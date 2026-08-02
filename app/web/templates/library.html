@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Library — RPG Master{% endblock %}
+{% block content %}
+<header>
+  <h2>Your Library</h2>
+  <form method="post" action="/collections" style="display:flex; gap:0.5rem; align-items:end">
+    <label>New collection<input type="text" name="name" placeholder="e.g. Pathfinder shelf" required></label>
+    <button type="submit">Create</button>
+  </form>
+</header>
+{% if collections %}
+<div class="grid">
+  {% for c in collections %}
+  <article>
+    <h3>{{ c.name }}</h3>
+    <small>Created {{ c.created_at }}</small>
+  </article>
+  {% endfor %}
+</div>
+{% else %}
+<p><em>No collections yet. Create one above to start uploading books.</em></p>
+{% endif %}
+{% endblock %}
