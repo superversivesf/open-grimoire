@@ -58,21 +58,7 @@ class Extractor:
         return "\n".join(pytesseract.image_to_string(img) for img in images)
 
     def _vision_ocr(self, pdf_path: Path, page_num: int) -> str:
-        import asyncio
-        import base64
-        from pdf2image import convert_from_path
-        images = convert_from_path(str(pdf_path), first_page=page_num, last_page=page_num, dpi=200)
-        if not images:
-            return ""
-        import io
-        buf = io.BytesIO()
-        images[0].save(buf, format="PNG")
-        b64 = base64.b64encode(buf.getvalue()).decode()
-        prompt = f"Transcribe the text from this page image exactly. Image: [base64 png omitted in prompt]"
-        result = asyncio.get_event_loop().run_until_complete(
-            self.gateway.call("vision", prompt)
-        )
-        return result.get("message", {}).get("content", "")
+        raise NotImplementedError("vision OCR not yet implemented")
 
     @staticmethod
     def _is_garbage(text: str) -> bool:

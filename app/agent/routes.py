@@ -114,3 +114,15 @@ async def view_session(request: Request, session_id: str):
         "chat.html",
         {"user_id": uid, "session": session, "history": history},
     )
+
+
+@router.delete("/sessions/{session_id}")
+async def delete_session(request: Request, session_id: str):
+    uid = current_user_id(request)
+    if not uid:
+        return RedirectResponse("/login", status_code=303)
+    conn = init_user_db(_db_dir, uid)
+    conn.execute("DELETE FROM sessions WHERE session_id = ?", (session_id,))
+    conn.commit()
+    conn.close()
+    return RedirectResponse("/sessions", status_code=303)

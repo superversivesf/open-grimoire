@@ -72,7 +72,7 @@ class ToolBox:
             try:
                 for i, line in enumerate(f.read_text().splitlines(), start=1):
                     if regex.search(line):
-                        rel = str(f.relative_to(self.data_dir))
+                        rel = str(f.relative_to(self.data_dir / self.user_id))
                         hits.append({"path": rel, "line": i, "text": line.strip()[:200]})
                         if len(hits) >= 20:
                             return hits

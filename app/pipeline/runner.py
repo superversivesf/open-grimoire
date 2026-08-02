@@ -42,7 +42,7 @@ class PipelineRunner:
             if self.gateway is not None:
                 enricher = Enricher(self.gateway)
                 full_paths = [udata / p for p in leaf_paths]
-                page_map = {}
+                page_map = self._build_page_map(tree, udata, leaf_paths)
                 await enricher.enrich_all(full_paths, page_map)
 
             update_doc_status(uconn, doc_id, "indexing")
@@ -56,6 +56,17 @@ class PipelineRunner:
         finally:
             uconn.close()
             conn.close()
+
+    def _build_page_map(self, tree: list[dict], udata, leaf_paths: list[str]) -> dict:
+        pages = []
+        def walk(nodes):
+            for node in nodes:
+                if node["children"]:
+                    walk(node["children"])
+                else:
+                    pages.append(node.get("page_start"))
+        walk(tree)
+        return {str(udata / p): page for p, page in zip(leaf_paths, pages)}
 
     def _doc_title(self, uconn, doc_id: str) -> str:
         from app.storage.user_db import get_doc

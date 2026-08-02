@@ -14,7 +14,10 @@ def user_db_path(db_dir: Path, user_id: str) -> Path:
 
 def validate_user_path(data_dir: Path, user_id: str, target: str) -> Path:
     user_root = (data_dir / user_id).resolve()
-    resolved = Path(target).resolve()
+    p = Path(target)
+    if not p.is_absolute():
+        p = data_dir / user_id / p
+    resolved = p.resolve()
     if not str(resolved).startswith(str(user_root) + os.sep) and resolved != user_root:
         raise ValueError(f"path outside user tree: {target}")
     return resolved
