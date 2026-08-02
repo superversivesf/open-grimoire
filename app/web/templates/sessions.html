@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Sessions — RPG Master{% endblock %}
+{% block content %}
+<h2>Recent Sessions</h2>
+{% if sessions %}
+<ul>
+  {% for s in sessions %}
+  <li><a href="/sessions/{{ s.session_id }}">Session {{ s.session_id[:8] }}</a> — {{ s.updated_at }}</li>
+  {% endfor %}
+</ul>
+{% else %}
+<p><em>No sessions yet. Start one from a collection.</em></p>
+{% endif %}
+{% endblock %}

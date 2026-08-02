@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Chat — RPG Master{% endblock %}
+{% block content %}
+<h2>Ask about your manuals</h2>
+<div id="chat-log">
+  {% for turn in history %}
+  <article>
+    <p><strong>You:</strong> {{ turn.user }}</p>
+    <p><strong>Answer:</strong> {{ turn.agent }}</p>
+    {% if turn.cites %}
+    <ul>
+      {% for c in turn.cites %}
+      <li><a href="/docs/{{ session.collection_id }}/view?path={{ c.path }}">{{ c.path }} (p. {{ c.page }})</a> — "{{ c.quote }}"</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </article>
+  {% endfor %}
+</div>
+<form hx-post="/sessions/{{ session.session_id }}" hx-target="#chat-log" hx-swap="beforeend" hx-on::after-request="this.reset()">
+  <input type="text" name="question" placeholder="Ask a follow-up..." required>
+  <button type="submit">Send</button>
+</form>
+{% endblock %}

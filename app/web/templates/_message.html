@@ -1,0 +1,11 @@
+<article>
+  <p><strong>You:</strong> {{ turn.user }}</p>
+  <p><strong>Answer:</strong> {{ turn.agent }}</p>
+  {% if turn.cites %}
+  <ul>
+    {% for c in turn.cites %}
+    <li><a href="#">{{ c.path }} (p. {{ c.page }})</a> — "{{ c.quote }}"</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+</article>
