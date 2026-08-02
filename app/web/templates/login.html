@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Login — RPG Master{% endblock %}
+{% block content %}
+<article>
+  <h2>Login</h2>
+  {% if error %}<small style="color:var(--pico-color-red-500)">{{ error }}</small>{% endif %}
+  <form method="post" action="/login">
+    <label>Username<input type="text" name="username" required></label>
+    <label>Password<input type="password" name="password" required></label>
+    <button type="submit">Login</button>
+  </form>
+</article>
+{% endblock %}

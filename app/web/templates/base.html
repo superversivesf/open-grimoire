@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}RPG Master{% endblock %}</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/css@1/pico.min.css">
+  <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+</head>
+<body>
+  <nav class="container-fluid">
+    <ul><li><strong>RPG Master</strong></li></ul>
+    <ul>
+      {% if user_id %}<li><a href="/">Library</a></li><li><form method="post" action="/logout" style="display:inline"><button type="submit" class="secondary">Logout</button></form></li>{% endif %}
+    </ul>
+  </nav>
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>
