@@ -48,7 +48,7 @@ class AgentLoop:
                     }
 
                 result = self.toolbox.execute(name, args)
-                messages.append({"role": "assistant", "content": content})
+                messages.append({"role": "assistant", "content": content or f"[calling {name}]"})
                 messages.append({"role": "tool", "name": name, "content": result})
 
         return {

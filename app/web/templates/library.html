@@ -12,7 +12,7 @@
 <div class="grid">
   {% for c in collections %}
   <article>
-    <h3>{{ c.name }}</h3>
+    <h3><a href="/collections/{{ c.collection_id }}">{{ c.name }}</a></h3>
     <small>Created {{ c.created_at }}</small>
   </article>
   {% endfor %}
