@@ -1,0 +1,54 @@
+import json
+import re
+from pathlib import Path
+
+
+class Enricher:
+    def __init__(self, gateway):
+        self.gateway = gateway
+
+    async def enrich_leaf(self, path: Path, page: int | None = None) -> dict:
+        content = path.read_text()
+        prompt = (
+            "Read this RPG manual section and produce a JSON object with "
+            "a 1-2 sentence 'summary' and a list of 3-8 'keywords' (lowercase). "
+            "Return ONLY valid JSON, no prose.\n\n"
+            f"{content}"
+        )
+        resp = await self.gateway.call("enrich", prompt)
+        raw = resp.get("message", {}).get("content", "")
+        result = self._parse_json(raw)
+        self._write_frontmatter(path, content, result, page)
+        return result
+
+    async def enrich_all(self, leaf_paths: list[Path], page_map: dict) -> list[dict]:
+        results = []
+        for p in leaf_paths:
+            page = page_map.get(str(p))
+            r = await self.enrich_leaf(p, page)
+            results.append(r)
+        return results
+
+    @staticmethod
+    def _parse_json(raw: str) -> dict:
+        try:
+            return json.loads(raw)
+        except json.JSONDecodeError:
+            match = re.search(r"\{.*\}", raw, re.DOTALL)
+            if match:
+                try:
+                    return json.loads(match.group(0))
+                except json.JSONDecodeError:
+                    pass
+        return {"summary": "", "keywords": []}
+
+    @staticmethod
+    def _write_frontmatter(path: Path, content: str, result: dict, page: int | None) -> None:
+        summary = result.get("summary", "")
+        keywords = result.get("keywords", [])
+        kw_yaml = ", ".join(keywords) if isinstance(keywords, list) else str(keywords)
+        fm = f"---\nsummary: \"{summary}\"\nkeywords: [{kw_yaml}]\n"
+        if page is not None:
+            fm += f"page: {page}\n"
+        fm += f"---\n\n{content}"
+        path.write_text(fm)
