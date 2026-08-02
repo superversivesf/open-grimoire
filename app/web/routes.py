@@ -11,7 +11,7 @@ from app.storage.user_db import (
     create_doc, get_doc as _get_doc, delete_doc as _delete_doc, update_doc_status,
 )
 from app.storage.shared_db import init_shared_db, enqueue_job
-from app.storage.paths import user_data_dir
+from app.storage.paths import user_data_dir, validate_user_path
 
 router = APIRouter()
 _templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
@@ -151,3 +151,55 @@ async def delete_doc_route(request: Request, doc_id: str):
     if doc_dir.exists():
         shutil.rmtree(doc_dir)
     return RedirectResponse("/", status_code=303)
+
+
+@router.get("/docs/{doc_id}")
+async def doc_view(request: Request, doc_id: str):
+    uid = current_user_id(request)
+    if not uid:
+        return RedirectResponse("/login", status_code=303)
+    uconn = init_user_db(_db_dir, uid)
+    d = _get_doc(uconn, doc_id)
+    uconn.close()
+    if not d:
+        return RedirectResponse("/", status_code=303)
+    tree = _build_doc_tree(_data_dir, uid, doc_id)
+    return _templates.TemplateResponse(
+        request,
+        "doc.html",
+        {"user_id": uid, "doc": d, "tree": tree},
+    )
+
+
+@router.get("/docs/{doc_id}/view")
+async def doc_view_leaf(request: Request, doc_id: str, path: str):
+    uid = current_user_id(request)
+    if not uid:
+        return RedirectResponse("/login", status_code=303)
+    try:
+        full = validate_user_path(_data_dir, uid, str(_data_dir / uid / doc_id / path))
+    except ValueError:
+        return RedirectResponse(f"/docs/{doc_id}", status_code=303)
+    content = full.read_text() if full.exists() else "(file not found)"
+    return _templates.TemplateResponse(
+        request,
+        "doc_leaf.html",
+        {"user_id": uid, "doc_id": doc_id, "path": path, "content": content},
+    )
+
+
+def _build_doc_tree(data_dir: Path, uid: str, doc_id: str) -> list[dict]:
+    doc_root = data_dir / uid / doc_id
+    if not doc_root.exists():
+        return []
+    entries = []
+    for chap_dir in sorted(doc_root.iterdir()):
+        if chap_dir.is_dir():
+            idx = chap_dir / "index.md"
+            title = chap_dir.name
+            if idx.exists():
+                first_line = idx.read_text().splitlines()[0]
+                if first_line.startswith("# "):
+                    title = first_line[2:]
+            entries.append({"title": title, "path": f"{chap_dir.name}/index.md"})
+    return entries
