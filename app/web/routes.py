@@ -1,9 +1,17 @@
-from fastapi import APIRouter, Request, Form
+from fastapi import APIRouter, Request, Form, UploadFile, File
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
+import hashlib
+import uuid
+import shutil
 from app.auth.middleware import current_user_id
-from app.storage.user_db import init_user_db, list_collections, create_collection
+from app.storage.user_db import (
+    init_user_db, list_collections, create_collection, list_docs,
+    create_doc, get_doc as _get_doc, delete_doc as _delete_doc, update_doc_status,
+)
+from app.storage.shared_db import init_shared_db, enqueue_job
+from app.storage.paths import user_data_dir
 
 router = APIRouter()
 _templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
@@ -40,4 +48,106 @@ async def create_collection_route(request: Request, name: str = Form(...)):
     conn = init_user_db(_db_dir, uid)
     create_collection(conn, name)
     conn.close()
+    return RedirectResponse("/", status_code=303)
+
+
+@router.get("/collections/{collection_id}")
+async def collection_view(request: Request, collection_id: str):
+    uid = current_user_id(request)
+    if not uid:
+        return RedirectResponse("/login", status_code=303)
+    conn = init_user_db(_db_dir, uid)
+    cols = list_collections(conn)
+    col = next((c for c in cols if c["collection_id"] == collection_id), None)
+    docs = list_docs(conn, collection_id)
+    conn.close()
+    if not col:
+        return RedirectResponse("/", status_code=303)
+    return _templates.TemplateResponse(
+        request,
+        "collection.html",
+        {"user_id": uid, "collection": col, "docs": docs},
+    )
+
+
+@router.get("/collections/{collection_id}/upload")
+async def upload_form(request: Request, collection_id: str):
+    uid = current_user_id(request)
+    if not uid:
+        return RedirectResponse("/login", status_code=303)
+    conn = init_user_db(_db_dir, uid)
+    cols = list_collections(conn)
+    col = next((c for c in cols if c["collection_id"] == collection_id), None)
+    conn.close()
+    if not col:
+        return RedirectResponse("/", status_code=303)
+    return _templates.TemplateResponse(
+        request,
+        "upload.html",
+        {"user_id": uid, "collection": col},
+    )
+
+
+@router.post("/upload")
+async def upload(request: Request, collection_id: str = Form(...), files: list[UploadFile] = File(...)):
+    uid = current_user_id(request)
+    if not uid:
+        return RedirectResponse("/login", status_code=303)
+    udata = user_data_dir(_data_dir, uid)
+    sconn = init_shared_db(_db_dir)
+    uconn = init_user_db(_db_dir, uid)
+    try:
+        for f in files:
+            if not f.filename or not f.filename.lower().endswith(".pdf"):
+                continue
+            data = await f.read()
+            sha = hashlib.sha256(data).hexdigest()
+            doc_id = uuid.uuid4().hex
+            doc_dir = udata / doc_id
+            doc_dir.mkdir(parents=True, exist_ok=True)
+            (doc_dir / "original.pdf").write_bytes(data)
+            create_doc(uconn, doc_id, collection_id, f.filename.rsplit(".", 1)[0], sha)
+            enqueue_job(sconn, uid, doc_id, str(doc_dir / "original.pdf"))
+    finally:
+        uconn.close()
+        sconn.close()
+    return RedirectResponse(f"/collections/{collection_id}", status_code=303)
+
+
+@router.post("/docs/{doc_id}/reprocess")
+async def reprocess_doc(request: Request, doc_id: str):
+    uid = current_user_id(request)
+    if not uid:
+        return RedirectResponse("/login", status_code=303)
+    uconn = init_user_db(_db_dir, uid)
+    sconn = init_shared_db(_db_dir)
+    d = None
+    try:
+        d = _get_doc(uconn, doc_id)
+        if not d:
+            return RedirectResponse("/", status_code=303)
+        pdf_path = _data_dir / uid / doc_id / "original.pdf"
+        update_doc_status(uconn, doc_id, "queued")
+        enqueue_job(sconn, uid, doc_id, str(pdf_path))
+    finally:
+        uconn.close()
+        sconn.close()
+    return RedirectResponse(f"/collections/{d['collection_id']}", status_code=303)
+
+
+@router.post("/docs/{doc_id}/delete")
+async def delete_doc_route(request: Request, doc_id: str):
+    uid = current_user_id(request)
+    if not uid:
+        return RedirectResponse("/login", status_code=303)
+    uconn = init_user_db(_db_dir, uid)
+    try:
+        d = _get_doc(uconn, doc_id)
+        if d:
+            _delete_doc(uconn, doc_id)
+    finally:
+        uconn.close()
+    doc_dir = _data_dir / uid / doc_id
+    if doc_dir.exists():
+        shutil.rmtree(doc_dir)
     return RedirectResponse("/", status_code=303)

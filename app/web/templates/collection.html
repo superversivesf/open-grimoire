@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}{{ collection.name }} — RPG Master{% endblock %}
+{% block content %}
+<header>
+  <h2>{{ collection.name }}</h2>
+  <a href="/collections/{{ collection.collection_id }}/upload" role="button">Upload books</a>
+</header>
+{% if docs %}
+<table>
+  <thead><tr><th>Title</th><th>Status</th><th>Actions</th></tr></thead>
+  <tbody>
+    {% for d in docs %}
+    <tr>
+      <td><a href="/docs/{{ d.doc_id }}">{{ d.title }}</a></td>
+      <td><small>{{ d.status }}</small></td>
+      <td>
+        <form method="post" action="/docs/{{ d.doc_id }}/reprocess" style="display:inline"><button class="secondary" type="submit">Reprocess</button></form>
+        <form method="post" action="/docs/{{ d.doc_id }}/delete" style="display:inline"><button class="secondary" type="submit">Delete</button></form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p><em>No books yet. <a href="/collections/{{ collection.collection_id }}/upload">Upload one</a>.</em></p>
+{% endif %}
+{% endblock %}
