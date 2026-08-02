@@ -4,6 +4,11 @@
 <header>
   <h2>{{ collection.name }}</h2>
   <a href="/collections/{{ collection.collection_id }}/upload" role="button">Upload books</a>
+  <form method="post" action="/sessions" style="display:inline">
+    <input type="hidden" name="collection_id" value="{{ collection.collection_id }}">
+    <input type="text" name="question" placeholder="Ask a question about these books..." required>
+    <button type="submit">Ask</button>
+  </form>
 </header>
 {% if docs %}
 <table>
