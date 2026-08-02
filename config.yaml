@@ -1,0 +1,12 @@
+ollama:
+  host: http://localhost:11434
+
+models:
+  query: qwen2.5:7b-instruct-q4
+  enrich: gemma3:4b-it-q4
+  structure: qwen2.5:7b-instruct-q4
+  vision: gemma3:4b-it-q4
+
+paths:
+  data_dir: ./data
+  db_dir: ./db
