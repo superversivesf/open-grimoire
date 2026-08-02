@@ -12,13 +12,15 @@ class OllamaGateway:
             self._client = AsyncClient(base_url=self.host, timeout=120.0)
         return self._client
 
-    async def call(self, role: str, prompt: str, tools: list | None = None) -> dict:
+    async def call(self, role: str, prompt: str, tools: list | None = None, messages: list | None = None) -> dict:
         model = self.models.get(role)
         if not model:
             raise ValueError(f"unknown role: {role}")
+        if messages is None:
+            messages = [{"role": "user", "content": prompt}]
         body = {
             "model": model,
-            "messages": [{"role": "user", "content": prompt}],
+            "messages": messages,
             "stream": False,
         }
         if tools:
