@@ -44,6 +44,13 @@ def init_user_db(db_dir: Path, user_id: str) -> sqlite3.Connection:
         )
         """
     )
+    conn.execute(
+        """
+        CREATE VIRTUAL TABLE IF NOT EXISTS documents_fts USING fts5(
+            path, title, summary, keywords, content, tokenize='porter'
+        )
+        """
+    )
     conn.commit()
     return conn
 
@@ -102,3 +109,35 @@ def get_session(conn, session_id: str) -> dict | None:
         (session_id,),
     ).fetchone()
     return dict(row) if row else None
+
+
+def insert_fts_row(conn, path: str, title: str, summary: str, keywords: str, content: str) -> None:
+    conn.execute(
+        "INSERT INTO documents_fts (path, title, summary, keywords, content) VALUES (?, ?, ?, ?, ?)",
+        (path, title, summary, keywords, content),
+    )
+    conn.commit()
+
+
+def delete_fts_rows_for_doc(conn, doc_id: str) -> None:
+    conn.execute("DELETE FROM documents_fts WHERE path LIKE ?", (f"%/{doc_id}/%",))
+    conn.commit()
+
+
+def update_doc_status(conn, doc_id: str, status: str) -> None:
+    conn.execute("UPDATE docs SET status = ? WHERE doc_id = ?", (status, doc_id))
+    conn.commit()
+
+
+def get_doc(conn, doc_id: str) -> dict | None:
+    row = conn.execute(
+        "SELECT doc_id, collection_id, title, sha256, status, page_count, created_at FROM docs WHERE doc_id = ?",
+        (doc_id,),
+    ).fetchone()
+    return dict(row) if row else None
+
+
+def delete_doc(conn, doc_id: str) -> None:
+    delete_fts_rows_for_doc(conn, doc_id)
+    conn.execute("DELETE FROM docs WHERE doc_id = ?", (doc_id,))
+    conn.commit()
