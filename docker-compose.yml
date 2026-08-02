@@ -5,7 +5,7 @@ services:
       - "8000:8000"
     environment:
       - OLLAMA_HOST=http://ollama:11434
-      - SESSION_SECRET=${SESSION_SECRET:-change-me-in-production}
+      - SESSION_SECRET=${SESSION_SECRET:?SESSION_SECRET must be set in .env}
       # DATA_DIR and DB_DIR are set in the Dockerfile to /app/data and /app/db
       # Override here if needed:
       # - DATA_DIR=/app/data

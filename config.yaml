@@ -17,4 +17,4 @@ server:
   secret: change-me-in-production
 
 # All values above can be overridden by environment variables:
-#   OLLAMA_HOST, SESSION_SECRET, DATA_DIR, DB_DIR, HOST, PORT
+#   OLLAMA_HOST, SESSION_SECRET, DATA_DIR, DB_DIR, HOST, PORT, COOKIE_SECURE

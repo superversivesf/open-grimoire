@@ -13,6 +13,7 @@ class Config:
     host: str = "0.0.0.0"
     port: int = 8000
     session_secret: str = "change-me-in-production"
+    cookie_secure: bool = False
 
 
 def load_config(path: str) -> Config:
@@ -25,10 +26,11 @@ def load_config(path: str) -> Config:
 
     return Config(
         ollama_host=os.environ.get("OLLAMA_HOST", ollama.get("host", "http://localhost:11434")),
-        session_secret=os.environ.get("SESSION_SECRET", server.get("secret", "change-me-in-production")),
         models=dict(models),
         data_dir=Path(os.environ.get("DATA_DIR", paths.get("data_dir", "./data"))),
         db_dir=Path(os.environ.get("DB_DIR", paths.get("db_dir", "./db"))),
         host=os.environ.get("HOST", server.get("host", "0.0.0.0")),
         port=int(os.environ.get("PORT", server.get("port", 8000))),
+        session_secret=os.environ.get("SESSION_SECRET", server.get("secret", "change-me-in-production")),
+        cookie_secure=os.environ.get("COOKIE_SECURE", "").lower() in ("1", "true", "yes"),
     )

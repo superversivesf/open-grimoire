@@ -88,6 +88,9 @@ async def upload_form(request: Request, collection_id: str):
     )
 
 
+MAX_UPLOAD_BYTES = 200 * 1024 * 1024  # 200 MB per file
+
+
 @router.post("/upload")
 async def upload(request: Request, collection_id: str = Form(...), files: list[UploadFile] = File(...)):
     uid = current_user_id(request)
@@ -101,6 +104,8 @@ async def upload(request: Request, collection_id: str = Form(...), files: list[U
             if not f.filename or not f.filename.lower().endswith(".pdf"):
                 continue
             data = await f.read()
+            if len(data) > MAX_UPLOAD_BYTES:
+                continue
             sha = hashlib.sha256(data).hexdigest()
             doc_id = uuid.uuid4().hex
             doc_dir = udata / doc_id

@@ -35,7 +35,8 @@ async def login_submit(request: Request, username: str = Form(...), password: st
         )
     token = sign_session(user["user_id"], request.app.state.session_secret)
     resp = RedirectResponse("/", status_code=303)
-    resp.set_cookie("session", token, httponly=True, max_age=86400, samesite="lax")
+    secure = getattr(request.app.state.config, "cookie_secure", False)
+    resp.set_cookie("session", token, httponly=True, max_age=86400, samesite="lax", secure=secure)
     return resp
 
 
