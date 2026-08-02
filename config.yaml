@@ -2,9 +2,9 @@ ollama:
   host: http://localhost:11434
 
 models:
-  query: gemma4:e4b
+  query: qwen2.5:7b
   enrich: gemma3:4b
-  structure: gemma4:e4b
+  structure: qwen2.5:7b
   vision: gemma3:4b
 
 paths:

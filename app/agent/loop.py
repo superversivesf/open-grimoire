@@ -6,8 +6,9 @@ SYSTEM_PROMPT = (
     "You are a helpful RPG rules assistant. You answer questions about RPG manuals "
     "by searching the user's document collection. Use fts_search first to find relevant "
     "sections, then read_file to get details. Use grep for cross-references, table_extract "
-    "for stat blocks, and calc for dice math. Always cite your sources with the done tool. "
-    "If you cannot find the answer, say so honestly."
+    "for stat blocks, and calc for dice math. When you have enough information, call the "
+    "done tool with your answer and citations. If you cannot find the answer, call done "
+    "with an honest message saying so."
 )
 
 
@@ -22,14 +23,19 @@ class AgentLoop:
         messages = build_messages(trimmed, SYSTEM_PROMPT)
         messages.append({"role": "user", "content": new_question})
 
+        last_content = ""
         for iteration in range(1, self.max_iterations + 1):
             resp = await self.gateway.call("query", "", tools=TOOL_DEFINITIONS, messages=messages)
             msg = resp.get("message", {})
             tool_calls = msg.get("tool_calls") or []
             content = msg.get("content", "")
+            if content:
+                last_content = content
 
             if not tool_calls:
-                return {"answer": content or "I could not find an answer.", "cites": [], "iterations": iteration}
+                if content and len(content) > 10:
+                    return {"answer": content, "cites": [], "iterations": iteration}
+                return {"answer": last_content or "I could not find an answer.", "cites": [], "iterations": iteration}
 
             for tc in tool_calls:
                 fn = tc.get("function", {})
@@ -41,18 +47,19 @@ class AgentLoop:
                     args = {}
 
                 if name == "done":
+                    answer = args.get("answer", content or last_content or "No answer provided.")
                     return {
-                        "answer": args.get("answer", content or "No answer provided."),
+                        "answer": answer,
                         "cites": args.get("cites", []),
                         "iterations": iteration,
                     }
 
                 result = self.toolbox.execute(name, args)
-                messages.append({"role": "assistant", "content": content or f"[calling {name}]"})
+                messages.append({"role": "assistant", "content": content})
                 messages.append({"role": "tool", "name": name, "content": result})
 
         return {
-            "answer": "I couldn't find a complete answer within my tool-call budget. Here's what I found so far: " + content,
+            "answer": last_content or "I couldn't find a complete answer within my tool-call budget.",
             "cites": [],
             "iterations": self.max_iterations,
         }
