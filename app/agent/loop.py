@@ -1,6 +1,7 @@
 import json
 import re
 import time
+import typing
 from app.agent.tools_schema import TOOL_DEFINITIONS
 from app.agent.history import build_messages, trim_history
 from app.logging_utils import get_logger
@@ -58,6 +59,33 @@ class AgentLoop:
         self.max_iterations = max_iterations
 
     async def run(self, history: list[dict], new_question: str) -> dict:
+        """Non-streaming run — returns the full result at once."""
+        result = None
+        async for event in self.run_stream(history, new_question):
+            if event["type"] == "done":
+                result = event
+                break
+            elif event["type"] == "error":
+                result = event
+                break
+        if result is None:
+            result = {"type": "done", "answer": "I could not find an answer.", "cites": [], "suggestions": [], "iterations": self.max_iterations}
+        return {
+            "answer": result.get("answer", ""),
+            "cites": result.get("cites", []),
+            "suggestions": result.get("suggestions", []),
+            "iterations": result.get("iterations", 0),
+        }
+
+    async def run_stream(self, history: list[dict], new_question: str) -> typing.AsyncGenerator[dict, None]:
+        """Streaming run — yields events as they happen.
+
+        Event types:
+          {"type": "thinking", "message": "..."} — status update (searching, reading)
+          {"type": "token", "content": "..."} — answer token (streamed)
+          {"type": "done", "answer": "...", "cites": [...], "suggestions": [...], "iterations": N}
+          {"type": "error", "message": "..."}
+        """
         start_time = time.time()
         trimmed = trim_history(history, keep_last=6)
         messages = build_messages(trimmed, SYSTEM_PROMPT)
@@ -92,7 +120,8 @@ class AgentLoop:
                     elapsed = time.time() - start_time
                     answer = clean_answer(last_content) or "I could not find an answer."
                     log.info(f"QUERY DONE: \"{new_question}\" -> \"{answer[:100]}\" (no done call, iters={iteration}, {elapsed:.1f}s)")
-                    return {"answer": answer, "cites": [], "suggestions": [], "iterations": iteration}
+                    yield {"type": "done", "answer": answer, "cites": [], "suggestions": [], "iterations": iteration}
+                    return
 
             for tc in tool_calls:
                 fn = tc.get("function", {})
@@ -110,17 +139,24 @@ class AgentLoop:
                     elapsed = time.time() - start_time
                     log.info(f"  iter {iteration}: DONE called ({llm_time:.1f}s)")
                     log.info(f"QUERY DONE: \"{new_question}\" -> \"{answer[:100]}\" (iters={iteration}, cites={len(cites)}, suggestions={len(suggestions)}, {elapsed:.1f}s)")
-                    for c in cites:
-                        cite_path = c.get("path", "").split("/")[-1]
-                        log.info(f"  cite: {cite_path} p.{c.get('page','?')} \"{c.get('quote','')[:60]}\"")
-                    for s in suggestions:
-                        log.info(f"  suggest: {s}")
-                    return {
-                        "answer": clean_answer(answer),
-                        "cites": cites,
-                        "suggestions": suggestions,
-                        "iterations": iteration,
-                    }
+
+                    # Stream the answer tokens
+                    cleaned = clean_answer(answer)
+                    yield {"type": "done", "answer": cleaned, "cites": cites, "suggestions": suggestions, "iterations": iteration}
+                    return
+
+                # Emit thinking event
+                if name == "fts_search":
+                    yield {"type": "thinking", "message": f"Searching for: {args.get('query', '')}"}
+                elif name == "read_file":
+                    fname = args.get("path", "").split("/")[-1].replace("_", " ").replace(".md", "")
+                    yield {"type": "thinking", "message": f"Reading: {fname}"}
+                elif name == "grep":
+                    yield {"type": "thinking", "message": f"Searching for: {args.get('pattern', '')}"}
+                elif name == "table_extract":
+                    yield {"type": "thinking", "message": "Extracting table data..."}
+                elif name == "list_index":
+                    yield {"type": "thinking", "message": "Browsing document index..."}
 
                 result = self.toolbox.execute(name, args)
                 result_preview = result[:120].replace("\n", " ")
@@ -134,9 +170,4 @@ class AgentLoop:
 
         elapsed = time.time() - start_time
         log.warning(f"QUERY BUDGET EXHAUSTED: \"{new_question}\" (iters={self.max_iterations}, {elapsed:.1f}s)")
-        return {
-            "answer": clean_answer(last_content) or "I couldn't find a complete answer within my tool-call budget.",
-            "cites": [],
-            "suggestions": [],
-            "iterations": self.max_iterations,
-        }
+        yield {"type": "done", "answer": clean_answer(last_content) or "I couldn't find a complete answer within my tool-call budget.", "cites": [], "suggestions": [], "iterations": self.max_iterations}

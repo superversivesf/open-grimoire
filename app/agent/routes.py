@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Request, Form
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
 import json
@@ -78,6 +78,46 @@ async def continue_session(request: Request, session_id: str, question: str = Fo
         )
     finally:
         conn.close()
+
+
+def _sse_format(event_type: str, data: dict) -> str:
+    return f"data: {json.dumps({'type': event_type, **data})}\n\n"
+
+
+@router.post("/sessions/{session_id}/stream")
+async def continue_session_stream(request: Request, session_id: str, question: str = Form(...)):
+    """SSE streaming endpoint for follow-up questions."""
+    uid = current_user_id(request)
+    if not uid:
+        return RedirectResponse("/login", status_code=303)
+
+    async def event_stream():
+        conn = init_user_db(_db_dir, uid)
+        try:
+            session = get_session(conn, session_id)
+            if not session:
+                yield _sse_format("error", {"message": "Session not found"})
+                return
+            history = load_history(conn, session_id)
+            loop = _make_loop(request, uid, session["collection_id"])
+
+            async for event in loop.run_stream(history, question):
+                if event["type"] == "thinking":
+                    yield _sse_format("thinking", {"message": event["message"]})
+                elif event["type"] == "done":
+                    append_turn(conn, session_id, question, event["answer"], event.get("cites", []), event.get("suggestions", []))
+                    yield _sse_format("done", {
+                        "answer": event["answer"],
+                        "cites": event.get("cites", []),
+                        "suggestions": event.get("suggestions", []),
+                        "iterations": event.get("iterations", 0),
+                    })
+                elif event["type"] == "error":
+                    yield _sse_format("error", {"message": event.get("message", "Unknown error")})
+        finally:
+            conn.close()
+
+    return StreamingResponse(event_stream(), media_type="text/event-stream")
 
 
 @router.get("/sessions")

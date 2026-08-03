@@ -47,7 +47,7 @@ class ToolBox:
             full = validate_user_path(self.data_dir, self.user_id, path)
         except ValueError:
             return []
-        if not full.exists():
+        if not full.exists() or not full.is_file():
             return []
         text = full.read_text()
         entries = []

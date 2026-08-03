@@ -4,7 +4,7 @@ from app.storage.paths import validate_user_path
 
 def safe_read_file(data_dir: Path, user_id: str, path: str, lines: str | None = None) -> str:
     full = validate_user_path(data_dir, user_id, path)
-    if not full.exists():
+    if not full.exists() or not full.is_file():
         return f"(file not found: {path})"
     text = full.read_text()
     if lines:
