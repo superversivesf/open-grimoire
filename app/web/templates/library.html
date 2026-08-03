@@ -32,9 +32,44 @@
   <div class="rpg-collection-card">
     <h3><a href="/collections/{{ c.collection_id }}">&#128218; {{ c.name }}</a></h3>
     <p class="meta">Created {{ c.created_at }}</p>
+    <div class="rpg-card-actions">
+      <button class="rpg-btn-secondary rpg-btn-sm" onclick="renameCollection('{{ c.collection_id }}', '{{ c.name }}')">&#9998; Rename</button>
+      <form method="post" action="/collections/{{ c.collection_id }}/delete" style="display:inline"
+            onsubmit="return confirm('Delete collection \"{{ c.name }}\" and all its books? This cannot be undone.')">
+        <button type="submit" class="rpg-btn-danger rpg-btn-sm">&#128465; Delete</button>
+      </form>
+    </div>
   </div>
   {% endfor %}
 </div>
+
+<!-- Rename modal -->
+<div id="rename-modal" class="rpg-upload-overlay" style="display:none;">
+  <div class="rpg-upload-card" style="min-width:320px;">
+    <h3 style="margin-bottom:1rem;">Rename Collection</h3>
+    <form id="rename-form" method="post" action="">
+      <input type="text" name="name" id="rename-input" placeholder="Collection name" required style="width:100%; margin-bottom:1rem;">
+      <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
+        <button type="button" class="rpg-btn-secondary" onclick="document.getElementById('rename-modal').style.display='none'">Cancel</button>
+        <button type="submit" class="rpg-btn">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function renameCollection(cid, currentName) {
+  var modal = document.getElementById('rename-modal');
+  var form = document.getElementById('rename-form');
+  var input = document.getElementById('rename-input');
+  form.action = '/collections/' + cid + '/rename';
+  input.value = currentName;
+  modal.style.display = 'flex';
+  input.focus();
+  input.select();
+}
+</script>
+
 {% else %}
 <div class="rpg-empty">
   <span class="icon">&#128218;</span>

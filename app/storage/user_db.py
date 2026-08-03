@@ -71,6 +71,32 @@ def create_collection(conn, name: str) -> str:
     return cid
 
 
+def rename_collection(conn, collection_id: str, name: str) -> None:
+    conn.execute(
+        "UPDATE collections SET name = ? WHERE collection_id = ?",
+        (name, collection_id),
+    )
+    conn.commit()
+
+
+def delete_collection(conn, collection_id: str) -> None:
+    # Delete all docs in this collection
+    rows = conn.execute(
+        "SELECT doc_id FROM docs WHERE collection_id = ?", (collection_id,)
+    ).fetchall()
+    for row in rows:
+        delete_doc(conn, row["doc_id"])
+    # Delete sessions for this collection
+    conn.execute(
+        "DELETE FROM sessions WHERE collection_id = ?", (collection_id,)
+    )
+    # Delete the collection
+    conn.execute(
+        "DELETE FROM collections WHERE collection_id = ?", (collection_id,)
+    )
+    conn.commit()
+
+
 def list_collections(conn) -> list[dict]:
     rows = conn.execute(
         "SELECT collection_id, name, created_at FROM collections ORDER BY created_at"

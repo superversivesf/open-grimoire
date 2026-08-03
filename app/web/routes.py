@@ -8,8 +8,9 @@ import shutil
 import markdown as md_lib
 from app.auth.middleware import current_user_id
 from app.storage.user_db import (
-    init_user_db, list_collections, create_collection, list_docs,
-    create_doc, get_doc as _get_doc, delete_doc as _delete_doc, update_doc_status,
+    init_user_db, list_collections, create_collection, rename_collection,
+    delete_collection, list_docs, get_doc as _get_doc, delete_doc as _delete_doc,
+    update_doc_status, create_doc,
 )
 from app.storage.shared_db import init_shared_db, enqueue_job
 from app.storage.paths import user_data_dir, validate_user_path
@@ -49,6 +50,34 @@ async def create_collection_route(request: Request, name: str = Form(...)):
         return RedirectResponse("/login", status_code=303)
     conn = init_user_db(_db_dir, uid)
     create_collection(conn, name)
+    conn.close()
+    return RedirectResponse("/", status_code=303)
+
+
+@router.post("/collections/{collection_id}/rename")
+async def rename_collection_route(request: Request, collection_id: str, name: str = Form(...)):
+    uid = current_user_id(request)
+    if not uid:
+        return RedirectResponse("/login", status_code=303)
+    conn = init_user_db(_db_dir, uid)
+    rename_collection(conn, collection_id, name)
+    conn.close()
+    return RedirectResponse(f"/collections/{collection_id}", status_code=303)
+
+
+@router.post("/collections/{collection_id}/delete")
+async def delete_collection_route(request: Request, collection_id: str):
+    uid = current_user_id(request)
+    if not uid:
+        return RedirectResponse("/login", status_code=303)
+    conn = init_user_db(_db_dir, uid)
+    # Delete all doc files from disk
+    docs = list_docs(conn, collection_id)
+    for d in docs:
+        doc_dir = _data_dir / uid / d["doc_id"]
+        if doc_dir.exists():
+            shutil.rmtree(doc_dir)
+    delete_collection(conn, collection_id)
     conn.close()
     return RedirectResponse("/", status_code=303)
 
