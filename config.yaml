@@ -2,7 +2,7 @@ ollama:
   host: http://localhost:11434
 
 models:
-  query: qwen2.5:7b
+  query: deepseek-v4-flash:cloud
   enrich: gemma4:e4b
   structure: qwen2.5:7b
   vision: gemma3:4b
