@@ -1,4 +1,4 @@
-# RPG Master app image
+# Open Grimoire app image
 FROM python:3.12-slim AS base
 
 # System deps for PDF processing: poppler (pdf2image), tesseract (OCR)

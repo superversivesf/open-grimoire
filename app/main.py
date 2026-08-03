@@ -13,7 +13,7 @@ from app.queue.worker import QueueWorker
 
 
 def create_app(cfg: Config, session_secret: str) -> FastAPI:
-    app = FastAPI(title="RPG Master")
+    app = FastAPI(title="Open Grimoire")
     app.state.config = cfg
     app.state.session_secret = session_secret
     cfg.data_dir.mkdir(parents=True, exist_ok=True)

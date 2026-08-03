@@ -1,6 +1,7 @@
 services:
   app:
     build: .
+    container_name: open-grimoire
     ports:
       - "8000:8000"
     environment:

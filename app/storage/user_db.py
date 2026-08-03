@@ -27,11 +27,22 @@ def init_user_db(db_dir: Path, user_id: str) -> sqlite3.Connection:
             sha256 TEXT NOT NULL,
             status TEXT NOT NULL DEFAULT 'queued',
             page_count INTEGER,
+            enrich_progress INTEGER NOT NULL DEFAULT 0,
+            enrich_total INTEGER NOT NULL DEFAULT 0,
             created_at TEXT NOT NULL DEFAULT (datetime('now')),
             FOREIGN KEY (collection_id) REFERENCES collections(collection_id)
         )
         """
     )
+    # Migration: add enrich columns to existing docs tables
+    try:
+        conn.execute("ALTER TABLE docs ADD COLUMN enrich_progress INTEGER NOT NULL DEFAULT 0")
+    except sqlite3.OperationalError:
+        pass
+    try:
+        conn.execute("ALTER TABLE docs ADD COLUMN enrich_total INTEGER NOT NULL DEFAULT 0")
+    except sqlite3.OperationalError:
+        pass
     conn.execute(
         """
         CREATE TABLE IF NOT EXISTS sessions (
@@ -115,12 +126,12 @@ def create_doc(conn, doc_id: str, collection_id: str, title: str, sha256: str) -
 def list_docs(conn, collection_id: str | None = None) -> list[dict]:
     if collection_id:
         rows = conn.execute(
-            "SELECT doc_id, collection_id, title, sha256, status, created_at FROM docs WHERE collection_id = ? ORDER BY created_at",
+            "SELECT doc_id, collection_id, title, sha256, status, page_count, enrich_progress, enrich_total, created_at FROM docs WHERE collection_id = ? ORDER BY created_at",
             (collection_id,),
         ).fetchall()
     else:
         rows = conn.execute(
-            "SELECT doc_id, collection_id, title, sha256, status, created_at FROM docs ORDER BY created_at"
+            "SELECT doc_id, collection_id, title, sha256, status, page_count, enrich_progress, enrich_total, created_at FROM docs ORDER BY created_at"
         ).fetchall()
     return [dict(r) for r in rows]
 
@@ -161,9 +172,17 @@ def update_doc_status(conn, doc_id: str, status: str) -> None:
     conn.commit()
 
 
+def update_enrich_progress(conn, doc_id: str, progress: int, total: int) -> None:
+    conn.execute(
+        "UPDATE docs SET enrich_progress = ?, enrich_total = ? WHERE doc_id = ?",
+        (progress, total, doc_id),
+    )
+    conn.commit()
+
+
 def get_doc(conn, doc_id: str) -> dict | None:
     row = conn.execute(
-        "SELECT doc_id, collection_id, title, sha256, status, page_count, created_at FROM docs WHERE doc_id = ?",
+        "SELECT doc_id, collection_id, title, sha256, status, page_count, enrich_progress, enrich_total, created_at FROM docs WHERE doc_id = ?",
         (doc_id,),
     ).fetchone()
     return dict(row) if row else None

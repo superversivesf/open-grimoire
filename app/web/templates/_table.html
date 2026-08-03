@@ -5,7 +5,18 @@
       {% for d in docs %}
       <tr>
         <td><a href="/docs/{{ d.doc_id }}">{{ d.title }}</a></td>
-        <td><span class="rpg-badge rpg-badge-{{ d.status }}">{{ d.status }}</span></td>
+        <td>
+          {% if d.status == 'enriching' and d.enrich_total > 0 %}
+          <span class="rpg-badge rpg-badge-enriching">
+            enriching {{ d.enrich_progress }}/{{ d.enrich_total }}
+          </span>
+          <div class="rpg-enrich-bar">
+            <div class="rpg-enrich-fill" style="width: {{ (d.enrich_progress / d.enrich_total * 100)|round }}%"></div>
+          </div>
+          {% else %}
+          <span class="rpg-badge rpg-badge-{{ d.status }}">{{ d.status }}</span>
+          {% endif %}
+        </td>
         <td>
           <form method="post" action="/docs/{{ d.doc_id }}/reprocess" style="display:inline"
                 onsubmit="this.querySelector('button').textContent='Processing...'; this.querySelector('button').disabled=true;">

@@ -6,7 +6,7 @@ from app.pipeline.structure import Structurer
 from app.pipeline.tier import tier_document
 from app.pipeline.enrich import Enricher
 from app.pipeline.index import index_document
-from app.storage.user_db import init_user_db, update_doc_status
+from app.storage.user_db import init_user_db, update_doc_status, update_enrich_progress
 from app.storage.shared_db import init_shared_db, complete_job
 from app.storage.paths import user_data_dir
 from app.logging_utils import get_logger
@@ -82,6 +82,7 @@ class PipelineRunner:
             update_doc_status(uconn, doc_id, "enriching")
             if self.gateway is not None:
                 log.info(f"JOB {job_id[:8]} STAGE 4: enriching {len(leaf_paths)} sections")
+                update_enrich_progress(uconn, doc_id, 0, len(leaf_paths))
                 enricher = Enricher(self.gateway)
                 full_paths = [udata / p for p in leaf_paths]
                 page_map = self._build_page_map(tree, udata, leaf_paths)
@@ -96,6 +97,7 @@ class PipelineRunner:
                         log.debug(f"JOB {job_id[:8]} ENRICH {i+1}/{len(full_paths)}: {p.name} -> summary=\"{summary}\" keywords={keywords}")
                     except Exception as e:
                         log.warning(f"JOB {job_id[:8]} ENRICH {i+1}/{len(full_paths)} FAILED: {p.name} -> {e}")
+                    update_enrich_progress(uconn, doc_id, i + 1, len(leaf_paths))
                 log.info(f"JOB {job_id[:8]} STAGE 4 DONE: {enriched}/{len(leaf_paths)} sections enriched, {time.time()-t0:.1f}s")
             else:
                 log.info(f"JOB {job_id[:8]} STAGE 4 SKIPPED: no gateway")
