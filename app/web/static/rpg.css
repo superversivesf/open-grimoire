@@ -496,7 +496,7 @@ body {
   color: var(--rpg-primary);
 }
 .rpg-suggestion-btn::before {
-  content: "\\2794  ";
+  content: "\2794  ";
   opacity: 0.5;
 }
 

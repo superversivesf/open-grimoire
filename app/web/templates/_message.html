@@ -19,9 +19,10 @@
         {% if c.page %} (p. {{ c.page }}){% endif %}
       </a>
       {% else %}
-      <span class="rpg-cite-link">&#128279; {{ c.path.split('/')[-1].replace('_', ' ').replace('.md', '') }}
+      <a href="/docs/search?path={{ c.path }}" class="rpg-cite-link">
+        &#128279; {{ c.path.split('/')[-1].replace('_', ' ').replace('.md', '') }}
         {% if c.page %} (p. {{ c.page }}){% endif %}
-      </span>
+      </a>
       {% endif %}
       {% if c.quote %}
       <div class="rpg-cite-quote">&ldquo;{{ c.quote }}&rdquo;</div>

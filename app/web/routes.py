@@ -255,3 +255,27 @@ def _build_doc_tree(data_dir: Path, uid: str, doc_id: str) -> list[dict]:
                     title = first_line[2:]
             entries.append({"title": title, "path": f"{chap_dir.name}/index.md"})
     return entries
+
+
+@router.get("/docs/search")
+async def doc_search_path(request: Request, path: str):
+    """Find which doc contains a given file path and redirect to it."""
+    uid = current_user_id(request)
+    if not uid:
+        return RedirectResponse("/login", status_code=303)
+    user_root = _data_dir / uid
+    if not user_root.exists():
+        return RedirectResponse("/", status_code=303)
+    # Search all doc directories for this file
+    filename = path.split("/")[-1]
+    for doc_dir in sorted(user_root.iterdir()):
+        if not doc_dir.is_dir():
+            continue
+        candidate = doc_dir / path
+        if candidate.exists():
+            return RedirectResponse(f"/docs/{doc_dir.name}/view?path={path}", status_code=303)
+        # Also try just the filename
+        for f in doc_dir.rglob(filename):
+            rel = str(f.relative_to(doc_dir))
+            return RedirectResponse(f"/docs/{doc_dir.name}/view?path={rel}", status_code=303)
+    return RedirectResponse("/", status_code=303)

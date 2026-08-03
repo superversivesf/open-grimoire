@@ -16,7 +16,7 @@
   {% endfor %}
 </div>
 
-<div id="chat-spinner" class="rpg-spinner" style="display:none;">
+<div id="chat-spinner" class="rpg-spinner htmx-indicator">
   <span class="rpg-spinner-dot"></span>
   <span class="rpg-spinner-dot"></span>
   <span class="rpg-spinner-dot"></span>
@@ -27,8 +27,8 @@
       hx-post="/sessions/{{ session.session_id }}"
       hx-target="#chat-log"
       hx-swap="beforeend"
-      hx-disabled-elt="#chat-form button"
-      hx-indicator="#chat-spinner">
+      hx-indicator="#chat-spinner"
+      hx-disabled-elt="#chat-form button, #chat-form input">
   <input type="text" name="question" placeholder="Ask a follow-up question..." required>
   <button type="submit" class="rpg-btn">Send &#9654;</button>
 </form>
@@ -38,8 +38,16 @@ function askFollowUp(btn) {
   var question = btn.getAttribute('data-question');
   var form = document.getElementById('chat-form');
   var input = form.querySelector('input[name="question"]');
+  var spinner = document.getElementById('chat-spinner');
+  var sendBtn = form.querySelector('button');
+
   input.value = question;
+  spinner.classList.add('htmx-request');
+  sendBtn.disabled = true;
+  input.disabled = true;
+
   htmx.trigger(form, 'submit');
+
   input.value = '';
 }
 </script>
