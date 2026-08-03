@@ -41,7 +41,7 @@ async def start_session(request: Request, collection_id: str = Form(...), questi
         return RedirectResponse("/login", status_code=303)
     conn = init_user_db(_db_dir, uid)
     try:
-        sid = create_session(conn, collection_id)
+        sid = create_session(conn, collection_id, name=question[:80])
         history = load_history(conn, sid)
         loop = _make_loop(request, uid, collection_id)
         result = await loop.run(history, question)
@@ -127,7 +127,7 @@ async def list_sessions(request: Request):
         return RedirectResponse("/login", status_code=303)
     conn = init_user_db(_db_dir, uid)
     rows = conn.execute(
-        "SELECT session_id, collection_id, created_at, updated_at FROM sessions ORDER BY updated_at DESC LIMIT 20"
+        "SELECT session_id, collection_id, name, created_at, updated_at FROM sessions ORDER BY updated_at DESC LIMIT 20"
     ).fetchall()
     sessions = [dict(r) for r in rows]
     conn.close()

@@ -37,6 +37,7 @@ def init_user_db(db_dir: Path, user_id: str) -> sqlite3.Connection:
         CREATE TABLE IF NOT EXISTS sessions (
             session_id TEXT PRIMARY KEY,
             collection_id TEXT NOT NULL,
+            name TEXT NOT NULL DEFAULT '',
             history_json TEXT NOT NULL DEFAULT '[]',
             created_at TEXT NOT NULL DEFAULT (datetime('now')),
             updated_at TEXT NOT NULL DEFAULT (datetime('now')),
@@ -44,6 +45,11 @@ def init_user_db(db_dir: Path, user_id: str) -> sqlite3.Connection:
         )
         """
     )
+    # Add name column to existing sessions tables (migration for old DBs)
+    try:
+        conn.execute("ALTER TABLE sessions ADD COLUMN name TEXT NOT NULL DEFAULT ''")
+    except sqlite3.OperationalError:
+        pass  # Column already exists
     conn.execute(
         """
         CREATE VIRTUAL TABLE IF NOT EXISTS documents_fts USING fts5(
@@ -93,11 +99,11 @@ def list_docs(conn, collection_id: str | None = None) -> list[dict]:
     return [dict(r) for r in rows]
 
 
-def create_session(conn, collection_id: str) -> str:
+def create_session(conn, collection_id: str, name: str = "") -> str:
     sid = uuid.uuid4().hex
     conn.execute(
-        "INSERT INTO sessions (session_id, collection_id) VALUES (?, ?)",
-        (sid, collection_id),
+        "INSERT INTO sessions (session_id, collection_id, name) VALUES (?, ?, ?)",
+        (sid, collection_id, name),
     )
     conn.commit()
     return sid
@@ -105,7 +111,7 @@ def create_session(conn, collection_id: str) -> str:
 
 def get_session(conn, session_id: str) -> dict | None:
     row = conn.execute(
-        "SELECT session_id, collection_id, history_json, created_at, updated_at FROM sessions WHERE session_id = ?",
+        "SELECT session_id, collection_id, name, history_json, created_at, updated_at FROM sessions WHERE session_id = ?",
         (session_id,),
     ).fetchone()
     return dict(row) if row else None

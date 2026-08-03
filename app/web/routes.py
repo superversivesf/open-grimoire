@@ -205,7 +205,13 @@ async def delete_doc_route(request: Request, doc_id: str):
 @router.get("/docs/search")
 async def doc_search_path(request: Request, path: str):
     """Find which doc contains a given file path and redirect to it.
-    Must be registered BEFORE /docs/{doc_id} to avoid matching 'search' as doc_id."""
+    Must be registered BEFORE /docs/{doc_id} to avoid matching 'search' as doc_id.
+    Handles various path formats the LLM might return:
+    - doc_id/filename (correct FTS format)
+    - filename (bare filename)
+    - section_name/index.md (hallucinated directory)
+    - partial_filename.md (partial match)
+    """
     uid = current_user_id(request)
     if not uid:
         return RedirectResponse("/login", status_code=303)
@@ -213,27 +219,50 @@ async def doc_search_path(request: Request, path: str):
     if not user_root.exists():
         return RedirectResponse("/", status_code=303)
 
-    filename = path.split("/")[-1]
-
-    # If path starts with a 32-char hex, try that as the doc_id directly
     parts = path.split("/")
+    filename = parts[-1]
+
+    # 1. If path starts with a 32-char hex, try that as the doc_id directly
     if len(parts) > 1 and len(parts[0]) == 32:
         direct_doc_id = parts[0]
         direct_file = "/".join(parts[1:])
         direct_path = user_root / direct_doc_id / direct_file
-        if direct_path.exists():
+        if direct_path.exists() and direct_path.is_file():
             return RedirectResponse(f"/docs/{direct_doc_id}/view?path={direct_file}", status_code=303)
 
-    # Search all doc directories by filename
+    # 2. Strip /index.md suffix — LLM often hallucinates "section_name/index.md"
+    #    when the actual file is "section_name.md" or "NN_section_name.md"
+    search_name = filename
+    if search_name == "index.md" and len(parts) > 1:
+        search_name = parts[-2]  # Use the directory name as the search term
+
+    # 3. Search all doc directories
     for doc_dir in sorted(user_root.iterdir()):
         if not doc_dir.is_dir():
             continue
+        # Try exact filename match
         candidate = doc_dir / filename
-        if candidate.exists():
+        if candidate.exists() and candidate.is_file():
             return RedirectResponse(f"/docs/{doc_dir.name}/view?path={filename}", status_code=303)
+        # Try the search_name (after stripping /index.md)
+        if search_name != filename:
+            candidate = doc_dir / search_name
+            if candidate.exists() and candidate.is_file():
+                return RedirectResponse(f"/docs/{doc_dir.name}/view?path={search_name}", status_code=303)
+            candidate = doc_dir / (search_name + ".md")
+            if candidate.exists() and candidate.is_file():
+                return RedirectResponse(f"/docs/{doc_dir.name}/view?path={search_name}.md", status_code=303)
+        # Recursive search for exact filename
         for f in doc_dir.rglob(filename):
-            rel = str(f.relative_to(doc_dir))
-            return RedirectResponse(f"/docs/{doc_dir.name}/view?path={rel}", status_code=303)
+            if f.is_file():
+                rel = str(f.relative_to(doc_dir))
+                return RedirectResponse(f"/docs/{doc_dir.name}/view?path={rel}", status_code=303)
+        # Fuzzy: find files containing the search_name stem
+        stem = search_name.replace(".md", "").replace("_", " ")
+        for f in doc_dir.glob("*.md"):
+            if stem in f.stem.replace("_", " "):
+                rel = str(f.relative_to(doc_dir))
+                return RedirectResponse(f"/docs/{doc_dir.name}/view?path={rel}", status_code=303)
 
     return RedirectResponse("/", status_code=303)
 

@@ -7,7 +7,9 @@
 <div class="rpg-card-grid">
   {% for s in sessions %}
   <div class="rpg-collection-card">
-    <h3><a href="/sessions/{{ s.session_id }}">&#128172; Session {{ s.session_id[:8] }}</a></h3>
+    <h3><a href="/sessions/{{ s.session_id }}">&#128172;
+      {% if s.name %}{{ s.name }}{% else %}Session {{ s.session_id[:8] }}{% endif %}
+    </a></h3>
     <p class="meta">Last updated {{ s.updated_at }}</p>
   </div>
   {% endfor %}
