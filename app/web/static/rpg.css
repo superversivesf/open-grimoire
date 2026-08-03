@@ -176,6 +176,12 @@ body {
 .rpg-btn:disabled, button:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+  pointer-events: none;
+}
+.rpg-btn-loading {
+  pointer-events: none;
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 .rpg-btn-secondary, .rpg-btn-outline {
   background: transparent;
