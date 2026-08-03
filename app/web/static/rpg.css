@@ -173,6 +173,10 @@ body {
   background: var(--rpg-primary-dim);
   color: #fff;
 }
+.rpg-btn:disabled, button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
 .rpg-btn-secondary, .rpg-btn-outline {
   background: transparent;
   border: 1px solid var(--rpg-border);
@@ -304,6 +308,13 @@ body {
   gap: 0.4rem;
   padding: 1rem;
   margin-bottom: 1rem;
+}
+.htmx-indicator {
+  display: none;
+}
+.htmx-request .htmx-indicator,
+.htmx-indicator.htmx-request {
+  display: flex;
 }
 .rpg-spinner-dot {
   width: 8px;

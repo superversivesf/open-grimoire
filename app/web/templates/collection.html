@@ -18,13 +18,13 @@
         hx-post="/sessions"
         hx-target="main"
         hx-swap="innerHTML"
-        hx-on::htmx:before-request="document.getElementById('ask-spinner').style.display='flex'; this.querySelector('button').disabled=true"
-        hx-on::htmx:after-request="document.getElementById('ask-spinner').style.display='none'; this.querySelector('button').disabled=false">
+        hx-disabled-elt="#ask-form button"
+        hx-indicator="#ask-spinner">
     <input type="hidden" name="collection_id" value="{{ collection.collection_id }}">
     <input type="text" name="question" placeholder="What is a goblin's AC? How does grapple work?" required>
     <button type="submit" class="rpg-btn">&#128269; Ask</button>
   </form>
-  <div id="ask-spinner" class="rpg-spinner" style="display:none; margin-top:1rem;">
+  <div id="ask-spinner" class="rpg-spinner htmx-indicator" style="margin-top:1rem;">
     <span class="rpg-spinner-dot"></span>
     <span class="rpg-spinner-dot"></span>
     <span class="rpg-spinner-dot"></span>

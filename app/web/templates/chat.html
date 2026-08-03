@@ -27,8 +27,8 @@
       hx-post="/sessions/{{ session.session_id }}"
       hx-target="#chat-log"
       hx-swap="beforeend"
-      hx-on::htmx:before-request="document.getElementById('chat-spinner').style.display='flex'; this.reset()"
-      hx-on::htmx:after-request="document.getElementById('chat-spinner').style.display='none'">
+      hx-disabled-elt="#chat-form button"
+      hx-indicator="#chat-spinner">
   <input type="text" name="question" placeholder="Ask a follow-up question..." required>
   <button type="submit" class="rpg-btn">Send &#9654;</button>
 </form>
@@ -39,7 +39,7 @@ function askFollowUp(btn) {
   var form = document.getElementById('chat-form');
   var input = form.querySelector('input[name="question"]');
   input.value = question;
-  form.dispatchEvent(new Event('submit', {cancelable: true, bubbles: true}));
+  htmx.trigger(form, 'submit');
   input.value = '';
 }
 </script>

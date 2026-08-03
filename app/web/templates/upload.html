@@ -44,10 +44,8 @@
       <span class="rpg-spinner-dot"></span>
       <span class="rpg-spinner-dot"></span>
     </span>
-    <p id="upload-status-text" style="color:var(--rpg-text-dim);">Uploading...</p>
-    <div id="upload-progress-bar" style="width:100%; height:6px; background:var(--rpg-surface-2); border-radius:3px; margin-top:1rem; overflow:hidden;">
-      <div id="upload-progress-fill" style="width:0%; height:100%; background:var(--rpg-primary); border-radius:3px; transition:width 0.3s;"></div>
-    </div>
+    <p id="upload-status-text" style="color:var(--rpg-text-dim);">Uploading and processing your book...</p>
+    <p class="rpg-meta" style="margin-top:0.5rem;">This page will refresh automatically when the upload completes.</p>
   </div>
 </div>
 
@@ -59,8 +57,6 @@ var fileInput = document.getElementById('file-input');
 var fileList = document.getElementById('file-list');
 var form = document.getElementById('upload-form');
 var status = document.getElementById('upload-status');
-var statusText = document.getElementById('upload-status-text');
-var progressFill = document.getElementById('upload-progress-fill');
 var uploadBtn = document.getElementById('upload-btn');
 
 fileInput.addEventListener('change', function(e) {
@@ -82,45 +78,19 @@ dropzone.addEventListener('drop', function(e) {
 });
 
 form.addEventListener('submit', function(e) {
+  // Show spinner immediately, then let the form submit on next frame
   e.preventDefault();
   uploadBtn.disabled = true;
+  uploadBtn.style.opacity = '0.5';
   status.style.display = 'block';
-  statusText.textContent = 'Uploading files...';
-
-  var formData = new FormData(form);
-  var xhr = new XMLHttpRequest();
-
-  xhr.upload.addEventListener('progress', function(e) {
-    if (e.lengthComputable) {
-      var pct = Math.round((e.loaded / e.total) * 100);
-      progressFill.style.width = pct + '%';
-      statusText.textContent = 'Uploading... ' + pct + '%';
-    }
+  status.scrollIntoView({behavior: 'smooth', block: 'center'});
+  // Submit after the spinner is painted
+  requestAnimationFrame(function() {
+    setTimeout(function() {
+      form.offsubmit = null;
+      form.submit();
+    }, 50);
   });
-
-  xhr.addEventListener('load', function() {
-    if (xhr.status === 303 || xhr.status === 200) {
-      progressFill.style.width = '100%';
-      statusText.textContent = 'Upload complete! Processing...';
-      statusText.style.color = 'var(--rpg-success)';
-      setTimeout(function() {
-        window.location.href = '/collections/{{ collection.collection_id }}';
-      }, 1500);
-    } else {
-      statusText.textContent = 'Upload failed';
-      statusText.style.color = 'var(--rpg-error)';
-      uploadBtn.disabled = false;
-    }
-  });
-
-  xhr.addEventListener('error', function() {
-    statusText.textContent = 'Upload failed';
-    statusText.style.color = 'var(--rpg-error)';
-    uploadBtn.disabled = false;
-  });
-
-  xhr.open('POST', '/upload');
-  xhr.send(formData);
 });
 </script>
 {% endblock %}

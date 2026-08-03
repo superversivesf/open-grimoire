@@ -7,10 +7,12 @@
         <td><a href="/docs/{{ d.doc_id }}">{{ d.title }}</a></td>
         <td><span class="rpg-badge rpg-badge-{{ d.status }}">{{ d.status }}</span></td>
         <td>
-          <form method="post" action="/docs/{{ d.doc_id }}/reprocess" style="display:inline">
+          <form method="post" action="/docs/{{ d.doc_id }}/reprocess" style="display:inline"
+                onsubmit="this.querySelector('button').textContent='Processing...'; this.querySelector('button').disabled=true;">
             <button class="rpg-btn-secondary rpg-btn" type="submit" style="padding:0.3rem 0.7rem; font-size:0.8rem;">Reprocess</button>
           </form>
-          <form method="post" action="/docs/{{ d.doc_id }}/delete" style="display:inline">
+          <form method="post" action="/docs/{{ d.doc_id }}/delete" style="display:inline"
+                onsubmit="this.querySelector('button').textContent='Deleting...'; this.querySelector('button').disabled=true;">
             <button class="rpg-btn-danger rpg-btn" type="submit" style="padding:0.3rem 0.7rem; font-size:0.8rem;">Delete</button>
           </form>
         </td>
