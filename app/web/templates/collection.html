@@ -13,11 +13,23 @@
 
 <div class="rpg-card" style="margin-bottom:1.5rem;">
   <p class="rpg-meta" style="margin-bottom:0.8rem;">Ask a question about the books in this collection:</p>
-  <form method="post" action="/sessions" class="rpg-inline-form">
+  <form method="post" action="/sessions" class="rpg-inline-form"
+        id="ask-form"
+        hx-post="/sessions"
+        hx-target="main"
+        hx-swap="innerHTML"
+        hx-on::htmx:before-request="document.getElementById('ask-spinner').style.display='flex'; this.querySelector('button').disabled=true"
+        hx-on::htmx:after-request="document.getElementById('ask-spinner').style.display='none'; this.querySelector('button').disabled=false">
     <input type="hidden" name="collection_id" value="{{ collection.collection_id }}">
     <input type="text" name="question" placeholder="What is a goblin's AC? How does grapple work?" required>
     <button type="submit" class="rpg-btn">&#128269; Ask</button>
   </form>
+  <div id="ask-spinner" class="rpg-spinner" style="display:none; margin-top:1rem;">
+    <span class="rpg-spinner-dot"></span>
+    <span class="rpg-spinner-dot"></span>
+    <span class="rpg-spinner-dot"></span>
+    <span class="rpg-spinner-text">Searching the manuals...</span>
+  </div>
 </div>
 
 <div class="rpg-page-header" style="margin-bottom:1rem;">
