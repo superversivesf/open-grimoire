@@ -27,8 +27,7 @@
       hx-post="/sessions/{{ session.session_id }}"
       hx-target="#chat-log"
       hx-swap="beforeend"
-      hx-on::after-request="this.reset()"
-      hx-on::htmx:before-request="document.getElementById('chat-spinner').style.display='flex'"
+      hx-on::htmx:before-request="document.getElementById('chat-spinner').style.display='flex'; this.reset()"
       hx-on::htmx:after-request="document.getElementById('chat-spinner').style.display='none'">
   <input type="text" name="question" placeholder="Ask a follow-up question..." required>
   <button type="submit" class="rpg-btn">Send &#9654;</button>

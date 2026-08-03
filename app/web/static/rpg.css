@@ -404,6 +404,36 @@ body {
 .rpg-login-card h2 { text-align: center; margin-bottom: 1.5rem; }
 .rpg-login-card .icon { display: block; text-align: center; font-size: 3rem; margin-bottom: 1rem; }
 
+/* === MARKDOWN RENDERING === */
+.rpg-chat-answer p, .rpg-doc-content p { margin-bottom: 0.7rem; }
+.rpg-chat-answer ul, .rpg-chat-answer ol, .rpg-doc-content ul, .rpg-doc-content ol {
+  margin-left: 1.5rem; margin-bottom: 0.7rem;
+}
+.rpg-chat-answer li, .rpg-doc-content li { margin-bottom: 0.3rem; }
+.rpg-chat-answer strong, .rpg-doc-content strong { color: var(--rpg-accent); }
+.rpg-chat-answer code, .rpg-doc-content code {
+  background: rgba(0,0,0,0.3); padding: 0.1rem 0.3rem; border-radius: 3px;
+  font-family: 'Courier New', monospace; font-size: 0.9em;
+}
+.rpg-chat-answer h1, .rpg-chat-answer h2, .rpg-chat-answer h3,
+.rpg-doc-content h1, .rpg-doc-content h2, .rpg-doc-content h3 {
+  margin-top: 1rem; margin-bottom: 0.5rem; color: var(--rpg-text);
+}
+.rpg-doc-content {
+  background: var(--rpg-surface);
+  border: 1px solid var(--rpg-border);
+  border-radius: var(--rpg-radius);
+  padding: 1.5rem;
+  font-family: 'Georgia', serif;
+  font-size: 0.95rem;
+  line-height: 1.8;
+  color: var(--rpg-text);
+}
+.rpg-doc-content pre {
+  background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 6px;
+  overflow-x: auto; margin-bottom: 0.7rem;
+}
+
 /* === RESPONSIVE === */
 @media (max-width: 768px) {
   .rpg-main { padding: 1rem; }

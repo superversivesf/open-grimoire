@@ -5,6 +5,7 @@ from pathlib import Path
 import hashlib
 import uuid
 import shutil
+import markdown as md_lib
 from app.auth.middleware import current_user_id
 from app.storage.user_db import (
     init_user_db, list_collections, create_collection, list_docs,
@@ -12,9 +13,10 @@ from app.storage.user_db import (
 )
 from app.storage.shared_db import init_shared_db, enqueue_job
 from app.storage.paths import user_data_dir, validate_user_path
+from app.web.template_utils import create_templates
 
 router = APIRouter()
-_templates = Jinja2Templates(directory=str(Path(__file__).parent / "templates"))
+_templates = create_templates(str(Path(__file__).parent / "templates"))
 _db_dir = None
 _data_dir = None
 
@@ -89,6 +91,18 @@ async def upload_form(request: Request, collection_id: str):
 
 
 MAX_UPLOAD_BYTES = 200 * 1024 * 1024  # 200 MB per file
+USER_STORAGE_LIMIT = 1024 * 1024 * 1024  # 1 GB per user
+
+
+def _user_storage_used(data_dir: Path, uid: str) -> int:
+    user_dir = data_dir / uid
+    if not user_dir.exists():
+        return 0
+    total = 0
+    for f in user_dir.rglob("*"):
+        if f.is_file():
+            total += f.stat().st_size
+    return total
 
 
 @router.post("/upload")
@@ -105,6 +119,9 @@ async def upload(request: Request, collection_id: str = Form(...), files: list[U
                 continue
             data = await f.read()
             if len(data) > MAX_UPLOAD_BYTES:
+                continue
+            used = _user_storage_used(_data_dir, uid)
+            if used + len(data) > USER_STORAGE_LIMIT:
                 continue
             sha = hashlib.sha256(data).hexdigest()
             doc_id = uuid.uuid4().hex
@@ -181,15 +198,18 @@ async def doc_view_leaf(request: Request, doc_id: str, path: str):
     uid = current_user_id(request)
     if not uid:
         return RedirectResponse("/login", status_code=303)
+    clean_path = path
+    if path.startswith(doc_id + "/"):
+        clean_path = path[len(doc_id) + 1:]
     try:
-        full = validate_user_path(_data_dir, uid, str(_data_dir / uid / doc_id / path))
+        full = validate_user_path(_data_dir, uid, str(_data_dir / uid / doc_id / clean_path))
     except ValueError:
         return RedirectResponse(f"/docs/{doc_id}", status_code=303)
     content = full.read_text() if full.exists() else "(file not found)"
     return _templates.TemplateResponse(
         request,
         "doc_leaf.html",
-        {"user_id": uid, "doc_id": doc_id, "path": path, "content": content},
+        {"user_id": uid, "doc_id": doc_id, "path": clean_path, "content": content},
     )
 
 

@@ -1,19 +1,16 @@
-{% set turn = turn %}
 <div class="rpg-chat-turn rpg-chat-user">
   <div class="role">&#129333; You</div>
   <p>{{ turn.user }}</p>
 </div>
 <div class="rpg-chat-turn rpg-chat-agent">
   <div class="role">&#129520; Answer</div>
-  <div class="rpg-chat-answer">{{ turn.agent }}</div>
+  <div class="rpg-chat-answer">{{ turn.agent | md }}</div>
   {% if turn.cites %}
   <div class="rpg-cites">
     <div class="rpg-cites-title">&#128218; Sources:</div>
     {% for c in turn.cites %}
     <div class="rpg-cite">
-      <a href="/docs/{{ collection_id }}/view?path={{ c.path }}"
-         class="rpg-cite-link"
-         title="{{ c.quote if c.quote else c.path }}">
+      <a href="/docs/{{ collection_id }}/view?path={{ c.path }}" class="rpg-cite-link">
         &#128279; {{ c.path.split('/')[-1].replace('_', ' ').replace('.md', '') }}
         {% if c.page %} (p. {{ c.page }}){% endif %}
       </a>

@@ -10,9 +10,10 @@ from app.storage.user_db import (
 from app.agent.history import load_history, append_turn
 from app.agent.tools import ToolBox
 from app.agent.loop import AgentLoop
+from app.web.template_utils import create_templates
 
 router = APIRouter()
-_templates = Jinja2Templates(directory=str(Path(__file__).parent.parent / "web" / "templates"))
+_templates = create_templates(str(Path(__file__).parent.parent / "web" / "templates"))
 _db_dir = None
 _data_dir = None
 _gateway = None
