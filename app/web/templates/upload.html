@@ -25,7 +25,8 @@
 </div>
 {% endif %}
 
-<form id="upload-form" method="post" action="/upload" enctype="multipart/form-data">
+<form id="upload-form" method="post" action="/upload" enctype="multipart/form-data"
+      onsubmit="document.getElementById('upload-btn').disabled=true; document.getElementById('upload-btn').classList.add('rpg-btn-loading'); document.getElementById('upload-overlay').style.display='flex';">
   <input type="hidden" name="collection_id" value="{{ collection.collection_id }}">
   <label class="rpg-dropzone" for="file-input" id="dropzone">
     <span class="icon">&#128218;</span>
@@ -37,20 +38,15 @@
   <button type="submit" class="rpg-btn" style="width:100%;" id="upload-btn">&#128228; Upload &amp; Process</button>
 </form>
 
-<div id="upload-status" style="display:none;">
-  <div class="rpg-card" style="padding:2rem;">
-    <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1rem;">
-      <span class="rpg-spinner" style="display:inline-flex;">
-        <span class="rpg-spinner-dot"></span>
-        <span class="rpg-spinner-dot"></span>
-        <span class="rpg-spinner-dot"></span>
-      </span>
-      <span id="upload-status-text" style="color:var(--rpg-text);">Uploading...</span>
-    </div>
-    <div style="width:100%; height:8px; background:var(--rpg-surface-2); border-radius:4px; overflow:hidden;">
-      <div id="upload-progress-fill" style="width:0%; height:100%; background:var(--rpg-primary); border-radius:4px; transition:width 0.2s;"></div>
-    </div>
-    <p id="upload-percent" style="text-align:center; margin-top:0.5rem; color:var(--rpg-text-dim); font-size:0.85rem;">0%</p>
+<div id="upload-overlay" class="rpg-upload-overlay" style="display:none;">
+  <div class="rpg-upload-card">
+    <span class="rpg-spinner" style="display:inline-flex; margin-bottom:1rem;">
+      <span class="rpg-spinner-dot"></span>
+      <span class="rpg-spinner-dot"></span>
+      <span class="rpg-spinner-dot"></span>
+    </span>
+    <p style="color:var(--rpg-text);">Uploading and processing...</p>
+    <p class="rpg-meta" style="margin-top:0.5rem;">You'll be redirected when it's done.</p>
   </div>
 </div>
 
@@ -60,12 +56,6 @@
 var dropzone = document.getElementById('dropzone');
 var fileInput = document.getElementById('file-input');
 var fileList = document.getElementById('file-list');
-var form = document.getElementById('upload-form');
-var status = document.getElementById('upload-status');
-var statusText = document.getElementById('upload-status-text');
-var progressFill = document.getElementById('upload-progress-fill');
-var percentText = document.getElementById('upload-percent');
-var uploadBtn = document.getElementById('upload-btn');
 
 fileInput.addEventListener('change', function(e) {
   fileList.innerHTML = '';
@@ -83,53 +73,6 @@ dropzone.addEventListener('drop', function(e) {
   dropzone.style.borderColor = '';
   fileInput.files = e.dataTransfer.files;
   fileInput.dispatchEvent(new Event('change'));
-});
-
-form.addEventListener('submit', function(e) {
-  e.preventDefault();
-  uploadBtn.disabled = true;
-  uploadBtn.classList.add('rpg-btn-loading');
-  status.style.display = 'block';
-  status.scrollIntoView({behavior: 'smooth', block: 'center'});
-
-  var formData = new FormData(form);
-  var xhr = new XMLHttpRequest();
-
-  xhr.upload.addEventListener('progress', function(e) {
-    if (e.lengthComputable) {
-      var pct = Math.round((e.loaded / e.total) * 100);
-      progressFill.style.width = pct + '%';
-      percentText.textContent = pct + '%';
-      statusText.textContent = pct < 100 ? 'Uploading... ' + pct + '%' : 'Upload complete — processing...';
-    }
-  });
-
-  xhr.addEventListener('load', function() {
-    if (xhr.status >= 200 && xhr.status < 400) {
-      progressFill.style.width = '100%';
-      percentText.textContent = '100%';
-      statusText.textContent = 'Upload complete — processing your book...';
-      statusText.style.color = 'var(--rpg-success)';
-      setTimeout(function() {
-        window.location.href = '/collections/{{ collection.collection_id }}';
-      }, 1000);
-    } else {
-      statusText.textContent = 'Upload failed (error ' + xhr.status + ')';
-      statusText.style.color = 'var(--rpg-error)';
-      uploadBtn.disabled = false;
-      uploadBtn.classList.remove('rpg-btn-loading');
-    }
-  });
-
-  xhr.addEventListener('error', function() {
-    statusText.textContent = 'Upload failed — network error';
-    statusText.style.color = 'var(--rpg-error)';
-    uploadBtn.disabled = false;
-    uploadBtn.classList.remove('rpg-btn-loading');
-  });
-
-  xhr.open('POST', '/upload');
-  xhr.send(formData);
 });
 </script>
 {% endblock %}
