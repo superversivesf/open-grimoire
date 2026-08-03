@@ -428,6 +428,42 @@ body {
   color: var(--rpg-error);
 }
 
+/* === SUGGESTIONS === */
+.rpg-suggestions {
+  margin-top: 0.8rem;
+  padding-top: 0.8rem;
+  border-top: 1px dashed var(--rpg-border);
+}
+.rpg-suggestions-title {
+  font-size: 0.8rem;
+  color: var(--rpg-text-dim);
+  margin-bottom: 0.5rem;
+}
+.rpg-suggestion-btn {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: var(--rpg-surface-2);
+  border: 1px solid var(--rpg-border);
+  border-radius: 6px;
+  padding: 0.5rem 0.8rem;
+  margin-bottom: 0.4rem;
+  color: var(--rpg-text);
+  font-family: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+.rpg-suggestion-btn:hover {
+  border-color: var(--rpg-primary);
+  background: rgba(179,136,255,0.1);
+  color: var(--rpg-primary);
+}
+.rpg-suggestion-btn::before {
+  content: "\\2794  ";
+  opacity: 0.5;
+}
+
 /* === MARKDOWN RENDERING === */
 .rpg-chat-answer p, .rpg-doc-content p { margin-bottom: 0.7rem; }
 .rpg-chat-answer ul, .rpg-chat-answer ol, .rpg-doc-content ul, .rpg-doc-content ol {

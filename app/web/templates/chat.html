@@ -32,4 +32,15 @@
   <input type="text" name="question" placeholder="Ask a follow-up question..." required>
   <button type="submit" class="rpg-btn">Send &#9654;</button>
 </form>
+
+<script>
+function askFollowUp(btn) {
+  var question = btn.getAttribute('data-question');
+  var form = document.getElementById('chat-form');
+  var input = form.querySelector('input[name="question"]');
+  input.value = question;
+  form.dispatchEvent(new Event('submit', {cancelable: true, bubbles: true}));
+  input.value = '';
+}
+</script>
 {% endblock %}

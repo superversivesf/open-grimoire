@@ -103,7 +103,7 @@ TOOL_DEFINITIONS = [
         "type": "function",
         "function": {
             "name": "done",
-            "description": "Signal that the answer is complete. Provide the final answer and citations to source pages.",
+            "description": "Signal that the answer is complete. Provide the final answer, citations, and 3 suggested follow-up questions.",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -119,6 +119,11 @@ TOOL_DEFINITIONS = [
                             },
                         },
                         "description": "Citations to source pages",
+                    },
+                    "suggestions": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "3 suggested follow-up questions for deeper exploration",
                     },
                 },
                 "required": ["answer"],

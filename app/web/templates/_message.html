@@ -9,15 +9,32 @@
   <div class="rpg-cites">
     <div class="rpg-cites-title">&#128218; Sources:</div>
     {% for c in turn.cites %}
+    {% set parts = c.path.split('/') %}
+    {% set cite_doc_id = parts[0] if parts[0]|length == 32 else '' %}
+    {% set cite_file_path = parts[1:] | join('/') if cite_doc_id else c.path %}
     <div class="rpg-cite">
-      <a href="/docs/{{ collection_id }}/view?path={{ c.path }}" class="rpg-cite-link">
-        &#128279; {{ c.path.split('/')[-1].replace('_', ' ').replace('.md', '') }}
+      {% if cite_doc_id %}
+      <a href="/docs/{{ cite_doc_id }}/view?path={{ cite_file_path }}" class="rpg-cite-link">
+        &#128279; {{ cite_file_path.split('/')[-1].replace('_', ' ').replace('.md', '') }}
         {% if c.page %} (p. {{ c.page }}){% endif %}
       </a>
+      {% else %}
+      <span class="rpg-cite-link">&#128279; {{ c.path.split('/')[-1].replace('_', ' ').replace('.md', '') }}
+        {% if c.page %} (p. {{ c.page }}){% endif %}
+      </span>
+      {% endif %}
       {% if c.quote %}
       <div class="rpg-cite-quote">&ldquo;{{ c.quote }}&rdquo;</div>
       {% endif %}
     </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% if turn.suggestions %}
+  <div class="rpg-suggestions">
+    <div class="rpg-suggestions-title">&#129534; Dig deeper:</div>
+    {% for s in turn.suggestions %}
+    <button class="rpg-suggestion-btn" onclick="askFollowUp(this)" data-question="{{ s }}">{{ s }}</button>
     {% endfor %}
   </div>
   {% endif %}

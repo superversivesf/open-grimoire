@@ -45,7 +45,7 @@ async def start_session(request: Request, collection_id: str = Form(...), questi
         history = load_history(conn, sid)
         loop = _make_loop(request, uid, collection_id)
         result = await loop.run(history, question)
-        append_turn(conn, sid, question, result["answer"], result["cites"])
+        append_turn(conn, sid, question, result["answer"], result["cites"], result.get("suggestions"))
         session = get_session(conn, sid)
         return _templates.TemplateResponse(
             request,
@@ -69,8 +69,8 @@ async def continue_session(request: Request, session_id: str, question: str = Fo
         history = load_history(conn, session_id)
         loop = _make_loop(request, uid, session["collection_id"])
         result = await loop.run(history, question)
-        append_turn(conn, session_id, question, result["answer"], result["cites"])
-        new_turn = {"user": question, "agent": result["answer"], "cites": result["cites"]}
+        append_turn(conn, session_id, question, result["answer"], result["cites"], result.get("suggestions"))
+        new_turn = {"user": question, "agent": result["answer"], "cites": result["cites"], "suggestions": result.get("suggestions", [])}
         return _templates.TemplateResponse(
             request,
             "_message.html",

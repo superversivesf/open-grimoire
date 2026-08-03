@@ -12,9 +12,9 @@ def load_history(conn, session_id: str) -> list[dict]:
         return []
 
 
-def append_turn(conn, session_id: str, user_msg: str, agent_msg: str, cites: list[dict] | None = None) -> None:
+def append_turn(conn, session_id: str, user_msg: str, agent_msg: str, cites: list[dict] | None = None, suggestions: list[str] | None = None) -> None:
     history = load_history(conn, session_id)
-    history.append({"user": user_msg, "agent": agent_msg, "cites": cites or []})
+    history.append({"user": user_msg, "agent": agent_msg, "cites": cites or [], "suggestions": suggestions or []})
     conn.execute(
         "UPDATE sessions SET history_json = ?, updated_at = datetime('now') WHERE session_id = ?",
         (json.dumps(history), session_id),
