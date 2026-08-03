@@ -332,7 +332,13 @@ async def doc_view_leaf(request: Request, doc_id: str, path: str):
     if not full.exists() or not full.is_file():
         content = f"(file not found: {clean_path})"
     else:
-        content = full.read_text()
+        raw = full.read_text()
+        # Strip front-matter (YAML between --- markers)
+        if raw.startswith("---\n"):
+            end = raw.find("\n---\n", 4)
+            if end != -1:
+                raw = raw[end + 5:]
+        content = raw.strip()
     return _templates.TemplateResponse(
         request,
         "doc_leaf.html",
