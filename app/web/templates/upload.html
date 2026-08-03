@@ -25,29 +25,102 @@
 </div>
 {% endif %}
 
-<form method="post" action="/upload" enctype="multipart/form-data">
+<form id="upload-form" method="post" action="/upload" enctype="multipart/form-data">
   <input type="hidden" name="collection_id" value="{{ collection.collection_id }}">
-  <label class="rpg-dropzone" for="file-input">
+  <label class="rpg-dropzone" for="file-input" id="dropzone">
     <span class="icon">&#128218;</span>
     <p><strong>Choose PDF files to upload</strong></p>
     <p class="hint">Click to select, or drag and drop. Multiple files supported. Max 200 MB each.</p>
     <input type="file" id="file-input" name="files" accept="application/pdf" multiple required style="display:none;">
   </label>
   <div id="file-list" style="margin-bottom:1rem;"></div>
-  <button type="submit" class="rpg-btn" style="width:100%;">&#128228; Upload &amp; Process</button>
+  <button type="submit" class="rpg-btn" style="width:100%;" id="upload-btn">&#128228; Upload &amp; Process</button>
 </form>
+
+<div id="upload-status" style="display:none;">
+  <div class="rpg-card" style="text-align:center; padding:2rem;">
+    <span class="rpg-spinner" style="display:inline-flex; margin-bottom:1rem;">
+      <span class="rpg-spinner-dot"></span>
+      <span class="rpg-spinner-dot"></span>
+      <span class="rpg-spinner-dot"></span>
+    </span>
+    <p id="upload-status-text" style="color:var(--rpg-text-dim);">Uploading...</p>
+    <div id="upload-progress-bar" style="width:100%; height:6px; background:var(--rpg-surface-2); border-radius:3px; margin-top:1rem; overflow:hidden;">
+      <div id="upload-progress-fill" style="width:0%; height:100%; background:var(--rpg-primary); border-radius:3px; transition:width 0.3s;"></div>
+    </div>
+  </div>
+</div>
 
 <p style="margin-top:1rem;"><a href="/collections/{{ collection.collection_id }}" class="rpg-btn-secondary rpg-btn">&#8592; Back to collection</a></p>
 
 <script>
-document.getElementById('file-input').addEventListener('change', function(e) {
-  var list = document.getElementById('file-list');
-  list.innerHTML = '';
+var dropzone = document.getElementById('dropzone');
+var fileInput = document.getElementById('file-input');
+var fileList = document.getElementById('file-list');
+var form = document.getElementById('upload-form');
+var status = document.getElementById('upload-status');
+var statusText = document.getElementById('upload-status-text');
+var progressFill = document.getElementById('upload-progress-fill');
+var uploadBtn = document.getElementById('upload-btn');
+
+fileInput.addEventListener('change', function(e) {
+  fileList.innerHTML = '';
   for (var i = 0; i < this.files.length; i++) {
     var f = this.files[i];
     var size = (f.size / 1024 / 1024).toFixed(1);
-    list.innerHTML += '<div class="rpg-card" style="padding:0.6rem 1rem; margin-bottom:0.3rem; display:flex; justify-content:space-between; align-items:center;"><span>&#128196; ' + f.name + '</span><span class="rpg-meta">' + size + ' MB</span></div>';
+    fileList.innerHTML += '<div class="rpg-card" style="padding:0.6rem 1rem; margin-bottom:0.3rem; display:flex; justify-content:space-between; align-items:center;"><span>&#128196; ' + f.name + '</span><span class="rpg-meta">' + size + ' MB</span></div>';
   }
+});
+
+dropzone.addEventListener('dragover', function(e) { e.preventDefault(); dropzone.style.borderColor = 'var(--rpg-primary)'; });
+dropzone.addEventListener('dragleave', function(e) { dropzone.style.borderColor = ''; });
+dropzone.addEventListener('drop', function(e) {
+  e.preventDefault();
+  dropzone.style.borderColor = '';
+  fileInput.files = e.dataTransfer.files;
+  fileInput.dispatchEvent(new Event('change'));
+});
+
+form.addEventListener('submit', function(e) {
+  e.preventDefault();
+  uploadBtn.disabled = true;
+  status.style.display = 'block';
+  statusText.textContent = 'Uploading files...';
+
+  var formData = new FormData(form);
+  var xhr = new XMLHttpRequest();
+
+  xhr.upload.addEventListener('progress', function(e) {
+    if (e.lengthComputable) {
+      var pct = Math.round((e.loaded / e.total) * 100);
+      progressFill.style.width = pct + '%';
+      statusText.textContent = 'Uploading... ' + pct + '%';
+    }
+  });
+
+  xhr.addEventListener('load', function() {
+    if (xhr.status === 303 || xhr.status === 200) {
+      progressFill.style.width = '100%';
+      statusText.textContent = 'Upload complete! Processing...';
+      statusText.style.color = 'var(--rpg-success)';
+      setTimeout(function() {
+        window.location.href = '/collections/{{ collection.collection_id }}';
+      }, 1500);
+    } else {
+      statusText.textContent = 'Upload failed';
+      statusText.style.color = 'var(--rpg-error)';
+      uploadBtn.disabled = false;
+    }
+  });
+
+  xhr.addEventListener('error', function() {
+    statusText.textContent = 'Upload failed';
+    statusText.style.color = 'var(--rpg-error)';
+    uploadBtn.disabled = false;
+  });
+
+  xhr.open('POST', '/upload');
+  xhr.send(formData);
 });
 </script>
 {% endblock %}

@@ -14,6 +14,7 @@ class Config:
     port: int = 8000
     session_secret: str = "change-me-in-production"
     cookie_secure: bool = False
+    num_ctx: int = 32768
 
 
 def load_config(path: str) -> Config:
@@ -23,6 +24,7 @@ def load_config(path: str) -> Config:
     models = raw.get("models", {})
     paths = raw.get("paths", {})
     server = raw.get("server", {})
+    options = raw.get("options", {})
 
     return Config(
         ollama_host=os.environ.get("OLLAMA_HOST", ollama.get("host", "http://localhost:11434")),
@@ -33,4 +35,5 @@ def load_config(path: str) -> Config:
         port=int(os.environ.get("PORT", server.get("port", 8000))),
         session_secret=os.environ.get("SESSION_SECRET", server.get("secret", "change-me-in-production")),
         cookie_secure=os.environ.get("COOKIE_SECURE", "").lower() in ("1", "true", "yes"),
+        num_ctx=int(os.environ.get("NUM_CTX", options.get("num_ctx", 32768))),
     )

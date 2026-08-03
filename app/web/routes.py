@@ -72,6 +72,21 @@ async def collection_view(request: Request, collection_id: str):
     )
 
 
+@router.get("/collections/{collection_id}/table")
+async def collection_table(request: Request, collection_id: str):
+    uid = current_user_id(request)
+    if not uid:
+        return RedirectResponse("/login", status_code=303)
+    conn = init_user_db(_db_dir, uid)
+    docs = list_docs(conn, collection_id)
+    conn.close()
+    return _templates.TemplateResponse(
+        request,
+        "_table.html",
+        {"user_id": uid, "collection_id": collection_id, "docs": docs},
+    )
+
+
 @router.get("/collections/{collection_id}/upload")
 async def upload_form(request: Request, collection_id: str):
     uid = current_user_id(request)

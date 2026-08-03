@@ -29,7 +29,8 @@ class ToolBox:
         conn = init_user_db(self.db_dir, self.user_id)
         try:
             rows = conn.execute(
-                "SELECT path, title, summary, snippet(documents_fts, 4, '<mark>', '</mark>', '...', 20) as snippet, rank FROM documents_fts WHERE documents_fts MATCH ? ORDER BY rank LIMIT 10",
+                "SELECT path, title, snippet(documents_fts, 4, '<mark>', '</mark>', '...', 10) as snippet, rank "
+                "FROM documents_fts WHERE documents_fts MATCH ? ORDER BY rank LIMIT 5",
                 (query,),
             ).fetchall()
             return [dict(r) for r in rows]

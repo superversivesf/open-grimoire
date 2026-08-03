@@ -38,7 +38,7 @@
 </div>
 
 {% if docs %}
-<div class="rpg-card" style="padding:0; overflow:hidden;">
+<div class="rpg-card" style="padding:0; overflow:hidden;" hx-get="/collections/{{ collection.collection_id }}/table" hx-trigger="every 3s" hx-target="this" hx-swap="outerHTML">
   <table class="rpg-table">
     <thead><tr><th>Title</th><th>Status</th><th>Actions</th></tr></thead>
     <tbody>

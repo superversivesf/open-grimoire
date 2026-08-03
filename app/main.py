@@ -24,7 +24,7 @@ def create_app(cfg: Config, session_secret: str) -> FastAPI:
 
     init_auth_routes(cfg.db_dir)
     init_web_routes(cfg.db_dir, cfg.data_dir)
-    gateway = OllamaGateway(cfg.ollama_host, cfg.models)
+    gateway = OllamaGateway(cfg.ollama_host, cfg.models, num_ctx=cfg.num_ctx)
     app.state.gateway = gateway
     init_agent_routes(cfg.db_dir, cfg.data_dir, gateway)
     app.add_middleware(AuthMiddleware, session_secret=session_secret)

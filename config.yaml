@@ -2,10 +2,13 @@ ollama:
   host: http://localhost:11434
 
 models:
-  query: qwen2.5:7b
-  enrich: gemma3:4b
+  query: gemma4:e4b
+  enrich: gemma4:e4b
   structure: qwen2.5:7b
   vision: gemma3:4b
+
+options:
+  num_ctx: 32768
 
 paths:
   data_dir: ./data
@@ -13,7 +16,7 @@ paths:
 
 server:
   host: 0.0.0.0
-  port: 8000
+  port: 8050
   secret: change-me-in-production
 
 # All values above can be overridden by environment variables:
