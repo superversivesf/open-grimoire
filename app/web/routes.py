@@ -38,7 +38,7 @@ async def library(request: Request):
     return _templates.TemplateResponse(
         request,
         "library.html",
-        {"user_id": uid, "collections": cols},
+        {"user_id": uid, "collections": cols, "storage": _storage_info(_data_dir, uid)},
     )
 
 
@@ -86,7 +86,7 @@ async def upload_form(request: Request, collection_id: str):
     return _templates.TemplateResponse(
         request,
         "upload.html",
-        {"user_id": uid, "collection": col},
+        {"user_id": uid, "collection": col, "storage": _storage_info(_data_dir, uid)},
     )
 
 
@@ -103,6 +103,18 @@ def _user_storage_used(data_dir: Path, uid: str) -> int:
         if f.is_file():
             total += f.stat().st_size
     return total
+
+
+def _storage_info(data_dir: Path, uid: str) -> dict:
+    used = _user_storage_used(data_dir, uid)
+    return {
+        "used_bytes": used,
+        "limit_bytes": USER_STORAGE_LIMIT,
+        "used_mb": used / (1024 * 1024),
+        "limit_mb": USER_STORAGE_LIMIT / (1024 * 1024),
+        "percent": round((used / USER_STORAGE_LIMIT) * 100) if USER_STORAGE_LIMIT else 0,
+        "remaining_mb": (USER_STORAGE_LIMIT - used) / (1024 * 1024),
+    }
 
 
 @router.post("/upload")

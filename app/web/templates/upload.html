@@ -11,6 +11,20 @@
 
 <h1 class="rpg-page-title" style="margin-bottom:1.5rem;"><span class="icon">&#128228;</span> Upload to {{ collection.name }}</h1>
 
+{% if storage %}
+<div class="rpg-storage-bar" style="margin-bottom:1.5rem;">
+  <div class="rpg-storage-label">
+    &#128190; {{ "%.0f"|format(storage.used_mb) }} MB / {{ "%.0f"|format(storage.limit_mb) }} MB used — {{ "%.0f"|format(storage.remaining_mb) }} MB remaining
+  </div>
+  <div class="rpg-storage-track">
+    <div class="rpg-storage-fill {% if storage.percent >= 95 %}full{% elif storage.percent >= 80 %}warn{% endif %}" style="width: {{ storage.percent }}%"></div>
+  </div>
+  {% if storage.percent >= 90 %}
+  <div class="rpg-storage-warn">Almost full — delete books from other collections to free space.</div>
+  {% endif %}
+</div>
+{% endif %}
+
 <form method="post" action="/upload" enctype="multipart/form-data">
   <input type="hidden" name="collection_id" value="{{ collection.collection_id }}">
   <label class="rpg-dropzone" for="file-input">

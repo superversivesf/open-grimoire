@@ -404,6 +404,30 @@ body {
 .rpg-login-card h2 { text-align: center; margin-bottom: 1.5rem; }
 .rpg-login-card .icon { display: block; text-align: center; font-size: 3rem; margin-bottom: 1rem; }
 
+/* === STORAGE BAR === */
+.rpg-storage-bar { margin-bottom: 1.5rem; }
+.rpg-storage-label { font-size: 0.85rem; color: var(--rpg-text-dim); margin-bottom: 0.3rem; }
+.rpg-storage-track {
+  width: 100%;
+  height: 8px;
+  background: var(--rpg-surface-2);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.rpg-storage-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s;
+  background: var(--rpg-success);
+}
+.rpg-storage-fill.warn { background: var(--rpg-pending); }
+.rpg-storage-fill.full { background: var(--rpg-error); }
+.rpg-storage-warn {
+  margin-top: 0.4rem;
+  font-size: 0.8rem;
+  color: var(--rpg-error);
+}
+
 /* === MARKDOWN RENDERING === */
 .rpg-chat-answer p, .rpg-doc-content p { margin-bottom: 0.7rem; }
 .rpg-chat-answer ul, .rpg-chat-answer ol, .rpg-doc-content ul, .rpg-doc-content ol {

@@ -12,6 +12,20 @@
   </form>
 </div>
 
+{% if storage %}
+<div class="rpg-storage-bar">
+  <div class="rpg-storage-label">
+    &#128190; Storage: {{ "%.0f"|format(storage.used_mb) }} MB / {{ "%.0f"|format(storage.limit_mb) }} MB used ({{ storage.percent }}%)
+  </div>
+  <div class="rpg-storage-track">
+    <div class="rpg-storage-fill {% if storage.percent >= 95 %}full{% elif storage.percent >= 80 %}warn{% endif %}" style="width: {{ storage.percent }}%"></div>
+  </div>
+  {% if storage.percent >= 90 %}
+  <div class="rpg-storage-warn">Almost full — delete books to free space.</div>
+  {% endif %}
+</div>
+{% endif %}
+
 {% if collections %}
 <div class="rpg-card-grid">
   {% for c in collections %}
