@@ -1,24 +1,40 @@
 {% extends "base.html" %}
 {% block title %}Chat — RPG Master{% endblock %}
 {% block content %}
-<h2>Ask about your manuals</h2>
-<div id="chat-log">
+<div class="rpg-breadcrumb">
+  <a href="/">&#128218; Library</a>
+  <span class="sep">/</span>
+  <span>Session</span>
+</div>
+
+<h1 class="rpg-page-title" style="margin-bottom:1.5rem;"><span class="icon">&#128172;</span> Ask About Your Manuals</h1>
+
+<div id="chat-log" class="rpg-chat-log">
   {% for turn in history %}
-  <article>
-    <p><strong>You:</strong> {{ turn.user }}</p>
-    <p><strong>Answer:</strong> {{ turn.agent }}</p>
+  <div class="rpg-chat-turn rpg-chat-user">
+    <div class="role">&#129333; You</div>
+    <p>{{ turn.user }}</p>
+  </div>
+  <div class="rpg-chat-turn rpg-chat-agent">
+    <div class="role">&#129520; Answer</div>
+    <p>{{ turn.agent }}</p>
     {% if turn.cites %}
-    <ul>
+    <div class="rpg-cites">
+      <div class="rpg-cites-title">Sources:</div>
       {% for c in turn.cites %}
-      <li><a href="/docs/{{ session.collection_id }}/view?path={{ c.path }}">{{ c.path }} (p. {{ c.page }})</a> — "{{ c.quote }}"</li>
+      <div class="rpg-cite">
+        &#128279; <a href="/docs/{{ session.collection_id }}/view?path={{ c.path }}">{{ c.path }} (p. {{ c.page }})</a>
+        {% if c.quote %} — <span class="quote">"{{ c.quote }}"</span>{% endif %}
+      </div>
       {% endfor %}
-    </ul>
+    </div>
     {% endif %}
-  </article>
+  </div>
   {% endfor %}
 </div>
-<form hx-post="/sessions/{{ session.session_id }}" hx-target="#chat-log" hx-swap="beforeend" hx-on::after-request="this.reset()">
-  <input type="text" name="question" placeholder="Ask a follow-up..." required>
-  <button type="submit">Send</button>
+
+<form class="rpg-chat-form" hx-post="/sessions/{{ session.session_id }}" hx-target="#chat-log" hx-swap="beforeend" hx-on::after-request="this.reset()">
+  <input type="text" name="question" placeholder="Ask a follow-up question..." required>
+  <button type="submit" class="rpg-btn">Send &#9654;</button>
 </form>
 {% endblock %}

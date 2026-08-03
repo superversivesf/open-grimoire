@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 import asyncio
 from app.config import Config
@@ -17,6 +18,10 @@ def create_app(cfg: Config, session_secret: str) -> FastAPI:
     app.state.session_secret = session_secret
     cfg.data_dir.mkdir(parents=True, exist_ok=True)
     cfg.db_dir.mkdir(parents=True, exist_ok=True)
+
+    static_dir = Path(__file__).parent / "web" / "static"
+    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+
     init_auth_routes(cfg.db_dir)
     init_web_routes(cfg.db_dir, cfg.data_dir)
     gateway = OllamaGateway(cfg.ollama_host, cfg.models)

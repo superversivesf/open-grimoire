@@ -1,11 +1,19 @@
-<article>
-  <p><strong>You:</strong> {{ turn.user }}</p>
-  <p><strong>Answer:</strong> {{ turn.agent }}</p>
+<div class="rpg-chat-turn rpg-chat-user">
+  <div class="role">&#129333; You</div>
+  <p>{{ turn.user }}</p>
+</div>
+<div class="rpg-chat-turn rpg-chat-agent">
+  <div class="role">&#129520; Answer</div>
+  <p>{{ turn.agent }}</p>
   {% if turn.cites %}
-  <ul>
+  <div class="rpg-cites">
+    <div class="rpg-cites-title">Sources:</div>
     {% for c in turn.cites %}
-    <li><a href="#">{{ c.path }} (p. {{ c.page }})</a> — "{{ c.quote }}"</li>
+    <div class="rpg-cite">
+      &#128279; <a href="#">{{ c.path }} (p. {{ c.page }})</a>
+      {% if c.quote %} — <span class="quote">"{{ c.quote }}"</span>{% endif %}
+    </div>
     {% endfor %}
-  </ul>
+  </div>
   {% endif %}
-</article>
+</div>

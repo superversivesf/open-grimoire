@@ -4,17 +4,27 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}RPG Master{% endblock %}</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/css@1/pico.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap">
+  <link rel="stylesheet" href="/static/rpg.css">
   <script src="https://unpkg.com/htmx.org@1.9.10"></script>
 </head>
 <body>
-  <nav class="container-fluid">
-    <ul><li><strong>RPG Master</strong></li></ul>
-    <ul>
-      {% if user_id %}<li><a href="/">Library</a></li><li><form method="post" action="/logout" style="display:inline"><button type="submit" class="secondary">Logout</button></form></li>{% endif %}
-    </ul>
+  <nav class="rpg-nav">
+    <a href="/" class="rpg-nav-brand">
+      <span class="icon">&#9876;</span> RPG Master
+    </a>
+    <div class="rpg-nav-links">
+      {% if user_id %}
+      <a href="/">&#128218; Library</a>
+      <a href="/sessions">&#128172; Sessions</a>
+      <form method="post" action="/logout" style="display:inline">
+        <button type="submit" class="rpg-btn-secondary">Logout</button>
+      </form>
+      {% endif %}
+    </div>
   </nav>
-  <main class="container">
+  <main class="rpg-main">
     {% block content %}{% endblock %}
   </main>
 </body>

@@ -1,23 +1,31 @@
 {% extends "base.html" %}
 {% block title %}Library — RPG Master{% endblock %}
 {% block content %}
-<header>
-  <h2>Your Library</h2>
-  <form method="post" action="/collections" style="display:flex; gap:0.5rem; align-items:end">
-    <label>New collection<input type="text" name="name" placeholder="e.g. Pathfinder shelf" required></label>
-    <button type="submit">Create</button>
+<div class="rpg-page-header">
+  <h1 class="rpg-page-title"><span class="icon">&#128218;</span> Your Library</h1>
+  <form method="post" action="/collections" class="rpg-inline-form">
+    <div>
+      <label class="rpg-label">New collection</label>
+      <input type="text" name="name" placeholder="e.g. Pathfinder, D&D 5e, Call of Cthulhu..." required>
+    </div>
+    <button type="submit" class="rpg-btn">+ Create</button>
   </form>
-</header>
+</div>
+
 {% if collections %}
-<div class="grid">
+<div class="rpg-card-grid">
   {% for c in collections %}
-  <article>
-    <h3><a href="/collections/{{ c.collection_id }}">{{ c.name }}</a></h3>
-    <small>Created {{ c.created_at }}</small>
-  </article>
+  <div class="rpg-collection-card">
+    <h3><a href="/collections/{{ c.collection_id }}">&#128218; {{ c.name }}</a></h3>
+    <p class="meta">Created {{ c.created_at }}</p>
+  </div>
   {% endfor %}
 </div>
 {% else %}
-<p><em>No collections yet. Create one above to start uploading books.</em></p>
+<div class="rpg-empty">
+  <span class="icon">&#128218;</span>
+  <p>No collections yet.</p>
+  <p style="margin-top:0.5rem;">Create one above to start uploading your RPG books.</p>
+</div>
 {% endif %}
 {% endblock %}

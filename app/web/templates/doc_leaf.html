@@ -1,6 +1,15 @@
 {% extends "base.html" %}
 {% block title %}{{ path }} — RPG Master{% endblock %}
 {% block content %}
-<a href="/docs/{{ doc_id }}">Back to doc</a>
-<pre>{{ content }}</pre>
+<div class="rpg-breadcrumb">
+  <a href="/">&#128218; Library</a>
+  <span class="sep">/</span>
+  <a href="/docs/{{ doc_id }}">Document</a>
+  <span class="sep">/</span>
+  <span>{{ path }}</span>
+</div>
+
+<p style="margin-bottom:1rem;"><a href="/docs/{{ doc_id }}" class="rpg-btn-secondary rpg-btn">&#8592; Back to doc</a></p>
+
+<div class="rpg-doc-content">{{ content }}</div>
 {% endblock %}

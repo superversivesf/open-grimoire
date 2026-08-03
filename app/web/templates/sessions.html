@@ -1,14 +1,22 @@
 {% extends "base.html" %}
 {% block title %}Sessions — RPG Master{% endblock %}
 {% block content %}
-<h2>Recent Sessions</h2>
+<h1 class="rpg-page-title" style="margin-bottom:1.5rem;"><span class="icon">&#128172;</span> Recent Sessions</h1>
+
 {% if sessions %}
-<ul>
+<div class="rpg-card-grid">
   {% for s in sessions %}
-  <li><a href="/sessions/{{ s.session_id }}">Session {{ s.session_id[:8] }}</a> — {{ s.updated_at }}</li>
+  <div class="rpg-collection-card">
+    <h3><a href="/sessions/{{ s.session_id }}">&#128172; Session {{ s.session_id[:8] }}</a></h3>
+    <p class="meta">Last updated {{ s.updated_at }}</p>
+  </div>
   {% endfor %}
-</ul>
+</div>
 {% else %}
-<p><em>No sessions yet. Start one from a collection.</em></p>
+<div class="rpg-empty">
+  <span class="icon">&#128172;</span>
+  <p>No sessions yet.</p>
+  <p style="margin-top:0.5rem;">Start one from a collection by asking a question.</p>
+</div>
 {% endif %}
 {% endblock %}

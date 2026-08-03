@@ -1,11 +1,39 @@
 {% extends "base.html" %}
 {% block title %}Upload — RPG Master{% endblock %}
 {% block content %}
-<h2>Upload books to {{ collection.name }}</h2>
+<div class="rpg-breadcrumb">
+  <a href="/">&#128218; Library</a>
+  <span class="sep">/</span>
+  <a href="/collections/{{ collection.collection_id }}">{{ collection.name }}</a>
+  <span class="sep">/</span>
+  <span>Upload</span>
+</div>
+
+<h1 class="rpg-page-title" style="margin-bottom:1.5rem;"><span class="icon">&#128228;</span> Upload to {{ collection.name }}</h1>
+
 <form method="post" action="/upload" enctype="multipart/form-data">
   <input type="hidden" name="collection_id" value="{{ collection.collection_id }}">
-  <label>PDF files<input type="file" name="files" accept="application/pdf" multiple required></label>
-  <button type="submit">Upload</button>
+  <label class="rpg-dropzone" for="file-input">
+    <span class="icon">&#128218;</span>
+    <p><strong>Choose PDF files to upload</strong></p>
+    <p class="hint">Click to select, or drag and drop. Multiple files supported. Max 200 MB each.</p>
+    <input type="file" id="file-input" name="files" accept="application/pdf" multiple required style="display:none;">
+  </label>
+  <div id="file-list" style="margin-bottom:1rem;"></div>
+  <button type="submit" class="rpg-btn" style="width:100%;">&#128228; Upload &amp; Process</button>
 </form>
-<p><a href="/collections/{{ collection.collection_id }}">Back to collection</a></p>
+
+<p style="margin-top:1rem;"><a href="/collections/{{ collection.collection_id }}" class="rpg-btn-secondary rpg-btn">&#8592; Back to collection</a></p>
+
+<script>
+document.getElementById('file-input').addEventListener('change', function(e) {
+  var list = document.getElementById('file-list');
+  list.innerHTML = '';
+  for (var i = 0; i < this.files.length; i++) {
+    var f = this.files[i];
+    var size = (f.size / 1024 / 1024).toFixed(1);
+    list.innerHTML += '<div class="rpg-card" style="padding:0.6rem 1rem; margin-bottom:0.3rem; display:flex; justify-content:space-between; align-items:center;"><span>&#128196; ' + f.name + '</span><span class="rpg-meta">' + size + ' MB</span></div>';
+  }
+});
+</script>
 {% endblock %}

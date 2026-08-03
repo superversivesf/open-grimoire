@@ -1,19 +1,35 @@
 {% extends "base.html" %}
 {% block title %}{{ doc.title }} — RPG Master{% endblock %}
 {% block content %}
-<header>
-  <h2>{{ doc.title }}</h2>
-  <small>Status: <strong>{{ doc.status }}</strong></small>
-</header>
+<div class="rpg-breadcrumb">
+  <a href="/">&#128218; Library</a>
+  <span class="sep">/</span>
+  <a href="/collections/{{ doc.collection_id }}">Collection</a>
+  <span class="sep">/</span>
+  <span>{{ doc.title }}</span>
+</div>
+
+<div class="rpg-page-header">
+  <h1 class="rpg-page-title"><span class="icon">&#128209;</span> {{ doc.title }}</h1>
+  <span class="rpg-badge rpg-badge-{{ doc.status }}">{{ doc.status }}</span>
+</div>
+
 {% if tree %}
-<h3>Contents</h3>
-<ul>
-  {% for entry in tree %}
-  <li><a href="/docs/{{ doc.doc_id }}/view?path={{ entry.path }}">{{ entry.title }}</a></li>
-  {% endfor %}
-</ul>
+<div class="rpg-card">
+  <h3 style="margin-bottom:1rem;">Contents</h3>
+  <ul class="rpg-tree">
+    {% for entry in tree %}
+    <li><span class="rpg-tree-icon">&#128193;</span> <a href="/docs/{{ doc.doc_id }}/view?path={{ entry.path }}">{{ entry.title }}</a></li>
+    {% endfor %}
+  </ul>
+</div>
 {% else %}
-<p><em>Document is still processing or has no content yet.</em></p>
+<div class="rpg-empty">
+  <span class="icon">&#9203;</span>
+  <p>Document is still processing or has no content yet.</p>
+  <p style="margin-top:0.5rem;">Status: <span class="rpg-badge rpg-badge-{{ doc.status }}">{{ doc.status }}</span></p>
+</div>
 {% endif %}
-<p><a href="/collections/{{ doc.collection_id }}">Back to collection</a></p>
+
+<p style="margin-top:1.5rem;"><a href="/collections/{{ doc.collection_id }}" class="rpg-btn-secondary rpg-btn">&#8592; Back to collection</a></p>
 {% endblock %}

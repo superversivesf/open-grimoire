@@ -1,32 +1,57 @@
 {% extends "base.html" %}
 {% block title %}{{ collection.name }} — RPG Master{% endblock %}
 {% block content %}
-<header>
-  <h2>{{ collection.name }}</h2>
-  <a href="/collections/{{ collection.collection_id }}/upload" role="button">Upload books</a>
-  <form method="post" action="/sessions" style="display:inline">
+<div class="rpg-breadcrumb">
+  <a href="/">&#128218; Library</a>
+  <span class="sep">/</span>
+  <span>{{ collection.name }}</span>
+</div>
+
+<div class="rpg-page-header">
+  <h1 class="rpg-page-title"><span class="icon">&#128218;</span> {{ collection.name }}</h1>
+</div>
+
+<div class="rpg-card" style="margin-bottom:1.5rem;">
+  <p class="rpg-meta" style="margin-bottom:0.8rem;">Ask a question about the books in this collection:</p>
+  <form method="post" action="/sessions" class="rpg-inline-form">
     <input type="hidden" name="collection_id" value="{{ collection.collection_id }}">
-    <input type="text" name="question" placeholder="Ask a question about these books..." required>
-    <button type="submit">Ask</button>
+    <input type="text" name="question" placeholder="What is a goblin's AC? How does grapple work?" required>
+    <button type="submit" class="rpg-btn">&#128269; Ask</button>
   </form>
-</header>
+</div>
+
+<div class="rpg-page-header" style="margin-bottom:1rem;">
+  <h2 style="font-size:1.3rem;">Books</h2>
+  <a href="/collections/{{ collection.collection_id }}/upload" class="rpg-btn">+ Upload books</a>
+</div>
+
 {% if docs %}
-<table>
-  <thead><tr><th>Title</th><th>Status</th><th>Actions</th></tr></thead>
-  <tbody>
-    {% for d in docs %}
-    <tr>
-      <td><a href="/docs/{{ d.doc_id }}">{{ d.title }}</a></td>
-      <td><small>{{ d.status }}</small></td>
-      <td>
-        <form method="post" action="/docs/{{ d.doc_id }}/reprocess" style="display:inline"><button class="secondary" type="submit">Reprocess</button></form>
-        <form method="post" action="/docs/{{ d.doc_id }}/delete" style="display:inline"><button class="secondary" type="submit">Delete</button></form>
-      </td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
+<div class="rpg-card" style="padding:0; overflow:hidden;">
+  <table class="rpg-table">
+    <thead><tr><th>Title</th><th>Status</th><th>Actions</th></tr></thead>
+    <tbody>
+      {% for d in docs %}
+      <tr>
+        <td><a href="/docs/{{ d.doc_id }}">{{ d.title }}</a></td>
+        <td><span class="rpg-badge rpg-badge-{{ d.status }}">{{ d.status }}</span></td>
+        <td>
+          <form method="post" action="/docs/{{ d.doc_id }}/reprocess" style="display:inline">
+            <button class="rpg-btn-secondary rpg-btn" type="submit" style="padding:0.3rem 0.7rem; font-size:0.8rem;">Reprocess</button>
+          </form>
+          <form method="post" action="/docs/{{ d.doc_id }}/delete" style="display:inline">
+            <button class="rpg-btn-danger rpg-btn" type="submit" style="padding:0.3rem 0.7rem; font-size:0.8rem;">Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
 {% else %}
-<p><em>No books yet. <a href="/collections/{{ collection.collection_id }}/upload">Upload one</a>.</em></p>
+<div class="rpg-empty">
+  <span class="icon">&#128218;</span>
+  <p>No books in this collection yet.</p>
+  <p style="margin-top:0.5rem;"><a href="/collections/{{ collection.collection_id }}/upload">Upload your first book</a></p>
+</div>
 {% endif %}
 {% endblock %}
