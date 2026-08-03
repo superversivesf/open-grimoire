@@ -559,3 +559,109 @@
 2026-08-03 21:53:50 [pipeline] INFO JOB 67532aba START doc=d1 user=alice pdf=bad.pdf
 2026-08-03 21:53:50 [pipeline] INFO JOB 67532aba STAGE 1: extracting text from bad.pdf
 2026-08-03 21:53:50 [pipeline] ERROR JOB 67532aba FAILED: doc=d1 error=Stream has ended unexpectedly
+2026-08-03 22:03:25 [agent] INFO QUERY START: "What are the requirements for making a wizard character?" (history=0 turns)
+2026-08-03 22:03:26 [agent] INFO   iter 1: fts_search({"query": "wizard class requirements"}) -> [{"path": "1aaecba1ffec496caf13dcaa903d7c6d/03_chapter_1_fantasy_roleplay_13_weaponskill_27.md", "title": "Chapter 1: Fa... (1.3s)
+2026-08-03 22:03:26 [agent] INFO   iter 1: fts_search({"query": "wizard character creation"}) -> [{"path": "1aaecba1ffec496caf13dcaa903d7c6d/02_contents.md", "title": "CONTENTS", "snippet": "...23 Minimum requirements... (1.3s)
+2026-08-03 22:03:28 [agent] INFO   iter 2: read_file({"path": "1aaecba1ffec496caf13dcaa903d7c6d/02_contents.md"}) -> --- summary: "This section of the Dragon Warriors RPG manual includes the table of contents, an introduction to fantasy ... (1.5s)
+2026-08-03 22:03:28 [agent] INFO   iter 2: read_file({"path": "1aaecba1ffec496caf13dcaa903d7c6d/42_wizards.md"}) -> --- summary: "The Dragon Warriors game features four wizard classes—Sorcerers, Elementalists, Mystics, and Warlocks—each... (1.5s)
+2026-08-03 22:03:29 [agent] INFO   iter 3: read_file({"path": "1aaecba1ffec496caf13dcaa903d7c6d/42_wizards.md"}) -> --- summary: "The Dragon Warriors game features four wizard classes—Sorcerers, Elementalists, Mystics, and Warlocks—each... (1.3s)
+2026-08-03 22:03:32 [agent] INFO   iter 4: read_file({"path": "1aaecba1ffec496caf13dcaa903d7c6d/42_wizards.md", "lines": "1-200"}) -> summary: "The Dragon Warriors game features four wizard classes—Sorcerers, Elementalists, Mystics, and Warlocks—each wit... (2.4s)
+2026-08-03 22:03:33 [agent] INFO   iter 5: read_file({"path": "1aaecba1ffec496caf13dcaa903d7c6d/04_chapter_2_creating_a_character_17_barbarians_and_armou) -> --- summary: "This section outlines the process of creating a character in Dragon Warriors, including steps for characte... (1.7s)
+2026-08-03 22:03:33 [agent] INFO   iter 5: grep({"pattern": "Minimum requirements", "path": "1aaecba1ffec496caf13dcaa903d7c6d"}) -> []... (1.7s)
+2026-08-03 22:03:36 [agent] INFO   iter 6: fts_search({"query": "Mystics minimum requirements"}) -> [{"path": "1aaecba1ffec496caf13dcaa903d7c6d/05_chapter_3_the_fighters_25_mystics_and_armour_33.md", "title": "Chapter 3:... (2.5s)
+2026-08-03 22:03:36 [agent] INFO   iter 6: nudging model to call done
+2026-08-03 22:03:36 [agent] INFO   iter 6: fts_search({"query": "Elementalists minimum requirements"}) -> [{"path": "1aaecba1ffec496caf13dcaa903d7c6d/05_chapter_3_the_fighters_25_mystics_and_armour_33.md", "title": "Chapter 3:... (2.5s)
+2026-08-03 22:03:36 [agent] INFO   iter 6: nudging model to call done
+2026-08-03 22:03:36 [agent] INFO   iter 6: fts_search({"query": "Warlock minimum requirements"}) -> [{"path": "1aaecba1ffec496caf13dcaa903d7c6d/05_chapter_3_the_fighters_25_mystics_and_armour_33.md", "title": "Chapter 3:... (2.5s)
+2026-08-03 22:03:36 [agent] INFO   iter 6: nudging model to call done
+2026-08-03 22:03:38 [agent] INFO   iter 7: read_file({"path": "1aaecba1ffec496caf13dcaa903d7c6d/42_wizards.md"}) -> --- summary: "The Dragon Warriors game features four wizard classes—Sorcerers, Elementalists, Mystics, and Warlocks—each... (1.7s)
+2026-08-03 22:03:38 [agent] INFO   iter 7: nudging model to call done
+2026-08-03 22:03:38 [agent] INFO   iter 7: read_file({"path": "1aaecba1ffec496caf13dcaa903d7c6d/04_chapter_2_creating_a_character_17_barbarians_and_armou) -> --- summary: "This section outlines the process of creating a character in Dragon Warriors, including steps for characte... (1.7s)
+2026-08-03 22:03:38 [agent] INFO   iter 7: nudging model to call done
+2026-08-03 22:03:40 [agent] INFO   iter 8: read_file({"path": "1aaecba1ffec496caf13dcaa903d7c6d/42_wizards.md"}) -> --- summary: "The Dragon Warriors game features four wizard classes—Sorcerers, Elementalists, Mystics, and Warlocks—each... (2.7s)
+2026-08-03 22:03:40 [agent] INFO   iter 8: nudging model to call done
+2026-08-03 22:03:40 [agent] INFO   iter 8: read_file({"path": "1aaecba1ffec496caf13dcaa903d7c6d/04_chapter_2_creating_a_character_17_barbarians_and_armou) -> --- summary: "This section outlines the process of creating a character in Dragon Warriors, including steps for characte... (2.7s)
+2026-08-03 22:03:40 [agent] INFO   iter 8: nudging model to call done
+2026-08-03 22:03:43 [agent] INFO   iter 9: ls({"dir": "1aaecba1ffec496caf13dcaa903d7c6d"}) -> ["01_dragon_warriors.md", "02_contents.md", "03_chapter_1_fantasy_roleplay_13_weaponskill_27.md", "04_chapter_2_creating... (2.5s)
+2026-08-03 22:03:43 [agent] INFO   iter 9: nudging model to call done
+2026-08-03 22:03:45 [agent] INFO   iter 10: read_file({"path": "1aaecba1ffec496caf13dcaa903d7c6d/44_mystics.md"}) -> --- summary: "Mystics are spellcasters who rely on mental powers rather than wands, with special abilities including Pre... (2.7s)
+2026-08-03 22:03:45 [agent] INFO   iter 10: nudging model to call done
+2026-08-03 22:03:45 [agent] INFO   iter 10: read_file({"path": "1aaecba1ffec496caf13dcaa903d7c6d/45_elementalists.md"}) -> --- summary: "This section describes two magical professions: Elementalists, who harness elemental powers (fire, air, wa... (2.7s)
+2026-08-03 22:03:45 [agent] INFO   iter 10: nudging model to call done
+2026-08-03 22:03:45 [agent] INFO   iter 10: read_file({"path": "1aaecba1ffec496caf13dcaa903d7c6d/47_warlocks.md"}) -> --- summary: "Warlocks are fighter-mages who combine sword and sorcery, specializing in specific weapon groups and gaini... (2.7s)
+2026-08-03 22:03:45 [agent] INFO   iter 10: nudging model to call done
+2026-08-03 22:03:54 [agent] INFO   iter 11: DONE called (8.7s)
+2026-08-03 22:03:54 [agent] INFO QUERY DONE: "What are the requirements for making a wizard character?" -> "## Requirements for Making a Wizard Character in Dragon Warriors
+
+In Dragon Warriors, "wizards" is a" (iters=11, cites=6, suggestions=3, 29.0s)
+2026-08-03 22:11:48 [agent] INFO QUERY START: "What is AC?" (history=0 turns)
+2026-08-03 22:11:48 [agent] INFO   iter 1: DONE called (0.0s)
+2026-08-03 22:11:48 [agent] INFO QUERY DONE: "What is AC?" -> "AC is 15." (iters=1, cites=1, suggestions=0, 0.0s)
+2026-08-03 22:11:48 [agent] INFO QUERY START: "Find goblin stats" (history=0 turns)
+2026-08-03 22:11:48 [agent] INFO   iter 1: fts_search({"query": "goblin"}) -> [{"path": "x.md", "title": "Goblin", "snippet": "AC 15"}]... (0.0s)
+2026-08-03 22:11:48 [agent] INFO   iter 2: DONE called (0.0s)
+2026-08-03 22:11:48 [agent] INFO QUERY DONE: "Find goblin stats" -> "Found goblin." (iters=2, cites=0, suggestions=0, 0.0s)
+2026-08-03 22:11:48 [agent] INFO QUERY START: "loop forever" (history=0 turns)
+2026-08-03 22:11:48 [agent] INFO   iter 1: fts_search({"query": "x"}) -> []... (0.0s)
+2026-08-03 22:11:48 [agent] INFO   iter 2: fts_search({"query": "x"}) -> []... (0.0s)
+2026-08-03 22:11:48 [agent] INFO   iter 3: fts_search({"query": "x"}) -> []... (0.0s)
+2026-08-03 22:11:48 [agent] WARNING QUERY BUDGET EXHAUSTED: "loop forever" (iters=3, 0.0s)
+2026-08-03 22:11:51 [pipeline] INFO JOB 0c9884d5 START doc=2ebd575a user=960707bd pdf=original.pdf
+2026-08-03 22:11:51 [pipeline] INFO JOB 0c9884d5 STAGE 1: extracting text from original.pdf
+2026-08-03 22:11:52 [pipeline] INFO JOB 0c9884d5 STAGE 1 DONE: 1 pages, 0 OCR, 46 chars, 0.1s
+2026-08-03 22:11:52 [pipeline] INFO JOB 0c9884d5 STAGE 2: detecting structure
+2026-08-03 22:11:52 [pipeline] INFO JOB 0c9884d5 STAGE 2 DONE: 1 chapters, 1 nodes, 1 leaves, 0.0s
+2026-08-03 22:11:52 [pipeline] INFO JOB 0c9884d5 STAGE 3: writing markdown files
+2026-08-03 22:11:52 [pipeline] INFO JOB 0c9884d5 STAGE 3 DONE: 1 files written to data/960707bd/2ebd575a/, 0.0s
+2026-08-03 22:11:52 [pipeline] INFO JOB 0c9884d5 STAGE 4: enriching 1 sections
+2026-08-03 22:11:52 [pipeline] DEBUG JOB 0c9884d5 ENRICH 1/1: 01_chapter_1_monsterscid10goblins_have_ac_15.md -> summary="Monster rules." keywords=['monster']
+2026-08-03 22:11:52 [pipeline] INFO JOB 0c9884d5 STAGE 4 DONE: 1/1 sections enriched, 0.0s
+2026-08-03 22:11:52 [pipeline] INFO JOB 0c9884d5 STAGE 5: building FTS5 index
+2026-08-03 22:11:52 [pipeline] INFO JOB 0c9884d5 STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-03 22:11:52 [pipeline] INFO JOB 0c9884d5 COMPLETE: doc=2ebd575a title="book"
+2026-08-03 22:11:52 [pipeline] INFO JOB 53d5f3f6 START doc=repro_do user=b3b6cb0d pdf=original.pdf
+2026-08-03 22:11:52 [pipeline] INFO JOB 53d5f3f6 STAGE 1: extracting text from original.pdf
+2026-08-03 22:11:52 [pipeline] INFO JOB 53d5f3f6 STAGE 1 DONE: 1 pages, 0 OCR, 44 chars, 0.1s
+2026-08-03 22:11:52 [pipeline] INFO JOB 53d5f3f6 STAGE 2: detecting structure
+2026-08-03 22:11:52 [pipeline] INFO JOB 53d5f3f6 STAGE 2 DONE: 1 chapters, 1 nodes, 1 leaves, 0.0s
+2026-08-03 22:11:52 [pipeline] INFO JOB 53d5f3f6 STAGE 3: writing markdown files
+2026-08-03 22:11:52 [pipeline] INFO JOB 53d5f3f6 STAGE 3 DONE: 1 files written to data/b3b6cb0d/repro_do/, 0.0s
+2026-08-03 22:11:52 [pipeline] INFO JOB 53d5f3f6 STAGE 4: enriching 1 sections
+2026-08-03 22:11:52 [pipeline] DEBUG JOB 53d5f3f6 ENRICH 1/1: 01_chapter_1_combatcid10goblins_have_ac_15.md -> summary="Reprocessed." keywords=['combat']
+2026-08-03 22:11:52 [pipeline] INFO JOB 53d5f3f6 STAGE 4 DONE: 1/1 sections enriched, 0.0s
+2026-08-03 22:11:52 [pipeline] INFO JOB 53d5f3f6 STAGE 5: building FTS5 index
+2026-08-03 22:11:52 [pipeline] INFO JOB 53d5f3f6 STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-03 22:11:52 [pipeline] INFO JOB 53d5f3f6 COMPLETE: doc=repro_do title="Repro Book"
+2026-08-03 22:11:52 [pipeline] INFO JOB eb3c3ef8 START doc=bad_doc user=7968a38b pdf=bad.pdf
+2026-08-03 22:11:52 [pipeline] INFO JOB eb3c3ef8 STAGE 1: extracting text from bad.pdf
+2026-08-03 22:11:52 [pipeline] ERROR JOB eb3c3ef8 FAILED: doc=bad_doc error=Stream has ended unexpectedly
+2026-08-03 22:11:52 [agent] INFO QUERY START: "What is AC?" (history=0 turns)
+2026-08-03 22:11:53 [pipeline] INFO JOB aab022b0 START doc=e4721944 user=e378744a pdf=original.pdf
+2026-08-03 22:11:53 [pipeline] INFO JOB aab022b0 STAGE 1: extracting text from original.pdf
+2026-08-03 22:11:53 [pipeline] INFO JOB aab022b0 STAGE 1 DONE: 2 pages, 0 OCR, 71 chars, 0.1s
+2026-08-03 22:11:53 [pipeline] INFO JOB aab022b0 STAGE 2: detecting structure
+2026-08-03 22:11:53 [pipeline] INFO JOB aab022b0 STAGE 2 DONE: 1 chapters, 1 nodes, 1 leaves, 0.0s
+2026-08-03 22:11:53 [pipeline] INFO JOB aab022b0 STAGE 3: writing markdown files
+2026-08-03 22:11:53 [pipeline] INFO JOB aab022b0 STAGE 3 DONE: 1 files written to data/e378744a/e4721944/, 0.0s
+2026-08-03 22:11:53 [pipeline] INFO JOB aab022b0 STAGE 4: enriching 1 sections
+2026-08-03 22:11:53 [pipeline] DEBUG JOB aab022b0 ENRICH 1/1: 01_chapter_1_combat.md -> summary="Combat rules for goblins." keywords=['goblin', 'combat', 'AC']
+2026-08-03 22:11:53 [pipeline] INFO JOB aab022b0 STAGE 4 DONE: 1/1 sections enriched, 0.0s
+2026-08-03 22:11:53 [pipeline] INFO JOB aab022b0 STAGE 5: building FTS5 index
+2026-08-03 22:11:53 [pipeline] INFO JOB aab022b0 STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-03 22:11:53 [pipeline] INFO JOB aab022b0 COMPLETE: doc=e4721944 title="combat"
+2026-08-03 22:11:54 [pipeline] INFO JOB fdc21306 START doc=d1 user=alice pdf=test.pdf
+2026-08-03 22:11:54 [pipeline] INFO JOB fdc21306 STAGE 1: extracting text from test.pdf
+2026-08-03 22:11:54 [pipeline] INFO JOB fdc21306 STAGE 1 DONE: 1 pages, 0 OCR, 46 chars, 0.1s
+2026-08-03 22:11:54 [pipeline] INFO JOB fdc21306 STAGE 2: detecting structure
+2026-08-03 22:11:54 [pipeline] INFO JOB fdc21306 STAGE 2 DONE: 1 chapters, 1 nodes, 1 leaves, 0.0s
+2026-08-03 22:11:54 [pipeline] INFO JOB fdc21306 STAGE 3: writing markdown files
+2026-08-03 22:11:54 [pipeline] INFO JOB fdc21306 STAGE 3 DONE: 1 files written to data/alice/d1/, 0.0s
+2026-08-03 22:11:54 [pipeline] INFO JOB fdc21306 STAGE 4: enriching 1 sections
+2026-08-03 22:11:54 [pipeline] DEBUG JOB fdc21306 ENRICH 1/1: 01_chapter_1_combat.md -> summary="Combat rules." keywords=['combat', 'goblin']
+2026-08-03 22:11:54 [pipeline] INFO JOB fdc21306 STAGE 4 DONE: 1/1 sections enriched, 0.0s
+2026-08-03 22:11:54 [pipeline] INFO JOB fdc21306 STAGE 5: building FTS5 index
+2026-08-03 22:11:54 [pipeline] INFO JOB fdc21306 STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-03 22:11:54 [pipeline] INFO JOB fdc21306 COMPLETE: doc=d1 title="Test Book"
+2026-08-03 22:11:54 [pipeline] INFO JOB c2efbc4f START doc=d1 user=alice pdf=bad.pdf
+2026-08-03 22:11:54 [pipeline] INFO JOB c2efbc4f STAGE 1: extracting text from bad.pdf
+2026-08-03 22:11:54 [pipeline] ERROR JOB c2efbc4f FAILED: doc=d1 error=Stream has ended unexpectedly

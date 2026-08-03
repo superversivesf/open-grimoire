@@ -322,11 +322,17 @@ async def doc_view_leaf(request: Request, doc_id: str, path: str):
     clean_path = path
     if path.startswith(doc_id + "/"):
         clean_path = path[len(doc_id) + 1:]
+    # Build path relative to user root: doc_id/file_path
+    rel_path = f"{doc_id}/{clean_path}"
     try:
-        full = validate_user_path(_data_dir, uid, str(_data_dir / uid / doc_id / clean_path))
+        full = validate_user_path(_data_dir, uid, rel_path)
     except ValueError:
         return RedirectResponse(f"/docs/{doc_id}", status_code=303)
-    content = full.read_text() if full.exists() else "(file not found)"
+    # Check is_file() too — directory paths return "file not found"
+    if not full.exists() or not full.is_file():
+        content = f"(file not found: {clean_path})"
+    else:
+        content = full.read_text()
     return _templates.TemplateResponse(
         request,
         "doc_leaf.html",
