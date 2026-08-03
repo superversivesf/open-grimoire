@@ -38,27 +38,7 @@
 </div>
 
 {% if docs %}
-<div class="rpg-card" style="padding:0; overflow:hidden;" hx-get="/collections/{{ collection.collection_id }}/table" hx-trigger="every 3s" hx-target="this" hx-swap="outerHTML">
-  <table class="rpg-table">
-    <thead><tr><th>Title</th><th>Status</th><th>Actions</th></tr></thead>
-    <tbody>
-      {% for d in docs %}
-      <tr>
-        <td><a href="/docs/{{ d.doc_id }}">{{ d.title }}</a></td>
-        <td><span class="rpg-badge rpg-badge-{{ d.status }}">{{ d.status }}</span></td>
-        <td>
-          <form method="post" action="/docs/{{ d.doc_id }}/reprocess" style="display:inline">
-            <button class="rpg-btn-secondary rpg-btn" type="submit" style="padding:0.3rem 0.7rem; font-size:0.8rem;">Reprocess</button>
-          </form>
-          <form method="post" action="/docs/{{ d.doc_id }}/delete" style="display:inline">
-            <button class="rpg-btn-danger rpg-btn" type="submit" style="padding:0.3rem 0.7rem; font-size:0.8rem;">Delete</button>
-          </form>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
+{% include "_table.html" with context %}
 {% else %}
 <div class="rpg-empty">
   <span class="icon">&#128218;</span>

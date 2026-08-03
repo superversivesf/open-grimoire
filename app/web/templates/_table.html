@@ -1,34 +1,35 @@
-<div class="rpg-card" style="padding:0; overflow:hidden;" hx-get="/collections/{{ collection_id }}/table" hx-trigger="every 3s" hx-target="this" hx-swap="outerHTML">
-  <table class="rpg-table">
-    <thead><tr><th>Title</th><th>Status</th><th>Actions</th></tr></thead>
-    <tbody>
-      {% for d in docs %}
-      <tr>
-        <td><a href="/docs/{{ d.doc_id }}">{{ d.title }}</a></td>
-        <td>
-          {% if d.status == 'enriching' and d.enrich_total > 0 %}
-          <span class="rpg-badge rpg-badge-enriching">
-            enriching {{ d.enrich_progress }}/{{ d.enrich_total }}
-          </span>
-          <div class="rpg-enrich-bar">
-            <div class="rpg-enrich-fill" style="width: {{ (d.enrich_progress / d.enrich_total * 100)|round }}%"></div>
-          </div>
-          {% else %}
+<div class="rpg-book-grid" id="book-grid"
+     hx-get="/collections/{{ collection_id }}/table" hx-trigger="every 3s" hx-target="this" hx-swap="outerHTML">
+  {% for d in docs %}
+  <div class="rpg-book-card">
+    <a href="/docs/{{ d.doc_id }}" class="rpg-book-cover-link">
+      <div class="rpg-book-cover">
+        <img src="/docs/{{ d.doc_id }}/cover" alt="{{ d.title }}" loading="lazy"
+             onerror="this.src='/static/no-cover.svg'">
+        {% if d.status != 'done' %}
+        <div class="rpg-book-overlay">
           <span class="rpg-badge rpg-badge-{{ d.status }}">{{ d.status }}</span>
+          {% if d.status == 'enriching' and d.enrich_total > 0 %}
+          <div class="rpg-enrich-bar"><div class="rpg-enrich-fill" style="width: {{ (d.enrich_progress / d.enrich_total * 100)|round }}%"></div></div>
+          <span class="rpg-book-progress">{{ d.enrich_progress }}/{{ d.enrich_total }}</span>
           {% endif %}
-        </td>
-        <td>
-          <form method="post" action="/docs/{{ d.doc_id }}/reprocess" style="display:inline"
-                onsubmit="this.querySelector('button').textContent='Processing...'; this.querySelector('button').disabled=true;">
-            <button class="rpg-btn-secondary rpg-btn" type="submit" style="padding:0.3rem 0.7rem; font-size:0.8rem;">Reprocess</button>
-          </form>
-          <form method="post" action="/docs/{{ d.doc_id }}/delete" style="display:inline"
-                onsubmit="this.querySelector('button').textContent='Deleting...'; this.querySelector('button').disabled=true;">
-            <button class="rpg-btn-danger rpg-btn" type="submit" style="padding:0.3rem 0.7rem; font-size:0.8rem;">Delete</button>
-          </form>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+        </div>
+        {% endif %}
+      </div>
+    </a>
+    <div class="rpg-book-info">
+      <a href="/docs/{{ d.doc_id }}" class="rpg-book-title">{{ d.title }}</a>
+      <div class="rpg-book-actions">
+        <form method="post" action="/docs/{{ d.doc_id }}/reprocess" style="display:inline"
+              onsubmit="this.querySelector('button').textContent='...'; this.querySelector('button').disabled=true;">
+          <button class="rpg-btn-secondary rpg-btn-sm" type="submit">Reprocess</button>
+        </form>
+        <form method="post" action="/docs/{{ d.doc_id }}/delete" style="display:inline"
+              onsubmit="return confirm('Delete this book?')">
+          <button class="rpg-btn-danger rpg-btn-sm" type="submit">Delete</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
 </div>

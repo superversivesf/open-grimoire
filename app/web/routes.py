@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Request, Form, UploadFile, File
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
 import hashlib
@@ -294,6 +294,34 @@ async def doc_search_path(request: Request, path: str):
                 return RedirectResponse(f"/docs/{doc_dir.name}/view?path={rel}", status_code=303)
 
     return RedirectResponse("/", status_code=303)
+
+
+@router.get("/docs/{doc_id}/cover")
+async def doc_cover(request: Request, doc_id: str):
+    """Serve the cover image (first page as JPG)."""
+    uid = current_user_id(request)
+    if not uid:
+        return RedirectResponse("/login", status_code=303)
+    cover_path = _data_dir / uid / doc_id / "cover.jpg"
+    if cover_path.exists():
+        return FileResponse(str(cover_path), media_type="image/jpeg")
+    # Fallback: no cover
+    return RedirectResponse("/static/no-cover.svg", status_code=303)
+
+
+@router.get("/docs/{doc_id}/pdf")
+async def doc_pdf(request: Request, doc_id: str, page: int = 0):
+    """Serve the original PDF, optionally jumping to a page."""
+    uid = current_user_id(request)
+    if not uid:
+        return RedirectResponse("/login", status_code=303)
+    pdf_path = _data_dir / uid / doc_id / "original.pdf"
+    if pdf_path.exists():
+        if page and page > 1:
+            # Use #page= anchor — browser PDF viewers support this
+            return RedirectResponse(f"/docs/{doc_id}/pdf#page={page}", status_code=303)
+        return FileResponse(str(pdf_path), media_type="application/pdf")
+    return RedirectResponse(f"/docs/{doc_id}", status_code=303)
 
 
 @router.get("/docs/{doc_id}")

@@ -274,6 +274,76 @@ body {
   transition: width 0.3s;
 }
 
+/* === BOOK GRID === */
+.rpg-book-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+.rpg-book-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.rpg-book-cover-link {
+  display: block;
+  text-decoration: none;
+}
+.rpg-book-cover {
+  position: relative;
+  aspect-ratio: 3/4;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--rpg-border);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  transition: border-color 0.2s, transform 0.15s;
+}
+.rpg-book-cover:hover {
+  border-color: var(--rpg-primary);
+  transform: translateY(-2px);
+}
+.rpg-book-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.rpg-book-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(transparent, rgba(0,0,0,0.85));
+  padding: 0.8rem 0.5rem 0.5rem;
+  text-align: center;
+}
+.rpg-book-progress {
+  font-size: 0.75rem;
+  color: var(--rpg-pending);
+  display: block;
+  margin-top: 2px;
+}
+.rpg-book-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.rpg-book-title {
+  font-size: 0.9rem;
+  color: var(--rpg-text);
+  text-decoration: none;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.rpg-book-title:hover { color: var(--rpg-primary); }
+.rpg-book-actions {
+  display: flex;
+  gap: 0.3rem;
+}
+
 /* === CHAT === */
 .rpg-chat-log { margin-bottom: 1.5rem; }
 .rpg-chat-turn {

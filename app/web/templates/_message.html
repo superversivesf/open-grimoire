@@ -12,16 +12,17 @@
     {% set parts = c.path.split('/') %}
     {% set cite_doc_id = parts[0] if parts[0]|length == 32 else '' %}
     {% set cite_file_path = parts[1:] | join('/') if cite_doc_id else c.path %}
+    {% set cite_page = c.page if c.page and c.page > 0 else '' %}
     <div class="rpg-cite">
       {% if cite_doc_id %}
-      <a href="/docs/{{ cite_doc_id }}/view?path={{ cite_file_path }}" class="rpg-cite-link">
+      <a href="/docs/{{ cite_doc_id }}/pdf{% if cite_page %}#page={{ cite_page }}{% endif %}" class="rpg-cite-link" target="_blank">
         &#128279; {{ cite_file_path.split('/')[-1].replace('_', ' ').replace('.md', '') }}
-        {% if c.page %} (p. {{ c.page }}){% endif %}
+        {% if cite_page %} (p. {{ cite_page }}){% endif %}
       </a>
       {% else %}
       <a href="/docs/search?path={{ c.path }}" class="rpg-cite-link">
         &#128279; {{ c.path.split('/')[-1].replace('_', ' ').replace('.md', '') }}
-        {% if c.page %} (p. {{ c.page }}){% endif %}
+        {% if cite_page %} (p. {{ cite_page }}){% endif %}
       </a>
       {% endif %}
       {% if c.quote %}

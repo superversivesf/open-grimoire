@@ -42,6 +42,13 @@ class PipelineRunner:
             if not blocks or not any(b["text"].strip() for b in blocks):
                 raise ValueError("no text extracted from PDF")
 
+            # Extract cover image (first page as JPG)
+            try:
+                self._extract_cover(pdf_path, udata / doc_id)
+                log.info(f"JOB {job_id[:8]} COVER: extracted cover.jpg")
+            except Exception as e:
+                log.warning(f"JOB {job_id[:8]} COVER: failed to extract cover: {e}")
+
             # Stage 2: Structure
             t0 = time.time()
             update_doc_status(uconn, doc_id, "structuring")
@@ -135,3 +142,11 @@ class PipelineRunner:
         from app.storage.user_db import get_doc
         d = get_doc(uconn, doc_id)
         return d["title"] if d else doc_id
+
+    def _extract_cover(self, pdf_path: Path, doc_dir: Path) -> None:
+        """Extract first page of PDF as cover.jpg."""
+        from pdf2image import convert_from_path
+        images = convert_from_path(str(pdf_path), first_page=1, last_page=1, dpi=150)
+        if images:
+            cover_path = doc_dir / "cover.jpg"
+            images[0].save(str(cover_path), "JPEG", quality=85, optimize=True)
