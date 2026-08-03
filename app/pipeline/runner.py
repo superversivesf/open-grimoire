@@ -28,6 +28,8 @@ class PipelineRunner:
         log.info(f"JOB {job_id[:8]} START doc={doc_id[:8]} user={user_id[:8]} pdf={pdf_path.name}")
         conn = init_shared_db(self.db_dir)
         uconn = init_user_db(self.db_dir, user_id)
+        udata = user_data_dir(self.data_dir, user_id)
+        doc_dir = udata / doc_id
         try:
             # Stage 1: Extract
             t0 = time.time()
@@ -44,7 +46,7 @@ class PipelineRunner:
 
             # Extract cover image (first page as JPG)
             try:
-                self._extract_cover(pdf_path, udata / doc_id)
+                self._extract_cover(pdf_path, doc_dir)
                 log.info(f"JOB {job_id[:8]} COVER: extracted cover.jpg")
             except Exception as e:
                 log.warning(f"JOB {job_id[:8]} COVER: failed to extract cover: {e}")
@@ -79,7 +81,6 @@ class PipelineRunner:
             t0 = time.time()
             update_doc_status(uconn, doc_id, "tiering")
             log.info(f"JOB {job_id[:8]} STAGE 3: writing markdown files")
-            udata = user_data_dir(self.data_dir, user_id)
             doc_title = self._doc_title(uconn, doc_id)
             leaf_paths = tier_document(tree, udata, doc_id, doc_title)
             log.info(f"JOB {job_id[:8]} STAGE 3 DONE: {len(leaf_paths)} files written to data/{user_id[:8]}/{doc_id[:8]}/, {time.time()-t0:.1f}s")
