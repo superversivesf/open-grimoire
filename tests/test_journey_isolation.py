@@ -31,7 +31,7 @@ def app_two_users(tmp_dirs):
     alice_uconn = init_user_db(tmp_dirs["db"], alice_uid)
     alice_cid = create_collection(alice_uconn, "Alice Bestiary")
     create_doc(alice_uconn, "alice_doc1", alice_cid, "Alice Goblin Book", "sha_a")
-    insert_fts_row(alice_uconn, "data/alice/d1/goblin.md", "Goblin", "AC 15", "goblin", "Goblins have AC 15.")
+    insert_fts_row(alice_uconn, "alice_doc1/goblin.md", "Goblin", "AC 15", "goblin", "Goblins have AC 15.")
     update_doc_status(alice_uconn, "alice_doc1", "done")
     alice_sid = create_session(alice_uconn, alice_cid)
     alice_uconn.close()
@@ -39,7 +39,7 @@ def app_two_users(tmp_dirs):
     bob_uconn = init_user_db(tmp_dirs["db"], bob_uid)
     bob_cid = create_collection(bob_uconn, "Bob Campaign")
     create_doc(bob_uconn, "bob_doc1", bob_cid, "Bob Dragon Book", "sha_b")
-    insert_fts_row(bob_uconn, "data/bob/d1/dragon.md", "Dragon", "AC 19", "dragon", "Dragons have AC 19.")
+    insert_fts_row(bob_uconn, "bob_doc1/dragon.md", "Dragon", "AC 19", "dragon", "Dragons have AC 19.")
     update_doc_status(bob_uconn, "bob_doc1", "done")
     bob_uconn.close()
 

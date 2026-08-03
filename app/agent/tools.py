@@ -28,10 +28,21 @@ class ToolBox:
     def fts_search(self, query: str) -> list[dict]:
         conn = init_user_db(self.db_dir, self.user_id)
         try:
+            # Get doc_ids for this collection only
+            doc_rows = conn.execute(
+                "SELECT doc_id FROM docs WHERE collection_id = ?", (self.collection_id,)
+            ).fetchall()
+            doc_ids = [r["doc_id"] for r in doc_rows]
+            if not doc_ids:
+                return []
+            # Build a filter: only match paths that start with a doc_id from this collection
+            placeholders = ",".join("?" * len(doc_ids))
             rows = conn.execute(
-                "SELECT path, title, snippet(documents_fts, 4, '<mark>', '</mark>', '...', 10) as snippet, rank "
-                "FROM documents_fts WHERE documents_fts MATCH ? ORDER BY rank LIMIT 5",
-                (query,),
+                f"SELECT path, title, snippet(documents_fts, 4, '<mark>', '</mark>', '...', 10) as snippet, rank "
+                f"FROM documents_fts WHERE documents_fts MATCH ? AND ("
+                + " OR ".join(f"path LIKE ?" for _ in doc_ids)
+                + ") ORDER BY rank LIMIT 5",
+                (query,) + tuple(f"{did}/%" for did in doc_ids),
             ).fetchall()
             return [dict(r) for r in rows]
         except Exception:
@@ -47,7 +58,14 @@ class ToolBox:
             full = validate_user_path(self.data_dir, self.user_id, path)
         except ValueError:
             return []
-        if not full.exists() or not full.is_file():
+        if not full.exists():
+            return []
+        # If it's a directory, look for index.md inside it
+        if full.is_dir():
+            full = full / "index.md"
+            if not full.exists():
+                return []
+        if not full.is_file():
             return []
         text = full.read_text()
         entries = []
@@ -62,23 +80,36 @@ class ToolBox:
             regex = re.compile(pattern)
         except re.error:
             return []
-        root = self.data_dir / self.user_id
-        if path:
-            try:
-                root = validate_user_path(self.data_dir, self.user_id, path)
-            except ValueError:
-                return []
+        # Restrict search to docs in this collection only
+        conn = init_user_db(self.db_dir, self.user_id)
+        doc_rows = conn.execute(
+            "SELECT doc_id FROM docs WHERE collection_id = ?", (self.collection_id,)
+        ).fetchall()
+        conn.close()
+        doc_ids = [r["doc_id"] for r in doc_rows]
+        if not doc_ids:
+            return []
+
         hits = []
-        for f in root.rglob("*.md"):
-            try:
-                for i, line in enumerate(f.read_text().splitlines(), start=1):
-                    if regex.search(line):
-                        rel = str(f.relative_to(self.data_dir / self.user_id))
-                        hits.append({"path": rel, "line": i, "text": line.strip()[:200]})
-                        if len(hits) >= 20:
-                            return hits
-            except Exception:
+        for did in doc_ids:
+            root = self.data_dir / self.user_id / did
+            if not root.exists():
                 continue
+            if path:
+                try:
+                    root = validate_user_path(self.data_dir, self.user_id, path)
+                except ValueError:
+                    continue
+            for f in root.rglob("*.md"):
+                try:
+                    for i, line in enumerate(f.read_text().splitlines(), start=1):
+                        if regex.search(line):
+                            rel = str(f.relative_to(self.data_dir))
+                            hits.append({"path": rel, "line": i, "text": line.strip()[:200]})
+                            if len(hits) >= 20:
+                                return hits
+                except Exception:
+                    continue
         return hits
 
     def table_extract(self, path: str) -> list[dict]:

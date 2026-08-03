@@ -9,7 +9,7 @@ def toolbox(tmp_dirs):
     uconn = init_user_db(tmp_dirs["db"], "alice")
     cid = create_collection(uconn, "C")
     create_doc(uconn, "d1", cid, "Book", "h")
-    insert_fts_row(uconn, "data/alice/d1/c1/s1.md", "Goblin", "AC 15 monster", "goblin,monster", "Goblins are small humanoids with AC 15 and HP 7.")
+    insert_fts_row(uconn, "d1/c1/s1.md", "Goblin", "AC 15 monster", "goblin,monster", "Goblins are small humanoids with AC 15 and HP 7.")
     uconn.close()
     doc_dir = tmp_dirs["data"] / "alice" / "d1"
     doc_dir.mkdir(parents=True)
