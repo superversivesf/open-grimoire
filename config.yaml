@@ -2,13 +2,13 @@ ollama:
   host: http://localhost:11434
 
 models:
-  query: gemma4:e4b
+  query: qwen2.5:7b
   enrich: gemma4:e4b
   structure: qwen2.5:7b
   vision: gemma3:4b
 
 options:
-  num_ctx: 32768
+  num_ctx: 16384
 
 paths:
   data_dir: ./data

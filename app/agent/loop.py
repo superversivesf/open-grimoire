@@ -3,35 +3,15 @@ import re
 from app.agent.tools_schema import TOOL_DEFINITIONS
 from app.agent.history import build_messages, trim_history
 
-SYSTEM_PROMPT = """You are an expert RPG rules assistant. You answer questions about RPG manuals by searching the user's document collection.
+SYSTEM_PROMPT = """You are an RPG rules assistant. You search the user's RPG manual collection to answer questions.
 
-SEARCH STRATEGY:
-1. Start with fts_search using key terms from the question. Try the EXACT words the user used first.
-2. If no good results, try synonyms or related terms (e.g. "clearance" instead of "level", "armor class" instead of "AC")
-3. fts_search returns snippets — read the snippet to see if it's relevant BEFORE reading the full file
-4. After finding a relevant path, use read_file to read the full content of that section
-5. You may search up to 4 times with different terms if the first search doesn't find what you need
+Rules:
+1. ALWAYS use fts_search first to find relevant sections
+2. ALWAYS use read_file to read the full content before answering — never answer from snippets alone
+3. Use done to give your final answer with citations
+4. If you can't find it after 3 searches, use done and say so
 
-WHEN TO ANSWER:
-- After reading 1-2 relevant sections, call done IMMEDIATELY with your answer
-- Do NOT search again after you've read a section that answers the question
-- If you searched 4 times and found nothing relevant, call done and say you couldn't find it
-- Do NOT give up after one search — try different terms at least 2-3 times
-
-CITATIONS:
-- Do NOT include citation details (page, path, quotes) in your answer text
-- Do NOT include a "Citations" section in your answer text
-- Do NOT include phrases like "Based on the search results" in your answer
-- Put citations ONLY in the "cites" field of the done tool
-- Each citation: path (from fts_search results), page (if known), quote (exact sentence from the manual)
-- The UI renders citations as clickable links automatically
-
-ANSWER STYLE:
-- Answer directly — start with the answer, not with "Based on the search results..."
-- Be concise — give the player what they need at the table
-- Quote exact rules text when relevant
-- If multiple sections are relevant, synthesize from all of them
-- If you cannot find the answer, call done and say so honestly"""
+Never answer without first reading a file. The fts_search snippets are too short."""
 
 
 def clean_answer(text: str) -> str:
@@ -58,6 +38,24 @@ def clean_answer(text: str) -> str:
     return text.strip()
 
 
+def _parse_text_tool_call(content: str) -> dict | None:
+    """Detect when a model writes a tool call as text instead of using the API.
+
+    e.g. content = 'fts_search {"query": "security clearance"}'
+    """
+    content = content.strip()
+    tool_names = {"fts_search", "read_file", "list_index", "grep", "table_extract", "calc", "ls", "done"}
+    for name in tool_names:
+        if content.startswith(name + " ") or content.startswith(name + "{"):
+            json_part = content[len(name):].strip()
+            try:
+                args = json.loads(json_part)
+                return {"function": {"name": name, "arguments": args}}
+            except json.JSONDecodeError:
+                pass
+    return None
+
+
 class AgentLoop:
     def __init__(self, gateway, toolbox, max_iterations: int = 12):
         self.gateway = gateway
@@ -79,9 +77,21 @@ class AgentLoop:
                 last_content = content
 
             if not tool_calls:
-                if content and len(content) > 10:
-                    return {"answer": clean_answer(content), "cites": [], "iterations": iteration}
-                return {"answer": clean_answer(last_content) or "I could not find an answer.", "cites": [], "iterations": iteration}
+                # Check if the model put a tool call in the content text instead of the API
+                # (common with Qwen 2.5 7B — it writes "fts_search {"query": "..."}" as text)
+                if content:
+                    parsed_tc = _parse_text_tool_call(content)
+                    if parsed_tc:
+                        tool_calls = [parsed_tc]
+                        content = ""
+                    elif len(content) > 10:
+                        # Model returned an answer without calling done.
+                        # Re-prompt it to call done with this answer + citations.
+                        messages.append({"role": "assistant", "content": content})
+                        messages.append({"role": "user", "content": "Good answer. Now call the done tool with that answer in the 'answer' field, and add any source citations you have in the 'cites' field. Use the exact paths from the fts_search results."})
+                        continue
+                if not tool_calls:
+                    return {"answer": clean_answer(last_content) or "I could not find an answer.", "cites": [], "iterations": iteration}
 
             for tc in tool_calls:
                 fn = tc.get("function", {})
