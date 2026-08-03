@@ -264,20 +264,61 @@ body {
 .rpg-chat-user .role { color: var(--rpg-primary); }
 .rpg-chat-agent .role { color: var(--rpg-accent); }
 .rpg-chat-turn p { margin-bottom: 0.5rem; }
+.rpg-chat-answer { line-height: 1.7; }
+.rpg-chat-answer p { margin-bottom: 0.5rem; }
+
+/* === CITATIONS === */
 .rpg-cites {
   margin-top: 0.8rem;
   padding-top: 0.8rem;
   border-top: 1px dashed var(--rpg-border);
 }
-.rpg-cites-title { font-size: 0.8rem; color: var(--rpg-text-dim); margin-bottom: 0.3rem; }
+.rpg-cites-title { font-size: 0.8rem; color: var(--rpg-text-dim); margin-bottom: 0.5rem; }
 .rpg-cite {
   font-size: 0.85rem;
-  color: var(--rpg-text-dim);
-  margin-bottom: 0.2rem;
+  margin-bottom: 0.5rem;
+  padding: 0.4rem 0.6rem;
+  background: rgba(0,0,0,0.15);
+  border-radius: 6px;
+  border-left: 2px solid var(--rpg-primary-dim);
 }
-.rpg-cite a { color: var(--rpg-primary-dim); text-decoration: none; }
-.rpg-cite a:hover { text-decoration: underline; }
-.rpg-cite .quote { font-style: italic; }
+.rpg-cite-link {
+  color: var(--rpg-primary);
+  text-decoration: none;
+  font-weight: 600;
+}
+.rpg-cite-link:hover { text-decoration: underline; color: var(--rpg-accent); }
+.rpg-cite-quote {
+  margin-top: 0.3rem;
+  font-style: italic;
+  color: var(--rpg-text-dim);
+  font-size: 0.82rem;
+  padding-left: 1rem;
+  border-left: 2px solid var(--rpg-border);
+}
+
+/* === SPINNER === */
+.rpg-spinner {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+.rpg-spinner-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--rpg-primary);
+  animation: rpg-bounce 1.4s infinite ease-in-out both;
+}
+.rpg-spinner-dot:nth-child(1) { animation-delay: -0.32s; }
+.rpg-spinner-dot:nth-child(2) { animation-delay: -0.16s; }
+.rpg-spinner-text { color: var(--rpg-text-dim); font-size: 0.9rem; margin-left: 0.5rem; }
+@keyframes rpg-bounce {
+  0%, 80%, 100% { transform: scale(0.6); opacity: 0.5; }
+  40% { transform: scale(1); opacity: 1; }
+}
 
 .rpg-chat-form {
   display: flex;

@@ -73,7 +73,7 @@ async def continue_session(request: Request, session_id: str, question: str = Fo
         return _templates.TemplateResponse(
             request,
             "_message.html",
-            {"user_id": uid, "turn": new_turn},
+            {"user_id": uid, "turn": new_turn, "collection_id": session["collection_id"]},
         )
     finally:
         conn.close()
