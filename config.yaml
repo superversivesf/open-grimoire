@@ -3,8 +3,8 @@ ollama:
 
 models:
   query: deepseek-v4-flash:cloud
-  enrich: gemma4:e4b
-  structure: qwen2.5:7b
+  enrich: deepseek-v4-flash:cloud
+  structure: deepseek-v4-flash:cloud
   vision: gemma3:4b
 
 options:
