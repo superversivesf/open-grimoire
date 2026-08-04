@@ -379,13 +379,32 @@ def _build_doc_tree(data_dir: Path, uid: str, doc_id: str) -> list[dict]:
     if not doc_root.exists():
         return []
     entries = []
-    for chap_dir in sorted(doc_root.iterdir()):
-        if chap_dir.is_dir():
-            idx = chap_dir / "index.md"
-            title = chap_dir.name
-            if idx.exists():
-                first_line = idx.read_text().splitlines()[0]
-                if first_line.startswith("# "):
-                    title = first_line[2:]
-            entries.append({"title": title, "path": f"{chap_dir.name}/index.md"})
+
+    # Check for chapter subdirectories with index.md
+    has_dirs = any(p.is_dir() for p in doc_root.iterdir())
+
+    if has_dirs:
+        for chap_dir in sorted(doc_root.iterdir()):
+            if chap_dir.is_dir():
+                idx = chap_dir / "index.md"
+                title = chap_dir.name
+                if idx.exists():
+                    first_line = idx.read_text().splitlines()[0]
+                    if first_line.startswith("# "):
+                        title = first_line[2:]
+                entries.append({"title": title, "path": f"{chap_dir.name}/index.md"})
+    else:
+        # Flat structure: list .md files directly
+        for f in sorted(doc_root.iterdir()):
+            if f.is_file() and f.suffix == ".md" and f.name != "index.md":
+                title = f.stem.replace("_", " ")
+                # Try to read the first heading
+                try:
+                    first_line = f.read_text().splitlines()[0]
+                    if first_line.startswith("# "):
+                        title = first_line[2:]
+                except (IndexError, UnicodeDecodeError):
+                    pass
+                entries.append({"title": title, "path": f.name})
+
     return entries

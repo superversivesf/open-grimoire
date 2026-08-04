@@ -38,17 +38,10 @@ function askFollowUp(btn) {
   var question = btn.getAttribute('data-question');
   var form = document.getElementById('chat-form');
   var input = form.querySelector('input[name="question"]');
-  var spinner = document.getElementById('chat-spinner');
-  var sendBtn = form.querySelector('button');
+  var sendBtn = form.querySelector('button[type="submit"]');
 
   input.value = question;
-  spinner.classList.add('htmx-request');
-  sendBtn.disabled = true;
-  input.disabled = true;
-
-  htmx.trigger(form, 'submit');
-
-  input.value = '';
+  sendBtn.click();
 }
 </script>
 {% endblock %}

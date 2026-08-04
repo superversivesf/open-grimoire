@@ -206,6 +206,9 @@ class AgentLoop:
                         log.info(f"  iter {iteration}: DEDUP skip fts_search({q}) — already searched ({llm_time:.1f}s)")
                         messages.append({"role": "assistant", "content": content})
                         messages.append({"role": "tool", "name": name, "content": f"Already searched for \"{q}\". Try a different query or call done."})
+                        if not forced_done and iteration >= 6:
+                            forced_done = True
+                            messages.append({"role": "user", "content": "You have searched enough. Call done now with your answer."})
                         continue
                     searches_done.add(q)
 

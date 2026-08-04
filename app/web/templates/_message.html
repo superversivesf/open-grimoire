@@ -35,7 +35,7 @@
   <div class="rpg-suggestions">
     <div class="rpg-suggestions-title">&#129534; Dig deeper:</div>
     {% for s in turn.suggestions %}
-    <button class="rpg-suggestion-btn" onclick="askFollowUp(this)" data-question="{{ s }}">{{ s }}</button>
+    <button class="rpg-suggestion-btn" onclick="askFollowUp(this)" data-question="{{ s | e }}">{{ s }}</button>
     {% endfor %}
   </div>
   {% endif %}
