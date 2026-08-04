@@ -1,3 +1,37 @@
+DONE_ONLY_TOOLS = [
+    {
+        "type": "function",
+        "function": {
+            "name": "done",
+            "description": "Signal that the answer is complete. Provide the final answer, citations, and 3 suggested follow-up questions.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "answer": {"type": "string", "description": "The final answer to the user's question"},
+                    "cites": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "path": {"type": "string"},
+                                "page": {"type": "integer"},
+                                "quote": {"type": "string"},
+                            },
+                        },
+                        "description": "Citations to source pages",
+                    },
+                    "suggestions": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                        "description": "3 suggested follow-up questions for deeper exploration",
+                    },
+                },
+                "required": ["answer"],
+            },
+        },
+    },
+]
+
 TOOL_DEFINITIONS = [
     {
         "type": "function",

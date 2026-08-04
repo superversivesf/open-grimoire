@@ -13,8 +13,8 @@ def test_safe_read_file(tmp_dirs):
 
 
 def test_safe_read_file_rejects_escape(tmp_dirs):
-    with pytest.raises(ValueError):
-        safe_read_file(tmp_dirs["data"], "alice", "/etc/passwd")
+    result = safe_read_file(tmp_dirs["data"], "alice", "/etc/passwd")
+    assert "invalid path" in result
 
 
 def test_safe_read_file_line_range(tmp_dirs):
@@ -50,5 +50,5 @@ def test_safe_ls(tmp_dirs):
 
 
 def test_safe_ls_rejects_escape(tmp_dirs):
-    with pytest.raises(ValueError):
-        safe_ls(tmp_dirs["data"], "alice", "/etc")
+    result = safe_ls(tmp_dirs["data"], "alice", "/etc")
+    assert result == []

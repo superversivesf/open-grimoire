@@ -1,10 +1,14 @@
 import json
 import re
 import random
+import traceback
 from pathlib import Path
 from app.agent.sandbox import safe_read_file, safe_ls, truncate_result
 from app.storage.user_db import init_user_db
 from app.storage.paths import validate_user_path
+from app.logging_utils import get_logger
+
+log = get_logger("agent")
 
 
 def _dice_roll(count: int, sides: int) -> int:
@@ -34,18 +38,20 @@ class ToolBox:
             ).fetchall()
             doc_ids = [r["doc_id"] for r in doc_rows]
             if not doc_ids:
+                log.debug(f"fts_search: no docs in collection {self.collection_id}")
                 return []
             # Build a filter: only match paths that start with a doc_id from this collection
             placeholders = ",".join("?" * len(doc_ids))
-            rows = conn.execute(
-                f"SELECT path, title, snippet(documents_fts, 4, '<mark>', '</mark>', '...', 10) as snippet, rank "
-                f"FROM documents_fts WHERE documents_fts MATCH ? AND ("
-                + " OR ".join(f"path LIKE ?" for _ in doc_ids)
-                + ") ORDER BY rank LIMIT 5",
-                (query,) + tuple(f"{did}/%" for did in doc_ids),
-            ).fetchall()
+            sql = (f"SELECT path, title, snippet(documents_fts, 4, '<mark>', '</mark>', '...', 10) as snippet, rank "
+                   f"FROM documents_fts WHERE documents_fts MATCH ? AND ("
+                   + " OR ".join(f"path LIKE ?" for _ in doc_ids)
+                   + ") ORDER BY rank LIMIT 5")
+            params = (query,) + tuple(f"{did}/%" for did in doc_ids)
+            rows = conn.execute(sql, params).fetchall()
+            log.debug(f"fts_search: query='{query}' db={self.db_dir} uid={self.user_id} -> {len(rows)} results")
             return [dict(r) for r in rows]
-        except Exception:
+        except Exception as e:
+            log.error(f"fts_search ERROR: {e}\n{traceback.format_exc()}")
             return []
         finally:
             conn.close()
@@ -139,7 +145,10 @@ class ToolBox:
             return f"error: {e}"
 
     def ls(self, dir_path: str) -> list[str]:
-        return safe_ls(self.data_dir, self.user_id, dir_path)
+        try:
+            return safe_ls(self.data_dir, self.user_id, dir_path)
+        except ValueError:
+            return []
 
     def execute(self, name: str, args: dict) -> str:
         dispatch = {

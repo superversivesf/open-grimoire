@@ -3,7 +3,10 @@ from app.storage.paths import validate_user_path
 
 
 def safe_read_file(data_dir: Path, user_id: str, path: str, lines: str | None = None) -> str:
-    full = validate_user_path(data_dir, user_id, path)
+    try:
+        full = validate_user_path(data_dir, user_id, path)
+    except ValueError:
+        return f"(invalid path: {path})"
     if not full.exists() or not full.is_file():
         return f"(file not found: {path})"
     text = full.read_text()
@@ -24,7 +27,10 @@ def truncate_result(text: str, max_chars: int = 16000) -> str:
 
 
 def safe_ls(data_dir: Path, user_id: str, dir_path: str) -> list[str]:
-    full = validate_user_path(data_dir, user_id, dir_path)
+    try:
+        full = validate_user_path(data_dir, user_id, dir_path)
+    except ValueError:
+        return []
     if not full.is_dir():
         return []
     return sorted(p.name for p in full.iterdir())

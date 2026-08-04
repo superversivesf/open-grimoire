@@ -90,8 +90,8 @@ async def test_alice_cannot_read_bobs_files(app_two_users, tmp_dirs):
     alice_toolbox = ToolBox(tmp_dirs["data"], alice_uid, tmp_dirs["db"], alice_cid)
 
     bob_file = str(tmp_dirs["data"] / bob_uid / "bob_doc1" / "index.md")
-    with pytest.raises(ValueError, match="outside"):
-        alice_toolbox.read_file(bob_file)
+    result = alice_toolbox.read_file(bob_file)
+    assert "invalid path" in result or "not found" in result
 
 
 @pytest.mark.asyncio
