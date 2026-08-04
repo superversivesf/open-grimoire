@@ -1,7 +1,6 @@
-# app/cli/user.py
 import click
 from pathlib import Path
-from app.storage.shared_db import init_shared_db, create_user
+from app.storage.shared_db import init_shared_db, create_user, get_user_by_username
 from app.auth.passwords import hash_password
 
 _db_dir: Path | None = None
@@ -36,6 +35,28 @@ def create_cmd(username, password, admin):
     except Exception as e:
         click.echo(f"Error: {e}", err=True)
         raise click.exceptions.Exit(1)
+    finally:
+        conn.close()
+
+
+@cli.command("passwd")
+@click.option("--username", required=True)
+@click.option("--password", default=None)
+def passwd_cmd(username, password):
+    if not password:
+        password = click.prompt("Password", hide_input=True, confirmation_prompt=True)
+    conn = init_shared_db(_resolve_db_dir())
+    try:
+        user = get_user_by_username(conn, username)
+        if not user:
+            click.echo(f"Error: user '{username}' not found", err=True)
+            raise click.exceptions.Exit(1)
+        conn.execute(
+            "UPDATE users SET password_hash = ? WHERE username = ?",
+            (hash_password(password), username),
+        )
+        conn.commit()
+        click.echo(f"Password updated for '{username}'")
     finally:
         conn.close()
 
