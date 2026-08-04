@@ -1,5 +1,3 @@
-# Open Grimoire
-
 A self-hosted web application for uploading RPG PDF manuals, processing them into searchable tiered markdown with FTS5 full-text search, and asking conversational questions answered by an LLM via Ollama — with cited sources linking back to the original PDF.
 
 ## Features
