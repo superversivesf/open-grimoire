@@ -3684,3 +3684,1015 @@ sqlite3.OperationalError: no such column: equivalent
 2026-08-04 09:34:17 [pipeline] DEBUG JOB efd678a3 ENRICH 42/112: 42_sigint.md -> summary="This section details covert tradecraft techniques for Delta " keywords=['tradecraft', 'covert operations', 'stealth', 'persuade', 'forensics', 'interrogation', 'communications security']
 2026-08-04 09:34:20 [pipeline] DEBUG JOB efd678a3 ENRICH 43/112: 43_never_trust.md -> summary="The section emphasizes that agents must assume constant surv" keywords=['communications security', 'tradecraft', 'cryptography', 'brush pass', 'dead drop', 'surveillance', 'secure meeting', 'operational security']
 2026-08-04 09:35:29 [pipeline] DEBUG JOB efd678a3 ENRICH 44/112: 44_noitcif_fo_krow_a_si_siht.md -> summary="This is a character sheet for a role-playing game, containin" keywords=['character sheet', 'rpg', 'statistics', 'skills', 'attributes', 'personal data', 'equipment', 'injuries']
+2026-08-04 09:35:58 [pipeline] DEBUG JOB efd678a3 ENRICH 45/112: 45_lanosrep.md -> summary="This is a character sheet for a role-playing game, including" keywords=['personal data', 'attributes', 'skills', 'combat', 'armor', 'lethality', 'called shots', 'injuries']
+2026-08-04 09:36:10 [pipeline] DEBUG JOB efd678a3 ENRICH 46/112: 46_lacitsitats.md -> summary="This RPG manual section contains a character sheet with pers" keywords=['character sheet', 'rpg', 'attributes', 'skills', 'equipment', 'personal data', 'injury', 'stats']
+2026-08-04 09:36:17 [pipeline] DEBUG JOB efd678a3 ENRICH 47/112: 47_reyolpme.md -> summary="This is a character sheet for an RPG, containing personal da" keywords=['character sheet', 'rpg', 'attributes', 'skills', 'statistics', 'personal data', 'combat', 'equipment']
+2026-08-04 09:37:22 [agent] INFO QUERY START: "What is AC?" (history=0 turns)
+2026-08-04 09:37:22 [agent] INFO   iter 1: DONE called (0.0s)
+2026-08-04 09:37:22 [agent] INFO QUERY DONE: "What is AC?" -> "AC is 15." (iters=1, cites=1, suggestions=0, 0.0s)
+2026-08-04 09:37:22 [agent] INFO QUERY START: "Find goblin stats" (history=0 turns)
+2026-08-04 09:37:22 [agent] INFO   iter 1: fts_search({"query": "goblin"}) -> [{"path": "x.md", "title": "Goblin", "snippet": "AC 15"}]... (0.0s)
+2026-08-04 09:37:22 [agent] INFO   iter 2: DONE called (0.0s)
+2026-08-04 09:37:22 [agent] INFO QUERY DONE: "Find goblin stats" -> "Found goblin." (iters=2, cites=0, suggestions=0, 0.0s)
+2026-08-04 09:37:22 [agent] INFO QUERY START: "loop forever" (history=0 turns)
+2026-08-04 09:37:22 [agent] INFO   iter 1: fts_search({"query": "x"}) -> []... (0.0s)
+2026-08-04 09:37:22 [agent] INFO   iter 2: DEDUP skip fts_search(x) — already searched (0.0s)
+2026-08-04 09:37:22 [agent] INFO   iter 3: DEDUP skip fts_search(x) — already searched (0.0s)
+2026-08-04 09:37:22 [agent] WARNING QUERY BUDGET EXHAUSTED: "loop forever" (iters=3, 0.0s)
+2026-08-04 09:37:26 [pipeline] INFO JOB c56d5a05 START doc=2f8593ad user=945b1602 pdf=original.pdf
+2026-08-04 09:37:26 [pipeline] INFO JOB c56d5a05 STAGE 1: extracting text from original.pdf
+2026-08-04 09:37:26 [pipeline] INFO JOB c56d5a05 STAGE 1 DONE: 4 pages, 0 OCR, 977 chars, 0.0s
+2026-08-04 09:37:26 [pipeline] INFO JOB c56d5a05 COVER: extracted cover.jpg
+2026-08-04 09:37:26 [pipeline] INFO JOB c56d5a05 STAGE 2: detecting structure
+2026-08-04 09:37:26 [pipeline] INFO JOB c56d5a05 STAGE 2 DONE: 4 chapters, 4 nodes, 4 leaves, 0.0s
+2026-08-04 09:37:26 [pipeline] INFO JOB c56d5a05 STAGE 3: writing markdown files
+2026-08-04 09:37:26 [pipeline] INFO JOB c56d5a05 STAGE 3 DONE: 4 files written to data/945b1602/2f8593ad/, 0.0s
+2026-08-04 09:37:26 [pipeline] INFO JOB c56d5a05 STAGE 4: enriching 4 sections
+2026-08-04 09:37:26 [pipeline] DEBUG JOB c56d5a05 ENRICH 1/4: 01_chapter_1_combat_rules.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:26 [pipeline] DEBUG JOB c56d5a05 ENRICH 2/4: 02_chapter_2_character_classes.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:26 [pipeline] DEBUG JOB c56d5a05 ENRICH 3/4: 03_chapter_3_spell_lists.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:26 [pipeline] DEBUG JOB c56d5a05 ENRICH 4/4: 04_chapter_4_monster_bestiary.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:26 [pipeline] INFO JOB c56d5a05 STAGE 4 DONE: 4/4 sections enriched, 0.0s
+2026-08-04 09:37:26 [pipeline] INFO JOB c56d5a05 STAGE 5: building FTS5 index
+2026-08-04 09:37:26 [pipeline] INFO JOB c56d5a05 STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-04 09:37:26 [pipeline] INFO JOB c56d5a05 COMPLETE: doc=2f8593ad title="rpg"
+2026-08-04 09:37:27 [pipeline] INFO JOB cb7e1963 START doc=81f73509 user=92549b88 pdf=original.pdf
+2026-08-04 09:37:27 [pipeline] INFO JOB cb7e1963 STAGE 1: extracting text from original.pdf
+2026-08-04 09:37:27 [pipeline] ERROR JOB cb7e1963 FAILED: doc=81f73509 error=Stream has ended unexpectedly
+2026-08-04 09:37:27 [pipeline] INFO JOB 3d55aaa5 START doc=1b71890d user=f6395873 pdf=original.pdf
+2026-08-04 09:37:27 [pipeline] INFO JOB 3d55aaa5 STAGE 1: extracting text from original.pdf
+2026-08-04 09:37:27 [pipeline] INFO JOB 3d55aaa5 STAGE 1 DONE: 4 pages, 0 OCR, 977 chars, 0.0s
+2026-08-04 09:37:27 [pipeline] INFO JOB 3d55aaa5 COVER: extracted cover.jpg
+2026-08-04 09:37:27 [pipeline] INFO JOB 3d55aaa5 STAGE 2: detecting structure
+2026-08-04 09:37:27 [pipeline] INFO JOB 3d55aaa5 STAGE 2 DONE: 4 chapters, 4 nodes, 4 leaves, 0.0s
+2026-08-04 09:37:27 [pipeline] INFO JOB 3d55aaa5 STAGE 3: writing markdown files
+2026-08-04 09:37:27 [pipeline] INFO JOB 3d55aaa5 STAGE 3 DONE: 4 files written to data/f6395873/1b71890d/, 0.0s
+2026-08-04 09:37:27 [pipeline] INFO JOB 3d55aaa5 STAGE 4: enriching 4 sections
+2026-08-04 09:37:27 [pipeline] DEBUG JOB 3d55aaa5 ENRICH 1/4: 01_chapter_1_combat_rules.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:27 [pipeline] DEBUG JOB 3d55aaa5 ENRICH 2/4: 02_chapter_2_character_classes.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:27 [pipeline] DEBUG JOB 3d55aaa5 ENRICH 3/4: 03_chapter_3_spell_lists.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:27 [pipeline] DEBUG JOB 3d55aaa5 ENRICH 4/4: 04_chapter_4_monster_bestiary.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:27 [pipeline] INFO JOB 3d55aaa5 STAGE 4 DONE: 4/4 sections enriched, 0.0s
+2026-08-04 09:37:27 [pipeline] INFO JOB 3d55aaa5 STAGE 5: building FTS5 index
+2026-08-04 09:37:27 [pipeline] INFO JOB 3d55aaa5 STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-04 09:37:27 [pipeline] INFO JOB 3d55aaa5 COMPLETE: doc=1b71890d title="rpg"
+2026-08-04 09:37:27 [pipeline] INFO JOB 848e12db START doc=be557dcb user=fc927094 pdf=original.pdf
+2026-08-04 09:37:27 [pipeline] INFO JOB 848e12db STAGE 1: extracting text from original.pdf
+2026-08-04 09:37:27 [pipeline] INFO JOB 848e12db STAGE 1 DONE: 4 pages, 0 OCR, 977 chars, 0.0s
+2026-08-04 09:37:27 [pipeline] INFO JOB 848e12db COVER: extracted cover.jpg
+2026-08-04 09:37:27 [pipeline] INFO JOB 848e12db STAGE 2: detecting structure
+2026-08-04 09:37:27 [pipeline] INFO JOB 848e12db STAGE 2 DONE: 4 chapters, 4 nodes, 4 leaves, 0.0s
+2026-08-04 09:37:27 [pipeline] INFO JOB 848e12db STAGE 3: writing markdown files
+2026-08-04 09:37:27 [pipeline] INFO JOB 848e12db STAGE 3 DONE: 4 files written to data/fc927094/be557dcb/, 0.0s
+2026-08-04 09:37:27 [pipeline] INFO JOB 848e12db STAGE 4: enriching 4 sections
+2026-08-04 09:37:27 [pipeline] DEBUG JOB 848e12db ENRICH 1/4: 01_chapter_1_combat_rules.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:27 [pipeline] DEBUG JOB 848e12db ENRICH 2/4: 02_chapter_2_character_classes.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:27 [pipeline] DEBUG JOB 848e12db ENRICH 3/4: 03_chapter_3_spell_lists.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:27 [pipeline] DEBUG JOB 848e12db ENRICH 4/4: 04_chapter_4_monster_bestiary.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:27 [pipeline] INFO JOB 848e12db STAGE 4 DONE: 4/4 sections enriched, 0.0s
+2026-08-04 09:37:27 [pipeline] INFO JOB 848e12db STAGE 5: building FTS5 index
+2026-08-04 09:37:27 [pipeline] INFO JOB 848e12db STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-04 09:37:27 [pipeline] INFO JOB 848e12db COMPLETE: doc=be557dcb title="rpg"
+2026-08-04 09:37:27 [pipeline] INFO JOB 7bb850d8 START doc=f8e8da3a user=167a95d3 pdf=original.pdf
+2026-08-04 09:37:27 [pipeline] INFO JOB 7bb850d8 STAGE 1: extracting text from original.pdf
+2026-08-04 09:37:27 [pipeline] INFO JOB 7bb850d8 STAGE 1 DONE: 4 pages, 0 OCR, 977 chars, 0.0s
+2026-08-04 09:37:27 [pipeline] INFO JOB 7bb850d8 COVER: extracted cover.jpg
+2026-08-04 09:37:27 [pipeline] INFO JOB 7bb850d8 STAGE 2: detecting structure
+2026-08-04 09:37:27 [pipeline] INFO JOB 7bb850d8 STAGE 2 DONE: 4 chapters, 4 nodes, 4 leaves, 0.0s
+2026-08-04 09:37:27 [pipeline] INFO JOB 7bb850d8 STAGE 3: writing markdown files
+2026-08-04 09:37:27 [pipeline] INFO JOB 7bb850d8 STAGE 3 DONE: 4 files written to data/167a95d3/f8e8da3a/, 0.0s
+2026-08-04 09:37:27 [pipeline] INFO JOB 7bb850d8 STAGE 4: enriching 4 sections
+2026-08-04 09:37:27 [pipeline] DEBUG JOB 7bb850d8 ENRICH 1/4: 01_chapter_1_combat_rules.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:27 [pipeline] DEBUG JOB 7bb850d8 ENRICH 2/4: 02_chapter_2_character_classes.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:27 [pipeline] DEBUG JOB 7bb850d8 ENRICH 3/4: 03_chapter_3_spell_lists.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:27 [pipeline] DEBUG JOB 7bb850d8 ENRICH 4/4: 04_chapter_4_monster_bestiary.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:27 [pipeline] INFO JOB 7bb850d8 STAGE 4 DONE: 4/4 sections enriched, 0.0s
+2026-08-04 09:37:27 [pipeline] INFO JOB 7bb850d8 STAGE 5: building FTS5 index
+2026-08-04 09:37:27 [pipeline] INFO JOB 7bb850d8 STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-04 09:37:27 [pipeline] INFO JOB 7bb850d8 COMPLETE: doc=f8e8da3a title="rpg"
+2026-08-04 09:37:27 [pipeline] INFO JOB 67ff23c5 START doc=bfd98303 user=d54c0710 pdf=original.pdf
+2026-08-04 09:37:27 [pipeline] INFO JOB 67ff23c5 STAGE 1: extracting text from original.pdf
+2026-08-04 09:37:27 [pipeline] INFO JOB 67ff23c5 STAGE 1 DONE: 4 pages, 0 OCR, 977 chars, 0.0s
+2026-08-04 09:37:27 [pipeline] INFO JOB 67ff23c5 COVER: extracted cover.jpg
+2026-08-04 09:37:27 [pipeline] INFO JOB 67ff23c5 STAGE 2: detecting structure
+2026-08-04 09:37:27 [pipeline] INFO JOB 67ff23c5 STAGE 2 DONE: 4 chapters, 4 nodes, 4 leaves, 0.0s
+2026-08-04 09:37:27 [pipeline] INFO JOB 67ff23c5 STAGE 3: writing markdown files
+2026-08-04 09:37:27 [pipeline] INFO JOB 67ff23c5 STAGE 3 DONE: 4 files written to data/d54c0710/bfd98303/, 0.0s
+2026-08-04 09:37:27 [pipeline] INFO JOB 67ff23c5 STAGE 4: enriching 4 sections
+2026-08-04 09:37:27 [pipeline] DEBUG JOB 67ff23c5 ENRICH 1/4: 01_chapter_1_combat_rules.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:27 [pipeline] DEBUG JOB 67ff23c5 ENRICH 2/4: 02_chapter_2_character_classes.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:27 [pipeline] DEBUG JOB 67ff23c5 ENRICH 3/4: 03_chapter_3_spell_lists.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:27 [pipeline] DEBUG JOB 67ff23c5 ENRICH 4/4: 04_chapter_4_monster_bestiary.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:27 [pipeline] INFO JOB 67ff23c5 STAGE 4 DONE: 4/4 sections enriched, 0.0s
+2026-08-04 09:37:27 [pipeline] INFO JOB 67ff23c5 STAGE 5: building FTS5 index
+2026-08-04 09:37:27 [pipeline] INFO JOB 67ff23c5 STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-04 09:37:27 [pipeline] INFO JOB 67ff23c5 COMPLETE: doc=bfd98303 title="rpg"
+2026-08-04 09:37:28 [pipeline] INFO JOB 65cf6c0b START doc=b00705fc user=90f52334 pdf=original.pdf
+2026-08-04 09:37:28 [pipeline] INFO JOB 65cf6c0b STAGE 1: extracting text from original.pdf
+2026-08-04 09:37:28 [pipeline] INFO JOB 65cf6c0b STAGE 1 DONE: 4 pages, 0 OCR, 977 chars, 0.0s
+2026-08-04 09:37:28 [pipeline] INFO JOB 65cf6c0b COVER: extracted cover.jpg
+2026-08-04 09:37:28 [pipeline] INFO JOB 65cf6c0b STAGE 2: detecting structure
+2026-08-04 09:37:28 [pipeline] INFO JOB 65cf6c0b STAGE 2 DONE: 4 chapters, 4 nodes, 4 leaves, 0.0s
+2026-08-04 09:37:28 [pipeline] INFO JOB 65cf6c0b STAGE 3: writing markdown files
+2026-08-04 09:37:28 [pipeline] INFO JOB 65cf6c0b STAGE 3 DONE: 4 files written to data/90f52334/b00705fc/, 0.0s
+2026-08-04 09:37:28 [pipeline] INFO JOB 65cf6c0b STAGE 4: enriching 4 sections
+2026-08-04 09:37:28 [pipeline] DEBUG JOB 65cf6c0b ENRICH 1/4: 01_chapter_1_combat_rules.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:28 [pipeline] DEBUG JOB 65cf6c0b ENRICH 2/4: 02_chapter_2_character_classes.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:28 [pipeline] DEBUG JOB 65cf6c0b ENRICH 3/4: 03_chapter_3_spell_lists.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:28 [pipeline] DEBUG JOB 65cf6c0b ENRICH 4/4: 04_chapter_4_monster_bestiary.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:28 [pipeline] INFO JOB 65cf6c0b STAGE 4 DONE: 4/4 sections enriched, 0.0s
+2026-08-04 09:37:28 [pipeline] INFO JOB 65cf6c0b STAGE 5: building FTS5 index
+2026-08-04 09:37:28 [pipeline] INFO JOB 65cf6c0b STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-04 09:37:28 [pipeline] INFO JOB 65cf6c0b COMPLETE: doc=b00705fc title="rpg"
+2026-08-04 09:37:28 [pipeline] INFO JOB 6fe0ec58 START doc=9f0a2f65 user=2b94d104 pdf=original.pdf
+2026-08-04 09:37:28 [pipeline] INFO JOB 6fe0ec58 STAGE 1: extracting text from original.pdf
+2026-08-04 09:37:28 [pipeline] INFO JOB 6fe0ec58 STAGE 1 DONE: 4 pages, 0 OCR, 977 chars, 0.0s
+2026-08-04 09:37:28 [pipeline] INFO JOB 6fe0ec58 COVER: extracted cover.jpg
+2026-08-04 09:37:28 [pipeline] INFO JOB 6fe0ec58 STAGE 2: detecting structure
+2026-08-04 09:37:28 [pipeline] INFO JOB 6fe0ec58 STAGE 2 DONE: 4 chapters, 4 nodes, 4 leaves, 0.0s
+2026-08-04 09:37:28 [pipeline] INFO JOB 6fe0ec58 STAGE 3: writing markdown files
+2026-08-04 09:37:28 [pipeline] INFO JOB 6fe0ec58 STAGE 3 DONE: 4 files written to data/2b94d104/9f0a2f65/, 0.0s
+2026-08-04 09:37:28 [pipeline] INFO JOB 6fe0ec58 STAGE 4: enriching 4 sections
+2026-08-04 09:37:28 [pipeline] DEBUG JOB 6fe0ec58 ENRICH 1/4: 01_chapter_1_combat_rules.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:28 [pipeline] DEBUG JOB 6fe0ec58 ENRICH 2/4: 02_chapter_2_character_classes.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:28 [pipeline] DEBUG JOB 6fe0ec58 ENRICH 3/4: 03_chapter_3_spell_lists.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:28 [pipeline] DEBUG JOB 6fe0ec58 ENRICH 4/4: 04_chapter_4_monster_bestiary.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:28 [pipeline] INFO JOB 6fe0ec58 STAGE 4 DONE: 4/4 sections enriched, 0.0s
+2026-08-04 09:37:28 [pipeline] INFO JOB 6fe0ec58 STAGE 5: building FTS5 index
+2026-08-04 09:37:28 [pipeline] INFO JOB 6fe0ec58 STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-04 09:37:28 [pipeline] INFO JOB 6fe0ec58 COMPLETE: doc=9f0a2f65 title="rpg"
+2026-08-04 09:37:28 [pipeline] INFO JOB 7a42e4cd START doc=0eeafd6b user=fcd99d23 pdf=original.pdf
+2026-08-04 09:37:28 [pipeline] INFO JOB 7a42e4cd STAGE 1: extracting text from original.pdf
+2026-08-04 09:37:28 [pipeline] INFO JOB 7a42e4cd STAGE 1 DONE: 4 pages, 0 OCR, 977 chars, 0.0s
+2026-08-04 09:37:28 [pipeline] INFO JOB 7a42e4cd COVER: extracted cover.jpg
+2026-08-04 09:37:28 [pipeline] INFO JOB 7a42e4cd STAGE 2: detecting structure
+2026-08-04 09:37:28 [pipeline] INFO JOB 7a42e4cd STAGE 2 DONE: 4 chapters, 4 nodes, 4 leaves, 0.0s
+2026-08-04 09:37:28 [pipeline] INFO JOB 7a42e4cd STAGE 3: writing markdown files
+2026-08-04 09:37:28 [pipeline] INFO JOB 7a42e4cd STAGE 3 DONE: 4 files written to data/fcd99d23/0eeafd6b/, 0.0s
+2026-08-04 09:37:28 [pipeline] INFO JOB 7a42e4cd STAGE 4: enriching 4 sections
+2026-08-04 09:37:28 [pipeline] DEBUG JOB 7a42e4cd ENRICH 1/4: 01_chapter_1_combat_rules.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:28 [pipeline] DEBUG JOB 7a42e4cd ENRICH 2/4: 02_chapter_2_character_classes.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:28 [pipeline] DEBUG JOB 7a42e4cd ENRICH 3/4: 03_chapter_3_spell_lists.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:28 [pipeline] DEBUG JOB 7a42e4cd ENRICH 4/4: 04_chapter_4_monster_bestiary.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:28 [pipeline] INFO JOB 7a42e4cd STAGE 4 DONE: 4/4 sections enriched, 0.0s
+2026-08-04 09:37:28 [pipeline] INFO JOB 7a42e4cd STAGE 5: building FTS5 index
+2026-08-04 09:37:28 [pipeline] INFO JOB 7a42e4cd STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-04 09:37:28 [pipeline] INFO JOB 7a42e4cd COMPLETE: doc=0eeafd6b title="rpg"
+2026-08-04 09:37:28 [agent] DEBUG fts_search: query='goblin' db=/tmp/pytest-of-jason/pytest-211/test_fts_search_finds_goblin0/db uid=fcd99d2377624995bffb867847a7adae -> 4 results
+2026-08-04 09:37:28 [pipeline] INFO JOB 0e39fb08 START doc=ee3b4015 user=3bad241e pdf=original.pdf
+2026-08-04 09:37:28 [pipeline] INFO JOB 0e39fb08 STAGE 1: extracting text from original.pdf
+2026-08-04 09:37:28 [pipeline] INFO JOB 0e39fb08 STAGE 1 DONE: 4 pages, 0 OCR, 977 chars, 0.0s
+2026-08-04 09:37:28 [pipeline] INFO JOB 0e39fb08 COVER: extracted cover.jpg
+2026-08-04 09:37:28 [pipeline] INFO JOB 0e39fb08 STAGE 2: detecting structure
+2026-08-04 09:37:28 [pipeline] INFO JOB 0e39fb08 STAGE 2 DONE: 4 chapters, 4 nodes, 4 leaves, 0.0s
+2026-08-04 09:37:28 [pipeline] INFO JOB 0e39fb08 STAGE 3: writing markdown files
+2026-08-04 09:37:28 [pipeline] INFO JOB 0e39fb08 STAGE 3 DONE: 4 files written to data/3bad241e/ee3b4015/, 0.0s
+2026-08-04 09:37:28 [pipeline] INFO JOB 0e39fb08 STAGE 4: enriching 4 sections
+2026-08-04 09:37:28 [pipeline] DEBUG JOB 0e39fb08 ENRICH 1/4: 01_chapter_1_combat_rules.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:28 [pipeline] DEBUG JOB 0e39fb08 ENRICH 2/4: 02_chapter_2_character_classes.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:28 [pipeline] DEBUG JOB 0e39fb08 ENRICH 3/4: 03_chapter_3_spell_lists.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:28 [pipeline] DEBUG JOB 0e39fb08 ENRICH 4/4: 04_chapter_4_monster_bestiary.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:28 [pipeline] INFO JOB 0e39fb08 STAGE 4 DONE: 4/4 sections enriched, 0.0s
+2026-08-04 09:37:28 [pipeline] INFO JOB 0e39fb08 STAGE 5: building FTS5 index
+2026-08-04 09:37:28 [pipeline] INFO JOB 0e39fb08 STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-04 09:37:28 [pipeline] INFO JOB 0e39fb08 COMPLETE: doc=ee3b4015 title="rpg"
+2026-08-04 09:37:28 [agent] DEBUG fts_search: query='armor class' db=/tmp/pytest-of-jason/pytest-211/test_fts_search_finds_ac0/db uid=3bad241ee4bf4c7b8d0fe4194a418ffb -> 2 results
+2026-08-04 09:37:28 [pipeline] INFO JOB df0ec911 START doc=6690b71e user=a4b5b855 pdf=original.pdf
+2026-08-04 09:37:28 [pipeline] INFO JOB df0ec911 STAGE 1: extracting text from original.pdf
+2026-08-04 09:37:28 [pipeline] INFO JOB df0ec911 STAGE 1 DONE: 4 pages, 0 OCR, 977 chars, 0.0s
+2026-08-04 09:37:28 [pipeline] INFO JOB df0ec911 COVER: extracted cover.jpg
+2026-08-04 09:37:28 [pipeline] INFO JOB df0ec911 STAGE 2: detecting structure
+2026-08-04 09:37:28 [pipeline] INFO JOB df0ec911 STAGE 2 DONE: 4 chapters, 4 nodes, 4 leaves, 0.0s
+2026-08-04 09:37:28 [pipeline] INFO JOB df0ec911 STAGE 3: writing markdown files
+2026-08-04 09:37:28 [pipeline] INFO JOB df0ec911 STAGE 3 DONE: 4 files written to data/a4b5b855/6690b71e/, 0.0s
+2026-08-04 09:37:28 [pipeline] INFO JOB df0ec911 STAGE 4: enriching 4 sections
+2026-08-04 09:37:28 [pipeline] DEBUG JOB df0ec911 ENRICH 1/4: 01_chapter_1_combat_rules.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:28 [pipeline] DEBUG JOB df0ec911 ENRICH 2/4: 02_chapter_2_character_classes.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:28 [pipeline] DEBUG JOB df0ec911 ENRICH 3/4: 03_chapter_3_spell_lists.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:28 [pipeline] DEBUG JOB df0ec911 ENRICH 4/4: 04_chapter_4_monster_bestiary.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:28 [pipeline] INFO JOB df0ec911 STAGE 4 DONE: 4/4 sections enriched, 0.0s
+2026-08-04 09:37:28 [pipeline] INFO JOB df0ec911 STAGE 5: building FTS5 index
+2026-08-04 09:37:28 [pipeline] INFO JOB df0ec911 STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-04 09:37:28 [pipeline] INFO JOB df0ec911 COMPLETE: doc=6690b71e title="rpg"
+2026-08-04 09:37:28 [agent] DEBUG fts_search: no docs in collection e7dcb6dae4d24bbbbb928e947b956a79
+2026-08-04 09:37:29 [pipeline] INFO JOB 0bb01b5c START doc=f32eb882 user=7cafa7ba pdf=original.pdf
+2026-08-04 09:37:29 [pipeline] INFO JOB 0bb01b5c STAGE 1: extracting text from original.pdf
+2026-08-04 09:37:29 [pipeline] INFO JOB 0bb01b5c STAGE 1 DONE: 4 pages, 0 OCR, 977 chars, 0.0s
+2026-08-04 09:37:29 [pipeline] INFO JOB 0bb01b5c COVER: extracted cover.jpg
+2026-08-04 09:37:29 [pipeline] INFO JOB 0bb01b5c STAGE 2: detecting structure
+2026-08-04 09:37:29 [pipeline] INFO JOB 0bb01b5c STAGE 2 DONE: 4 chapters, 4 nodes, 4 leaves, 0.0s
+2026-08-04 09:37:29 [pipeline] INFO JOB 0bb01b5c STAGE 3: writing markdown files
+2026-08-04 09:37:29 [pipeline] INFO JOB 0bb01b5c STAGE 3 DONE: 4 files written to data/7cafa7ba/f32eb882/, 0.0s
+2026-08-04 09:37:29 [pipeline] INFO JOB 0bb01b5c STAGE 4: enriching 4 sections
+2026-08-04 09:37:29 [pipeline] DEBUG JOB 0bb01b5c ENRICH 1/4: 01_chapter_1_combat_rules.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:29 [pipeline] DEBUG JOB 0bb01b5c ENRICH 2/4: 02_chapter_2_character_classes.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:29 [pipeline] DEBUG JOB 0bb01b5c ENRICH 3/4: 03_chapter_3_spell_lists.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:29 [pipeline] DEBUG JOB 0bb01b5c ENRICH 4/4: 04_chapter_4_monster_bestiary.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:29 [pipeline] INFO JOB 0bb01b5c STAGE 4 DONE: 4/4 sections enriched, 0.0s
+2026-08-04 09:37:29 [pipeline] INFO JOB 0bb01b5c STAGE 5: building FTS5 index
+2026-08-04 09:37:29 [pipeline] INFO JOB 0bb01b5c STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-04 09:37:29 [pipeline] INFO JOB 0bb01b5c COMPLETE: doc=f32eb882 title="rpg"
+2026-08-04 09:37:29 [pipeline] INFO JOB 17b7b93c START doc=349f0bb5 user=d431bc98 pdf=original.pdf
+2026-08-04 09:37:29 [pipeline] INFO JOB 17b7b93c STAGE 1: extracting text from original.pdf
+2026-08-04 09:37:29 [pipeline] INFO JOB 17b7b93c STAGE 1 DONE: 4 pages, 0 OCR, 977 chars, 0.0s
+2026-08-04 09:37:29 [pipeline] INFO JOB 17b7b93c COVER: extracted cover.jpg
+2026-08-04 09:37:29 [pipeline] INFO JOB 17b7b93c STAGE 2: detecting structure
+2026-08-04 09:37:29 [pipeline] INFO JOB 17b7b93c STAGE 2 DONE: 4 chapters, 4 nodes, 4 leaves, 0.0s
+2026-08-04 09:37:29 [pipeline] INFO JOB 17b7b93c STAGE 3: writing markdown files
+2026-08-04 09:37:29 [pipeline] INFO JOB 17b7b93c STAGE 3 DONE: 4 files written to data/d431bc98/349f0bb5/, 0.0s
+2026-08-04 09:37:29 [pipeline] INFO JOB 17b7b93c STAGE 4: enriching 4 sections
+2026-08-04 09:37:29 [pipeline] DEBUG JOB 17b7b93c ENRICH 1/4: 01_chapter_1_combat_rules.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:29 [pipeline] DEBUG JOB 17b7b93c ENRICH 2/4: 02_chapter_2_character_classes.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:29 [pipeline] DEBUG JOB 17b7b93c ENRICH 3/4: 03_chapter_3_spell_lists.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:29 [pipeline] DEBUG JOB 17b7b93c ENRICH 4/4: 04_chapter_4_monster_bestiary.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:29 [pipeline] INFO JOB 17b7b93c STAGE 4 DONE: 4/4 sections enriched, 0.0s
+2026-08-04 09:37:29 [pipeline] INFO JOB 17b7b93c STAGE 5: building FTS5 index
+2026-08-04 09:37:29 [pipeline] INFO JOB 17b7b93c STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-04 09:37:29 [pipeline] INFO JOB 17b7b93c COMPLETE: doc=349f0bb5 title="rpg"
+2026-08-04 09:37:29 [pipeline] INFO JOB 31b2fbd7 START doc=b4ec3b3b user=e25de8cd pdf=original.pdf
+2026-08-04 09:37:29 [pipeline] INFO JOB 31b2fbd7 STAGE 1: extracting text from original.pdf
+2026-08-04 09:37:29 [pipeline] INFO JOB 31b2fbd7 STAGE 1 DONE: 4 pages, 0 OCR, 977 chars, 0.0s
+2026-08-04 09:37:29 [pipeline] INFO JOB 31b2fbd7 COVER: extracted cover.jpg
+2026-08-04 09:37:29 [pipeline] INFO JOB 31b2fbd7 STAGE 2: detecting structure
+2026-08-04 09:37:29 [pipeline] INFO JOB 31b2fbd7 STAGE 2 DONE: 4 chapters, 4 nodes, 4 leaves, 0.0s
+2026-08-04 09:37:29 [pipeline] INFO JOB 31b2fbd7 STAGE 3: writing markdown files
+2026-08-04 09:37:29 [pipeline] INFO JOB 31b2fbd7 STAGE 3 DONE: 4 files written to data/e25de8cd/b4ec3b3b/, 0.0s
+2026-08-04 09:37:29 [pipeline] INFO JOB 31b2fbd7 STAGE 4: enriching 4 sections
+2026-08-04 09:37:29 [pipeline] DEBUG JOB 31b2fbd7 ENRICH 1/4: 01_chapter_1_combat_rules.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:29 [pipeline] DEBUG JOB 31b2fbd7 ENRICH 2/4: 02_chapter_2_character_classes.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:29 [pipeline] DEBUG JOB 31b2fbd7 ENRICH 3/4: 03_chapter_3_spell_lists.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:29 [pipeline] DEBUG JOB 31b2fbd7 ENRICH 4/4: 04_chapter_4_monster_bestiary.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:29 [pipeline] INFO JOB 31b2fbd7 STAGE 4 DONE: 4/4 sections enriched, 0.0s
+2026-08-04 09:37:29 [pipeline] INFO JOB 31b2fbd7 STAGE 5: building FTS5 index
+2026-08-04 09:37:29 [pipeline] INFO JOB 31b2fbd7 STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-04 09:37:29 [pipeline] INFO JOB 31b2fbd7 COMPLETE: doc=b4ec3b3b title="rpg"
+2026-08-04 09:37:29 [pipeline] INFO JOB e485adb9 START doc=1ee04ec3 user=96c40bde pdf=original.pdf
+2026-08-04 09:37:29 [pipeline] INFO JOB e485adb9 STAGE 1: extracting text from original.pdf
+2026-08-04 09:37:29 [pipeline] INFO JOB e485adb9 STAGE 1 DONE: 4 pages, 0 OCR, 977 chars, 0.0s
+2026-08-04 09:37:29 [pipeline] INFO JOB e485adb9 COVER: extracted cover.jpg
+2026-08-04 09:37:29 [pipeline] INFO JOB e485adb9 STAGE 2: detecting structure
+2026-08-04 09:37:29 [pipeline] INFO JOB e485adb9 STAGE 2 DONE: 4 chapters, 4 nodes, 4 leaves, 0.0s
+2026-08-04 09:37:29 [pipeline] INFO JOB e485adb9 STAGE 3: writing markdown files
+2026-08-04 09:37:29 [pipeline] INFO JOB e485adb9 STAGE 3 DONE: 4 files written to data/96c40bde/1ee04ec3/, 0.0s
+2026-08-04 09:37:29 [pipeline] INFO JOB e485adb9 STAGE 4: enriching 4 sections
+2026-08-04 09:37:29 [pipeline] DEBUG JOB e485adb9 ENRICH 1/4: 01_chapter_1_combat_rules.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:29 [pipeline] DEBUG JOB e485adb9 ENRICH 2/4: 02_chapter_2_character_classes.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:29 [pipeline] DEBUG JOB e485adb9 ENRICH 3/4: 03_chapter_3_spell_lists.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:29 [pipeline] DEBUG JOB e485adb9 ENRICH 4/4: 04_chapter_4_monster_bestiary.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:29 [pipeline] INFO JOB e485adb9 STAGE 4 DONE: 4/4 sections enriched, 0.0s
+2026-08-04 09:37:29 [pipeline] INFO JOB e485adb9 STAGE 5: building FTS5 index
+2026-08-04 09:37:29 [pipeline] INFO JOB e485adb9 STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-04 09:37:29 [pipeline] INFO JOB e485adb9 COMPLETE: doc=1ee04ec3 title="rpg"
+2026-08-04 09:37:29 [agent] INFO QUERY START: "What is a goblin's AC?" (history=0 turns)
+2026-08-04 09:37:29 [agent] DEBUG fts_search: query='goblin AC' db=/tmp/pytest-of-jason/pytest-211/test_ask_question_gets_answer0/db uid=96c40bdeffa24f25843028d4e99f274e -> 4 results
+2026-08-04 09:37:29 [agent] INFO   iter 1: fts_search({"query": "goblin AC"}) -> [{"path": "1ee04ec35b2a4eb3aa40f67d7ad834eb/04_chapter_4_monster_bestiary.md", "title": "Chapter 4: Monster Bestiary", "... (0.0s)
+2026-08-04 09:37:29 [agent] INFO   iter 2: read_file({"path": "DUMMY/combat.md"}) -> (file not found: DUMMY/combat.md)... (0.0s)
+2026-08-04 09:37:29 [agent] INFO   iter 3: DONE called (0.0s)
+2026-08-04 09:37:29 [agent] INFO QUERY DONE: "What is a goblin's AC?" -> "A goblin has AC 13 and 7 hit points. It attacks with a shortsword dealing 1d6+2 damage." (iters=3, cites=1, suggestions=3, 0.0s)
+2026-08-04 09:37:29 [pipeline] INFO JOB 43282c86 START doc=9f0befb9 user=d074f55d pdf=original.pdf
+2026-08-04 09:37:29 [pipeline] INFO JOB 43282c86 STAGE 1: extracting text from original.pdf
+2026-08-04 09:37:29 [pipeline] INFO JOB 43282c86 STAGE 1 DONE: 4 pages, 0 OCR, 977 chars, 0.0s
+2026-08-04 09:37:29 [pipeline] INFO JOB 43282c86 COVER: extracted cover.jpg
+2026-08-04 09:37:29 [pipeline] INFO JOB 43282c86 STAGE 2: detecting structure
+2026-08-04 09:37:29 [pipeline] INFO JOB 43282c86 STAGE 2 DONE: 4 chapters, 4 nodes, 4 leaves, 0.0s
+2026-08-04 09:37:29 [pipeline] INFO JOB 43282c86 STAGE 3: writing markdown files
+2026-08-04 09:37:29 [pipeline] INFO JOB 43282c86 STAGE 3 DONE: 4 files written to data/d074f55d/9f0befb9/, 0.0s
+2026-08-04 09:37:29 [pipeline] INFO JOB 43282c86 STAGE 4: enriching 4 sections
+2026-08-04 09:37:29 [pipeline] DEBUG JOB 43282c86 ENRICH 1/4: 01_chapter_1_combat_rules.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:29 [pipeline] DEBUG JOB 43282c86 ENRICH 2/4: 02_chapter_2_character_classes.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:29 [pipeline] DEBUG JOB 43282c86 ENRICH 3/4: 03_chapter_3_spell_lists.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:29 [pipeline] DEBUG JOB 43282c86 ENRICH 4/4: 04_chapter_4_monster_bestiary.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:29 [pipeline] INFO JOB 43282c86 STAGE 4 DONE: 4/4 sections enriched, 0.0s
+2026-08-04 09:37:29 [pipeline] INFO JOB 43282c86 STAGE 5: building FTS5 index
+2026-08-04 09:37:29 [pipeline] INFO JOB 43282c86 STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-04 09:37:29 [pipeline] INFO JOB 43282c86 COMPLETE: doc=9f0befb9 title="rpg"
+2026-08-04 09:37:30 [agent] INFO QUERY START: "What is a goblin's AC?" (history=0 turns)
+2026-08-04 09:37:30 [agent] DEBUG fts_search: query='goblin AC' db=/tmp/pytest-of-jason/pytest-211/test_ask_followup_question_in_0/db uid=d074f55db7724091974a427f8869ed91 -> 4 results
+2026-08-04 09:37:30 [agent] INFO   iter 1: fts_search({"query": "goblin AC"}) -> [{"path": "9f0befb9eaa94236a9f4c908309dbbc6/04_chapter_4_monster_bestiary.md", "title": "Chapter 4: Monster Bestiary", "... (0.0s)
+2026-08-04 09:37:30 [agent] INFO   iter 2: read_file({"path": "DUMMY/combat.md"}) -> (file not found: DUMMY/combat.md)... (0.0s)
+2026-08-04 09:37:30 [agent] INFO   iter 3: DONE called (0.0s)
+2026-08-04 09:37:30 [agent] INFO QUERY DONE: "What is a goblin's AC?" -> "A goblin has AC 13 and 7 hit points. It attacks with a shortsword dealing 1d6+2 damage." (iters=3, cites=1, suggestions=3, 0.0s)
+2026-08-04 09:37:30 [agent] INFO QUERY START: "What weapons can goblins use?" (history=1 turns)
+2026-08-04 09:37:30 [agent] INFO   iter 1: DONE called (0.0s)
+2026-08-04 09:37:30 [agent] INFO QUERY DONE: "What weapons can goblins use?" -> "A goblin has AC 13 and 7 hit points. It attacks with a shortsword dealing 1d6+2 damage." (iters=1, cites=1, suggestions=3, 0.0s)
+2026-08-04 09:37:30 [pipeline] INFO JOB 2916c372 START doc=45e2dd36 user=7c8a31b0 pdf=original.pdf
+2026-08-04 09:37:30 [pipeline] INFO JOB 2916c372 STAGE 1: extracting text from original.pdf
+2026-08-04 09:37:30 [pipeline] INFO JOB 2916c372 STAGE 1 DONE: 4 pages, 0 OCR, 977 chars, 0.0s
+2026-08-04 09:37:30 [pipeline] INFO JOB 2916c372 COVER: extracted cover.jpg
+2026-08-04 09:37:30 [pipeline] INFO JOB 2916c372 STAGE 2: detecting structure
+2026-08-04 09:37:30 [pipeline] INFO JOB 2916c372 STAGE 2 DONE: 4 chapters, 4 nodes, 4 leaves, 0.0s
+2026-08-04 09:37:30 [pipeline] INFO JOB 2916c372 STAGE 3: writing markdown files
+2026-08-04 09:37:30 [pipeline] INFO JOB 2916c372 STAGE 3 DONE: 4 files written to data/7c8a31b0/45e2dd36/, 0.0s
+2026-08-04 09:37:30 [pipeline] INFO JOB 2916c372 STAGE 4: enriching 4 sections
+2026-08-04 09:37:30 [pipeline] DEBUG JOB 2916c372 ENRICH 1/4: 01_chapter_1_combat_rules.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:30 [pipeline] DEBUG JOB 2916c372 ENRICH 2/4: 02_chapter_2_character_classes.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:30 [pipeline] DEBUG JOB 2916c372 ENRICH 3/4: 03_chapter_3_spell_lists.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:30 [pipeline] DEBUG JOB 2916c372 ENRICH 4/4: 04_chapter_4_monster_bestiary.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:30 [pipeline] INFO JOB 2916c372 STAGE 4 DONE: 4/4 sections enriched, 0.0s
+2026-08-04 09:37:30 [pipeline] INFO JOB 2916c372 STAGE 5: building FTS5 index
+2026-08-04 09:37:30 [pipeline] INFO JOB 2916c372 STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-04 09:37:30 [pipeline] INFO JOB 2916c372 COMPLETE: doc=45e2dd36 title="rpg"
+2026-08-04 09:37:30 [agent] INFO QUERY START: "What is a goblin's AC?" (history=0 turns)
+2026-08-04 09:37:30 [agent] DEBUG fts_search: query='goblin AC' db=/tmp/pytest-of-jason/pytest-211/test_session_list_shows_sessio0/db uid=7c8a31b0f5e74c00bfec0863720c5c8c -> 4 results
+2026-08-04 09:37:30 [agent] INFO   iter 1: fts_search({"query": "goblin AC"}) -> [{"path": "45e2dd36d4f04f6d911f749b39994cc1/04_chapter_4_monster_bestiary.md", "title": "Chapter 4: Monster Bestiary", "... (0.0s)
+2026-08-04 09:37:30 [agent] INFO   iter 2: read_file({"path": "DUMMY/combat.md"}) -> (file not found: DUMMY/combat.md)... (0.0s)
+2026-08-04 09:37:30 [agent] INFO   iter 3: DONE called (0.0s)
+2026-08-04 09:37:30 [agent] INFO QUERY DONE: "What is a goblin's AC?" -> "A goblin has AC 13 and 7 hit points. It attacks with a shortsword dealing 1d6+2 damage." (iters=3, cites=1, suggestions=3, 0.0s)
+2026-08-04 09:37:30 [pipeline] INFO JOB 048d1586 START doc=baea1625 user=063274c5 pdf=original.pdf
+2026-08-04 09:37:30 [pipeline] INFO JOB 048d1586 STAGE 1: extracting text from original.pdf
+2026-08-04 09:37:30 [pipeline] INFO JOB 048d1586 STAGE 1 DONE: 4 pages, 0 OCR, 977 chars, 0.0s
+2026-08-04 09:37:30 [pipeline] INFO JOB 048d1586 COVER: extracted cover.jpg
+2026-08-04 09:37:30 [pipeline] INFO JOB 048d1586 STAGE 2: detecting structure
+2026-08-04 09:37:30 [pipeline] INFO JOB 048d1586 STAGE 2 DONE: 4 chapters, 4 nodes, 4 leaves, 0.0s
+2026-08-04 09:37:30 [pipeline] INFO JOB 048d1586 STAGE 3: writing markdown files
+2026-08-04 09:37:30 [pipeline] INFO JOB 048d1586 STAGE 3 DONE: 4 files written to data/063274c5/baea1625/, 0.0s
+2026-08-04 09:37:30 [pipeline] INFO JOB 048d1586 STAGE 4: enriching 4 sections
+2026-08-04 09:37:30 [pipeline] DEBUG JOB 048d1586 ENRICH 1/4: 01_chapter_1_combat_rules.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:30 [pipeline] DEBUG JOB 048d1586 ENRICH 2/4: 02_chapter_2_character_classes.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:30 [pipeline] DEBUG JOB 048d1586 ENRICH 3/4: 03_chapter_3_spell_lists.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:30 [pipeline] DEBUG JOB 048d1586 ENRICH 4/4: 04_chapter_4_monster_bestiary.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:30 [pipeline] INFO JOB 048d1586 STAGE 4 DONE: 4/4 sections enriched, 0.0s
+2026-08-04 09:37:30 [pipeline] INFO JOB 048d1586 STAGE 5: building FTS5 index
+2026-08-04 09:37:30 [pipeline] INFO JOB 048d1586 STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-04 09:37:30 [pipeline] INFO JOB 048d1586 COMPLETE: doc=baea1625 title="rpg"
+2026-08-04 09:37:30 [agent] INFO QUERY START: "What is a goblin's AC?" (history=0 turns)
+2026-08-04 09:37:30 [agent] DEBUG fts_search: query='goblin AC' db=/tmp/pytest-of-jason/pytest-211/test_citation_links_to_pdf0/db uid=063274c5102c4e10924aa1220ca7b38a -> 4 results
+2026-08-04 09:37:30 [agent] INFO   iter 1: fts_search({"query": "goblin AC"}) -> [{"path": "baea1625b21041e28d20265f0abc5047/04_chapter_4_monster_bestiary.md", "title": "Chapter 4: Monster Bestiary", "... (0.0s)
+2026-08-04 09:37:30 [agent] INFO   iter 2: read_file({"path": "DUMMY/combat.md"}) -> (file not found: DUMMY/combat.md)... (0.0s)
+2026-08-04 09:37:30 [agent] INFO   iter 3: DONE called (0.0s)
+2026-08-04 09:37:30 [agent] INFO QUERY DONE: "What is a goblin's AC?" -> "A goblin has AC 13 and 7 hit points. It attacks with a shortsword dealing 1d6+2 damage." (iters=3, cites=1, suggestions=3, 0.0s)
+2026-08-04 09:37:30 [pipeline] INFO JOB a9aff013 START doc=271b0ffc user=b7c8d6a6 pdf=original.pdf
+2026-08-04 09:37:30 [pipeline] INFO JOB a9aff013 STAGE 1: extracting text from original.pdf
+2026-08-04 09:37:30 [pipeline] INFO JOB a9aff013 STAGE 1 DONE: 4 pages, 0 OCR, 977 chars, 0.0s
+2026-08-04 09:37:30 [pipeline] INFO JOB a9aff013 COVER: extracted cover.jpg
+2026-08-04 09:37:30 [pipeline] INFO JOB a9aff013 STAGE 2: detecting structure
+2026-08-04 09:37:30 [pipeline] INFO JOB a9aff013 STAGE 2 DONE: 4 chapters, 4 nodes, 4 leaves, 0.0s
+2026-08-04 09:37:30 [pipeline] INFO JOB a9aff013 STAGE 3: writing markdown files
+2026-08-04 09:37:30 [pipeline] INFO JOB a9aff013 STAGE 3 DONE: 4 files written to data/b7c8d6a6/271b0ffc/, 0.0s
+2026-08-04 09:37:30 [pipeline] INFO JOB a9aff013 STAGE 4: enriching 4 sections
+2026-08-04 09:37:30 [pipeline] DEBUG JOB a9aff013 ENRICH 1/4: 01_chapter_1_combat_rules.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:30 [pipeline] DEBUG JOB a9aff013 ENRICH 2/4: 02_chapter_2_character_classes.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:30 [pipeline] DEBUG JOB a9aff013 ENRICH 3/4: 03_chapter_3_spell_lists.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:30 [pipeline] DEBUG JOB a9aff013 ENRICH 4/4: 04_chapter_4_monster_bestiary.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:37:30 [pipeline] INFO JOB a9aff013 STAGE 4 DONE: 4/4 sections enriched, 0.0s
+2026-08-04 09:37:30 [pipeline] INFO JOB a9aff013 STAGE 5: building FTS5 index
+2026-08-04 09:37:30 [pipeline] INFO JOB a9aff013 STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-04 09:37:30 [pipeline] INFO JOB a9aff013 COMPLETE: doc=271b0ffc title="rpg"
+2026-08-04 09:37:30 [agent] INFO QUERY START: "What is a goblin's AC?" (history=0 turns)
+2026-08-04 09:37:30 [agent] DEBUG fts_search: query='goblin AC' db=/tmp/pytest-of-jason/pytest-211/test_suggestion_buttons_have_d0/db uid=b7c8d6a691a7497bb3ea016814d0201e -> 4 results
+2026-08-04 09:37:30 [agent] INFO   iter 1: fts_search({"query": "goblin AC"}) -> [{"path": "271b0ffcdb614dc3b83b3693c8d87c46/04_chapter_4_monster_bestiary.md", "title": "Chapter 4: Monster Bestiary", "... (0.0s)
+2026-08-04 09:37:30 [agent] INFO   iter 2: read_file({"path": "DUMMY/combat.md"}) -> (file not found: DUMMY/combat.md)... (0.0s)
+2026-08-04 09:37:30 [agent] INFO   iter 3: DONE called (0.0s)
+2026-08-04 09:37:30 [agent] INFO QUERY DONE: "What is a goblin's AC?" -> "A goblin has AC 13 and 7 hit points. It attacks with a shortsword dealing 1d6+2 damage." (iters=3, cites=1, suggestions=3, 0.0s)
+2026-08-04 09:37:31 [agent] INFO QUERY START: "What is goblin AC?" (history=0 turns)
+2026-08-04 09:37:31 [agent] INFO   iter 1: read_file({"path": "doc/combat.md"}) -> # Combat Rules Goblin AC 13.... (0.0s)
+2026-08-04 09:37:31 [agent] INFO   iter 2: DEDUP skip read_file(doc/combat.md) — already read (0.0s)
+2026-08-04 09:37:31 [agent] INFO   iter 3: DONE called (0.0s)
+2026-08-04 09:37:31 [agent] INFO QUERY DONE: "What is goblin AC?" -> "Done." (iters=3, cites=0, suggestions=0, 0.0s)
+2026-08-04 09:37:31 [agent] INFO QUERY START: "Find goblin" (history=0 turns)
+2026-08-04 09:37:31 [agent] INFO   iter 1: fts_search({"query": "goblin"}) -> []... (0.0s)
+2026-08-04 09:37:31 [agent] INFO   iter 2: DEDUP skip fts_search(goblin) — already searched (0.0s)
+2026-08-04 09:37:31 [agent] INFO   iter 3: DONE called (0.0s)
+2026-08-04 09:37:31 [agent] INFO QUERY DONE: "Find goblin" -> "Done." (iters=3, cites=0, suggestions=0, 0.0s)
+2026-08-04 09:37:31 [agent] INFO QUERY START: "test" (history=0 turns)
+2026-08-04 09:37:31 [agent] INFO   iter 1: fts_search({"query": "x"}) -> []... (0.0s)
+2026-08-04 09:37:31 [agent] INFO   iter 2: DEDUP skip fts_search(x) — already searched (0.0s)
+2026-08-04 09:37:31 [agent] INFO   iter 3: DEDUP skip fts_search(x) — already searched (0.0s)
+2026-08-04 09:37:31 [agent] INFO   iter 4: DEDUP skip fts_search(x) — already searched (0.0s)
+2026-08-04 09:37:31 [agent] INFO   iter 5: DEDUP skip fts_search(x) — already searched (0.0s)
+2026-08-04 09:37:31 [agent] INFO   iter 6: DEDUP skip fts_search(x) — already searched (0.0s)
+2026-08-04 09:37:31 [agent] INFO   iter 7: DEDUP skip fts_search(x) — already searched (0.0s)
+2026-08-04 09:37:31 [agent] INFO   iter 8: DEDUP skip fts_search(x) — already searched (0.0s)
+2026-08-04 09:37:31 [agent] INFO   iter 9: DEDUP skip fts_search(x) — already searched (0.0s)
+2026-08-04 09:37:31 [agent] INFO   iter 10: DEDUP skip fts_search(x) — already searched (0.0s)
+2026-08-04 09:37:31 [agent] INFO   iter 11: DEDUP skip fts_search(x) — already searched (0.0s)
+2026-08-04 09:37:31 [agent] INFO   iter 12: DEDUP skip fts_search(x) — already searched (0.0s)
+2026-08-04 09:37:31 [agent] INFO   iter 13: DEDUP skip fts_search(x) — already searched (0.0s)
+2026-08-04 09:37:31 [agent] INFO   iter 14: DEDUP skip fts_search(x) — already searched (0.0s)
+2026-08-04 09:37:31 [agent] INFO   iter 15: DEDUP skip fts_search(x) — already searched (0.0s)
+2026-08-04 09:37:31 [agent] WARNING QUERY BUDGET EXHAUSTED: "test" (iters=15, 0.0s)
+2026-08-04 09:37:31 [agent] INFO QUERY START: "impossible question" (history=0 turns)
+2026-08-04 09:37:31 [agent] INFO   iter 1: fts_search({"query": "x"}) -> []... (0.0s)
+2026-08-04 09:37:31 [agent] INFO   iter 2: DEDUP skip fts_search(x) — already searched (0.0s)
+2026-08-04 09:37:31 [agent] INFO   iter 3: DEDUP skip fts_search(x) — already searched (0.0s)
+2026-08-04 09:37:31 [agent] WARNING QUERY BUDGET EXHAUSTED: "impossible question" (iters=3, 0.0s)
+2026-08-04 09:37:31 [pipeline] INFO JOB 34648613 START doc=ffb389de user=afbdbdd2 pdf=original.pdf
+2026-08-04 09:37:31 [pipeline] INFO JOB 34648613 STAGE 1: extracting text from original.pdf
+2026-08-04 09:37:31 [pipeline] INFO JOB 34648613 STAGE 1 DONE: 4 pages, 0 OCR, 977 chars, 0.0s
+2026-08-04 09:37:31 [pipeline] INFO JOB 34648613 COVER: extracted cover.jpg
+2026-08-04 09:37:31 [pipeline] INFO JOB 34648613 STAGE 2: detecting structure
+2026-08-04 09:37:31 [pipeline] INFO JOB 34648613 STAGE 2 DONE: 4 chapters, 4 nodes, 4 leaves, 0.0s
+2026-08-04 09:37:31 [pipeline] INFO JOB 34648613 STAGE 3: writing markdown files
+2026-08-04 09:37:31 [pipeline] INFO JOB 34648613 STAGE 3 DONE: 4 files written to data/afbdbdd2/ffb389de/, 0.0s
+2026-08-04 09:37:31 [pipeline] INFO JOB 34648613 STAGE 4: enriching 4 sections
+2026-08-04 09:37:34 [pipeline] DEBUG JOB 34648613 ENRICH 1/4: 01_chapter_1_combat_rules.md -> summary="This section outlines basic combat rules, including how to d" keywords=['armor class', 'hit points', 'goblin', 'knight', 'barbarian', 'sorcerer', 'mystic']
+2026-08-04 09:37:35 [pipeline] DEBUG JOB 34648613 ENRICH 2/4: 02_chapter_2_character_classes.md -> summary="This section introduces four character classes with differen" keywords=['knights', 'barbarians', 'sorcerers', 'mystics', 'hit dice', 'armor class', 'spells', 'fireball']
+2026-08-04 09:37:36 [pipeline] DEBUG JOB 34648613 ENRICH 3/4: 03_chapter_3_spell_lists.md -> summary="This section covers basic spell descriptions including Fireb" keywords=['fireball', 'healing word', 'monster stats', 'orc', 'dragon', 'goblin']
+2026-08-04 09:37:37 [pipeline] DEBUG JOB 34648613 ENRICH 4/4: 04_chapter_4_monster_bestiary.md -> summary="This section details various monsters including goblins, orc" keywords=['monster', 'goblin', 'orc', 'dragon', 'skeleton', 'attributes', 'attacks', 'damage']
+2026-08-04 09:37:37 [pipeline] INFO JOB 34648613 STAGE 4 DONE: 4/4 sections enriched, 6.0s
+2026-08-04 09:37:37 [pipeline] INFO JOB 34648613 STAGE 5: building FTS5 index
+2026-08-04 09:37:37 [pipeline] INFO JOB 34648613 STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-04 09:37:37 [pipeline] INFO JOB 34648613 COMPLETE: doc=ffb389de title="rpg"
+2026-08-04 09:37:37 [agent] INFO QUERY START: "What is a goblin's AC?" (history=0 turns)
+2026-08-04 09:37:37 [agent] DEBUG fts_search: query='goblin AC' db=/tmp/pytest-of-jason/pytest-211/test_real_pipeline_and_qa0/db uid=afbdbdd2ebbb46758525a6e2e49a8fc0 -> 3 results
+2026-08-04 09:37:37 [agent] INFO   iter 1: fts_search({"query": "goblin AC"}) -> [{"path": "ffb389de920a46de980e7326f1c252d4/04_chapter_4_monster_bestiary.md", "title": "Chapter 4: Monster Bestiary", "... (0.5s)
+2026-08-04 09:37:38 [agent] INFO   iter 2: read_file({"path": "ffb389de920a46de980e7326f1c252d4/04_chapter_4_monster_bestiary.md"}) -> --- summary: "This section details various monsters including goblins, orcs, dragons, and skeletons with their respectiv... (0.9s)
+2026-08-04 09:37:40 [agent] INFO   iter 3: content without tool calls, re-prompting for done (1.7s)
+2026-08-04 09:37:42 [agent] INFO   iter 4: DONE called (2.0s)
+2026-08-04 09:37:42 [agent] INFO QUERY DONE: "What is a goblin's AC?" -> "The goblin's Armor Class (AC) is 13." (iters=4, cites=1, suggestions=3, 5.0s)
+2026-08-04 09:37:42 [pipeline] INFO JOB 5741fbae START doc=73707f50 user=e2dc3719 pdf=original.pdf
+2026-08-04 09:37:42 [pipeline] INFO JOB 5741fbae STAGE 1: extracting text from original.pdf
+2026-08-04 09:37:42 [pipeline] INFO JOB 5741fbae STAGE 1 DONE: 4 pages, 0 OCR, 977 chars, 0.0s
+2026-08-04 09:37:42 [pipeline] INFO JOB 5741fbae COVER: extracted cover.jpg
+2026-08-04 09:37:42 [pipeline] INFO JOB 5741fbae STAGE 2: detecting structure
+2026-08-04 09:37:42 [pipeline] INFO JOB 5741fbae STAGE 2 DONE: 4 chapters, 4 nodes, 4 leaves, 0.0s
+2026-08-04 09:37:42 [pipeline] INFO JOB 5741fbae STAGE 3: writing markdown files
+2026-08-04 09:37:42 [pipeline] INFO JOB 5741fbae STAGE 3 DONE: 4 files written to data/e2dc3719/73707f50/, 0.0s
+2026-08-04 09:37:42 [pipeline] INFO JOB 5741fbae STAGE 4: enriching 4 sections
+2026-08-04 09:37:43 [pipeline] DEBUG JOB 5741fbae ENRICH 1/4: 01_chapter_1_combat_rules.md -> summary="This section outlines basic combat rules, including how to d" keywords=['armor class', 'hit points', 'goblin', 'knights', 'barbarians', 'sorcerers', 'mystics']
+2026-08-04 09:37:44 [pipeline] DEBUG JOB 5741fbae ENRICH 2/4: 02_chapter_2_character_classes.md -> summary="This section introduces four character classes with differen" keywords=['knights', 'barbarians', 'sorcerers', 'mystics', 'hit dice', 'armor class', 'spells', 'fireball']
+2026-08-04 09:37:45 [pipeline] DEBUG JOB 5741fbae ENRICH 3/4: 03_chapter_3_spell_lists.md -> summary="This section covers basic spells including Fireball, Magic M" keywords=['fireball', 'magic missile', 'healing word', 'goblin', 'orc', 'dragon', 'skeleton']
+2026-08-04 09:37:46 [pipeline] DEBUG JOB 5741fbae ENRICH 4/4: 04_chapter_4_monster_bestiary.md -> summary="This section details several monsters including goblins, orc" keywords=['monster', 'goblin', 'orc', 'dragon', 'skeleton', 'ac', 'hp', 'attacks']
+2026-08-04 09:37:46 [pipeline] INFO JOB 5741fbae STAGE 4 DONE: 4/4 sections enriched, 4.3s
+2026-08-04 09:37:46 [pipeline] INFO JOB 5741fbae STAGE 5: building FTS5 index
+2026-08-04 09:37:46 [pipeline] INFO JOB 5741fbae STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-04 09:37:46 [pipeline] INFO JOB 5741fbae COMPLETE: doc=73707f50 title="rpg"
+2026-08-04 09:37:47 [pipeline] INFO JOB 25269209 START doc=04e87421 user=fe4f3604 pdf=original.pdf
+2026-08-04 09:37:47 [pipeline] INFO JOB 25269209 STAGE 1: extracting text from original.pdf
+2026-08-04 09:37:47 [pipeline] INFO JOB 25269209 STAGE 1 DONE: 1 pages, 0 OCR, 46 chars, 0.1s
+2026-08-04 09:37:47 [pipeline] INFO JOB 25269209 COVER: extracted cover.jpg
+2026-08-04 09:37:47 [pipeline] INFO JOB 25269209 STAGE 2: detecting structure
+2026-08-04 09:37:47 [pipeline] INFO JOB 25269209 STAGE 2 DONE: 1 chapters, 1 nodes, 1 leaves, 0.0s
+2026-08-04 09:37:47 [pipeline] INFO JOB 25269209 STAGE 3: writing markdown files
+2026-08-04 09:37:47 [pipeline] INFO JOB 25269209 STAGE 3 DONE: 1 files written to data/fe4f3604/04e87421/, 0.0s
+2026-08-04 09:37:47 [pipeline] INFO JOB 25269209 STAGE 4: enriching 1 sections
+2026-08-04 09:37:47 [pipeline] DEBUG JOB 25269209 ENRICH 1/1: 01_chapter_1_monsterscid10goblins_have_ac_15.md -> summary="Monster rules." keywords=['monster']
+2026-08-04 09:37:47 [pipeline] INFO JOB 25269209 STAGE 4 DONE: 1/1 sections enriched, 0.0s
+2026-08-04 09:37:47 [pipeline] INFO JOB 25269209 STAGE 5: building FTS5 index
+2026-08-04 09:37:47 [pipeline] INFO JOB 25269209 STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-04 09:37:47 [pipeline] INFO JOB 25269209 COMPLETE: doc=04e87421 title="book"
+2026-08-04 09:37:47 [pipeline] INFO JOB 226e4dbc START doc=repro_do user=59e6fca1 pdf=original.pdf
+2026-08-04 09:37:47 [pipeline] INFO JOB 226e4dbc STAGE 1: extracting text from original.pdf
+2026-08-04 09:37:47 [pipeline] INFO JOB 226e4dbc STAGE 1 DONE: 1 pages, 0 OCR, 44 chars, 0.0s
+2026-08-04 09:37:47 [pipeline] INFO JOB 226e4dbc COVER: extracted cover.jpg
+2026-08-04 09:37:47 [pipeline] INFO JOB 226e4dbc STAGE 2: detecting structure
+2026-08-04 09:37:47 [pipeline] INFO JOB 226e4dbc STAGE 2 DONE: 1 chapters, 1 nodes, 1 leaves, 0.0s
+2026-08-04 09:37:47 [pipeline] INFO JOB 226e4dbc STAGE 3: writing markdown files
+2026-08-04 09:37:47 [pipeline] INFO JOB 226e4dbc STAGE 3 DONE: 1 files written to data/59e6fca1/repro_do/, 0.0s
+2026-08-04 09:37:47 [pipeline] INFO JOB 226e4dbc STAGE 4: enriching 1 sections
+2026-08-04 09:37:47 [pipeline] DEBUG JOB 226e4dbc ENRICH 1/1: 01_chapter_1_combatcid10goblins_have_ac_15.md -> summary="Reprocessed." keywords=['combat']
+2026-08-04 09:37:47 [pipeline] INFO JOB 226e4dbc STAGE 4 DONE: 1/1 sections enriched, 0.0s
+2026-08-04 09:37:47 [pipeline] INFO JOB 226e4dbc STAGE 5: building FTS5 index
+2026-08-04 09:37:47 [pipeline] INFO JOB 226e4dbc STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-04 09:37:47 [pipeline] INFO JOB 226e4dbc COMPLETE: doc=repro_do title="Repro Book"
+2026-08-04 09:37:47 [pipeline] INFO JOB e9105c2c START doc=bad_doc user=2afbc6e5 pdf=bad.pdf
+2026-08-04 09:37:47 [pipeline] INFO JOB e9105c2c STAGE 1: extracting text from bad.pdf
+2026-08-04 09:37:47 [pipeline] ERROR JOB e9105c2c FAILED: doc=bad_doc error=Stream has ended unexpectedly
+2026-08-04 09:37:48 [agent] INFO QUERY START: "What is AC?" (history=0 turns)
+2026-08-04 09:37:48 [agent] DEBUG fts_search: query='dragon' db=/tmp/pytest-of-jason/pytest-211/test_alice_cannot_search_bobs_0/db uid=b4a1ec72d74840408d8f9c89ca5cbbef -> 0 results
+2026-08-04 09:37:48 [agent] DEBUG fts_search: query='goblin' db=/tmp/pytest-of-jason/pytest-211/test_alice_cannot_search_bobs_0/db uid=b4a1ec72d74840408d8f9c89ca5cbbef -> 1 results
+2026-08-04 09:37:49 [pipeline] INFO JOB a73700b7 START doc=ce11b623 user=a742ea7c pdf=original.pdf
+2026-08-04 09:37:49 [pipeline] INFO JOB a73700b7 STAGE 1: extracting text from original.pdf
+2026-08-04 09:37:49 [pipeline] INFO JOB a73700b7 STAGE 1 DONE: 2 pages, 0 OCR, 71 chars, 0.0s
+2026-08-04 09:37:49 [pipeline] INFO JOB a73700b7 COVER: extracted cover.jpg
+2026-08-04 09:37:49 [pipeline] INFO JOB a73700b7 STAGE 2: detecting structure
+2026-08-04 09:37:49 [pipeline] INFO JOB a73700b7 STAGE 2 DONE: 1 chapters, 1 nodes, 1 leaves, 0.0s
+2026-08-04 09:37:49 [pipeline] INFO JOB a73700b7 STAGE 3: writing markdown files
+2026-08-04 09:37:49 [pipeline] INFO JOB a73700b7 STAGE 3 DONE: 1 files written to data/a742ea7c/ce11b623/, 0.0s
+2026-08-04 09:37:49 [pipeline] INFO JOB a73700b7 STAGE 4: enriching 1 sections
+2026-08-04 09:37:49 [pipeline] DEBUG JOB a73700b7 ENRICH 1/1: 01_chapter_1_combat.md -> summary="Combat rules for goblins." keywords=['goblin', 'combat', 'AC']
+2026-08-04 09:37:49 [pipeline] INFO JOB a73700b7 STAGE 4 DONE: 1/1 sections enriched, 0.0s
+2026-08-04 09:37:49 [pipeline] INFO JOB a73700b7 STAGE 5: building FTS5 index
+2026-08-04 09:37:49 [pipeline] INFO JOB a73700b7 STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-04 09:37:49 [pipeline] INFO JOB a73700b7 COMPLETE: doc=ce11b623 title="combat"
+2026-08-04 09:37:49 [agent] DEBUG fts_search: query='goblin' db=/tmp/pytest-of-jason/pytest-211/test_full_pdf_processing_pipel0/db uid=a742ea7cc0cd46eeba327656aec8b662 -> 1 results
+2026-08-04 09:37:50 [pipeline] INFO JOB b93b7778 START doc=d1 user=alice pdf=test.pdf
+2026-08-04 09:37:50 [pipeline] INFO JOB b93b7778 STAGE 1: extracting text from test.pdf
+2026-08-04 09:37:50 [pipeline] INFO JOB b93b7778 STAGE 1 DONE: 1 pages, 0 OCR, 46 chars, 0.1s
+2026-08-04 09:37:50 [pipeline] WARNING JOB b93b7778 COVER: failed to extract cover: [Errno 2] No such file or directory: '/tmp/pytest-of-jason/pytest-211/test_runner_end_to_end0/data/alice/d1/cover.jpg'
+2026-08-04 09:37:50 [pipeline] INFO JOB b93b7778 STAGE 2: detecting structure
+2026-08-04 09:37:50 [pipeline] INFO JOB b93b7778 STAGE 2 DONE: 1 chapters, 1 nodes, 1 leaves, 0.0s
+2026-08-04 09:37:50 [pipeline] INFO JOB b93b7778 STAGE 3: writing markdown files
+2026-08-04 09:37:50 [pipeline] INFO JOB b93b7778 STAGE 3 DONE: 1 files written to data/alice/d1/, 0.0s
+2026-08-04 09:37:50 [pipeline] INFO JOB b93b7778 STAGE 4: enriching 1 sections
+2026-08-04 09:37:50 [pipeline] DEBUG JOB b93b7778 ENRICH 1/1: 01_chapter_1_combat.md -> summary="Combat rules." keywords=['combat', 'goblin']
+2026-08-04 09:37:50 [pipeline] INFO JOB b93b7778 STAGE 4 DONE: 1/1 sections enriched, 0.0s
+2026-08-04 09:37:50 [pipeline] INFO JOB b93b7778 STAGE 5: building FTS5 index
+2026-08-04 09:37:50 [pipeline] INFO JOB b93b7778 STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-04 09:37:50 [pipeline] INFO JOB b93b7778 COMPLETE: doc=d1 title="Test Book"
+2026-08-04 09:37:50 [pipeline] INFO JOB 9784fe4e START doc=d1 user=alice pdf=bad.pdf
+2026-08-04 09:37:50 [pipeline] INFO JOB 9784fe4e STAGE 1: extracting text from bad.pdf
+2026-08-04 09:37:50 [pipeline] ERROR JOB 9784fe4e FAILED: doc=d1 error=Stream has ended unexpectedly
+2026-08-04 09:37:50 [agent] DEBUG fts_search: query='goblin' db=/tmp/pytest-of-jason/pytest-211/test_fts_search0/db uid=alice -> 1 results
+2026-08-04 09:37:50 [agent] DEBUG fts_search: query='goblin' db=/tmp/pytest-of-jason/pytest-211/test_execute_dispatch0/db uid=alice -> 1 results
+2026-08-04 09:38:00 [pipeline] INFO JOB 45eda503 START doc=8efe241f user=1638caae pdf=original.pdf
+2026-08-04 09:38:00 [pipeline] INFO JOB 45eda503 STAGE 1: extracting text from original.pdf
+2026-08-04 09:38:29 [pipeline] INFO JOB 45eda503 STAGE 1 DONE: 369 pages, 0 OCR, 1217283 chars, 28.4s
+2026-08-04 09:38:29 [pipeline] INFO JOB 45eda503 COVER: extracted cover.jpg
+2026-08-04 09:38:29 [pipeline] INFO JOB 45eda503 STAGE 2: detecting structure
+2026-08-04 09:38:29 [pipeline] INFO JOB 45eda503 STAGE 2 DONE: 127 chapters, 128 nodes, 127 leaves, 0.0s
+2026-08-04 09:38:29 [pipeline] INFO JOB 45eda503 STAGE 3: writing markdown files
+2026-08-04 09:38:29 [pipeline] INFO JOB 45eda503 STAGE 3 DONE: 127 files written to data/1638caae/8efe241f/, 0.0s
+2026-08-04 09:38:29 [pipeline] INFO JOB 45eda503 STAGE 4: enriching 127 sections
+2026-08-04 09:38:33 [pipeline] DEBUG JOB 45eda503 ENRICH 1/127: 01_disinformation.md -> summary="This section describes the role of the Handler in Delta Gree" keywords=['handler', 'delta green', 'unnatural', 'disinformation', 'mood', 'paranoia', 'trust', 'responsibility']
+2026-08-04 09:38:35 [pipeline] DEBUG JOB 45eda503 ENRICH 2/127: 02_in_the.md -> summary="This section instructs Handlers on their role as the sole na" keywords=['handler', 'agents', 'unnatural', 'mood', 'paranoia', 'program', 'outlaws', 'innsmouth']
+2026-08-04 09:39:17 [agent] INFO QUERY START: "What is AC?" (history=0 turns)
+2026-08-04 09:39:17 [agent] INFO   iter 1: DONE called (0.0s)
+2026-08-04 09:39:17 [agent] INFO QUERY DONE: "What is AC?" -> "AC is 15." (iters=1, cites=1, suggestions=0, 0.0s)
+2026-08-04 09:39:17 [agent] INFO QUERY START: "Find goblin stats" (history=0 turns)
+2026-08-04 09:39:17 [agent] INFO   iter 1: fts_search({"query": "goblin"}) -> [{"path": "x.md", "title": "Goblin", "snippet": "AC 15"}]... (0.0s)
+2026-08-04 09:39:17 [agent] INFO   iter 2: DONE called (0.0s)
+2026-08-04 09:39:17 [agent] INFO QUERY DONE: "Find goblin stats" -> "Found goblin." (iters=2, cites=0, suggestions=0, 0.0s)
+2026-08-04 09:39:17 [agent] INFO QUERY START: "loop forever" (history=0 turns)
+2026-08-04 09:39:17 [agent] INFO   iter 1: fts_search({"query": "x"}) -> []... (0.0s)
+2026-08-04 09:39:17 [agent] INFO   iter 2: DEDUP skip fts_search(x) — already searched (0.0s)
+2026-08-04 09:39:17 [agent] INFO   iter 3: DEDUP skip fts_search(x) — already searched (0.0s)
+2026-08-04 09:39:17 [agent] WARNING QUERY BUDGET EXHAUSTED: "loop forever" (iters=3, 0.0s)
+2026-08-04 09:39:21 [pipeline] INFO JOB 21298fef START doc=b6b0cc4b user=483c2ad1 pdf=original.pdf
+2026-08-04 09:39:21 [pipeline] INFO JOB 21298fef STAGE 1: extracting text from original.pdf
+2026-08-04 09:39:21 [pipeline] INFO JOB 21298fef STAGE 1 DONE: 4 pages, 0 OCR, 977 chars, 0.0s
+2026-08-04 09:39:21 [pipeline] INFO JOB 21298fef COVER: extracted cover.jpg
+2026-08-04 09:39:21 [pipeline] INFO JOB 21298fef STAGE 2: detecting structure
+2026-08-04 09:39:21 [pipeline] INFO JOB 21298fef STAGE 2 DONE: 4 chapters, 4 nodes, 4 leaves, 0.0s
+2026-08-04 09:39:21 [pipeline] INFO JOB 21298fef STAGE 3: writing markdown files
+2026-08-04 09:39:21 [pipeline] INFO JOB 21298fef STAGE 3 DONE: 4 files written to data/483c2ad1/b6b0cc4b/, 0.0s
+2026-08-04 09:39:21 [pipeline] INFO JOB 21298fef STAGE 4: enriching 4 sections
+2026-08-04 09:39:21 [pipeline] DEBUG JOB 21298fef ENRICH 1/4: 01_chapter_1_combat_rules.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:21 [pipeline] DEBUG JOB 21298fef ENRICH 2/4: 02_chapter_2_character_classes.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:21 [pipeline] DEBUG JOB 21298fef ENRICH 3/4: 03_chapter_3_spell_lists.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:21 [pipeline] DEBUG JOB 21298fef ENRICH 4/4: 04_chapter_4_monster_bestiary.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:21 [pipeline] INFO JOB 21298fef STAGE 4 DONE: 4/4 sections enriched, 0.0s
+2026-08-04 09:39:21 [pipeline] INFO JOB 21298fef STAGE 5: building FTS5 index
+2026-08-04 09:39:21 [pipeline] INFO JOB 21298fef STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-04 09:39:21 [pipeline] INFO JOB 21298fef COMPLETE: doc=b6b0cc4b title="rpg"
+2026-08-04 09:39:21 [pipeline] INFO JOB 7eb2edf5 START doc=c804b42c user=3f1b3714 pdf=original.pdf
+2026-08-04 09:39:21 [pipeline] INFO JOB 7eb2edf5 STAGE 1: extracting text from original.pdf
+2026-08-04 09:39:21 [pipeline] ERROR JOB 7eb2edf5 FAILED: doc=c804b42c error=Stream has ended unexpectedly
+2026-08-04 09:39:21 [pipeline] INFO JOB 90498901 START doc=a677fb07 user=9bded94d pdf=original.pdf
+2026-08-04 09:39:21 [pipeline] INFO JOB 90498901 STAGE 1: extracting text from original.pdf
+2026-08-04 09:39:21 [pipeline] INFO JOB 90498901 STAGE 1 DONE: 4 pages, 0 OCR, 977 chars, 0.0s
+2026-08-04 09:39:21 [pipeline] INFO JOB 90498901 COVER: extracted cover.jpg
+2026-08-04 09:39:21 [pipeline] INFO JOB 90498901 STAGE 2: detecting structure
+2026-08-04 09:39:21 [pipeline] INFO JOB 90498901 STAGE 2 DONE: 4 chapters, 4 nodes, 4 leaves, 0.0s
+2026-08-04 09:39:21 [pipeline] INFO JOB 90498901 STAGE 3: writing markdown files
+2026-08-04 09:39:21 [pipeline] INFO JOB 90498901 STAGE 3 DONE: 4 files written to data/9bded94d/a677fb07/, 0.0s
+2026-08-04 09:39:21 [pipeline] INFO JOB 90498901 STAGE 4: enriching 4 sections
+2026-08-04 09:39:21 [pipeline] DEBUG JOB 90498901 ENRICH 1/4: 01_chapter_1_combat_rules.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:21 [pipeline] DEBUG JOB 90498901 ENRICH 2/4: 02_chapter_2_character_classes.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:21 [pipeline] DEBUG JOB 90498901 ENRICH 3/4: 03_chapter_3_spell_lists.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:21 [pipeline] DEBUG JOB 90498901 ENRICH 4/4: 04_chapter_4_monster_bestiary.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:21 [pipeline] INFO JOB 90498901 STAGE 4 DONE: 4/4 sections enriched, 0.0s
+2026-08-04 09:39:21 [pipeline] INFO JOB 90498901 STAGE 5: building FTS5 index
+2026-08-04 09:39:21 [pipeline] INFO JOB 90498901 STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-04 09:39:21 [pipeline] INFO JOB 90498901 COMPLETE: doc=a677fb07 title="rpg"
+2026-08-04 09:39:21 [pipeline] INFO JOB 066e7700 START doc=85687ed3 user=f7c113b7 pdf=original.pdf
+2026-08-04 09:39:21 [pipeline] INFO JOB 066e7700 STAGE 1: extracting text from original.pdf
+2026-08-04 09:39:21 [pipeline] INFO JOB 066e7700 STAGE 1 DONE: 4 pages, 0 OCR, 977 chars, 0.0s
+2026-08-04 09:39:21 [pipeline] INFO JOB 066e7700 COVER: extracted cover.jpg
+2026-08-04 09:39:21 [pipeline] INFO JOB 066e7700 STAGE 2: detecting structure
+2026-08-04 09:39:21 [pipeline] INFO JOB 066e7700 STAGE 2 DONE: 4 chapters, 4 nodes, 4 leaves, 0.0s
+2026-08-04 09:39:21 [pipeline] INFO JOB 066e7700 STAGE 3: writing markdown files
+2026-08-04 09:39:21 [pipeline] INFO JOB 066e7700 STAGE 3 DONE: 4 files written to data/f7c113b7/85687ed3/, 0.0s
+2026-08-04 09:39:21 [pipeline] INFO JOB 066e7700 STAGE 4: enriching 4 sections
+2026-08-04 09:39:21 [pipeline] DEBUG JOB 066e7700 ENRICH 1/4: 01_chapter_1_combat_rules.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:21 [pipeline] DEBUG JOB 066e7700 ENRICH 2/4: 02_chapter_2_character_classes.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:21 [pipeline] DEBUG JOB 066e7700 ENRICH 3/4: 03_chapter_3_spell_lists.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:21 [pipeline] DEBUG JOB 066e7700 ENRICH 4/4: 04_chapter_4_monster_bestiary.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:21 [pipeline] INFO JOB 066e7700 STAGE 4 DONE: 4/4 sections enriched, 0.0s
+2026-08-04 09:39:21 [pipeline] INFO JOB 066e7700 STAGE 5: building FTS5 index
+2026-08-04 09:39:21 [pipeline] INFO JOB 066e7700 STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-04 09:39:21 [pipeline] INFO JOB 066e7700 COMPLETE: doc=85687ed3 title="rpg"
+2026-08-04 09:39:21 [pipeline] INFO JOB 4873bd96 START doc=d8378612 user=88e65cba pdf=original.pdf
+2026-08-04 09:39:21 [pipeline] INFO JOB 4873bd96 STAGE 1: extracting text from original.pdf
+2026-08-04 09:39:21 [pipeline] INFO JOB 4873bd96 STAGE 1 DONE: 4 pages, 0 OCR, 977 chars, 0.0s
+2026-08-04 09:39:22 [pipeline] INFO JOB 4873bd96 COVER: extracted cover.jpg
+2026-08-04 09:39:22 [pipeline] INFO JOB 4873bd96 STAGE 2: detecting structure
+2026-08-04 09:39:22 [pipeline] INFO JOB 4873bd96 STAGE 2 DONE: 4 chapters, 4 nodes, 4 leaves, 0.0s
+2026-08-04 09:39:22 [pipeline] INFO JOB 4873bd96 STAGE 3: writing markdown files
+2026-08-04 09:39:22 [pipeline] INFO JOB 4873bd96 STAGE 3 DONE: 4 files written to data/88e65cba/d8378612/, 0.0s
+2026-08-04 09:39:22 [pipeline] INFO JOB 4873bd96 STAGE 4: enriching 4 sections
+2026-08-04 09:39:22 [pipeline] DEBUG JOB 4873bd96 ENRICH 1/4: 01_chapter_1_combat_rules.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:22 [pipeline] DEBUG JOB 4873bd96 ENRICH 2/4: 02_chapter_2_character_classes.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:22 [pipeline] DEBUG JOB 4873bd96 ENRICH 3/4: 03_chapter_3_spell_lists.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:22 [pipeline] DEBUG JOB 4873bd96 ENRICH 4/4: 04_chapter_4_monster_bestiary.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:22 [pipeline] INFO JOB 4873bd96 STAGE 4 DONE: 4/4 sections enriched, 0.0s
+2026-08-04 09:39:22 [pipeline] INFO JOB 4873bd96 STAGE 5: building FTS5 index
+2026-08-04 09:39:22 [pipeline] INFO JOB 4873bd96 STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-04 09:39:22 [pipeline] INFO JOB 4873bd96 COMPLETE: doc=d8378612 title="rpg"
+2026-08-04 09:39:22 [pipeline] INFO JOB 8ef554f8 START doc=11552d9b user=adedcc10 pdf=original.pdf
+2026-08-04 09:39:22 [pipeline] INFO JOB 8ef554f8 STAGE 1: extracting text from original.pdf
+2026-08-04 09:39:22 [pipeline] INFO JOB 8ef554f8 STAGE 1 DONE: 4 pages, 0 OCR, 977 chars, 0.0s
+2026-08-04 09:39:22 [pipeline] INFO JOB 8ef554f8 COVER: extracted cover.jpg
+2026-08-04 09:39:22 [pipeline] INFO JOB 8ef554f8 STAGE 2: detecting structure
+2026-08-04 09:39:22 [pipeline] INFO JOB 8ef554f8 STAGE 2 DONE: 4 chapters, 4 nodes, 4 leaves, 0.0s
+2026-08-04 09:39:22 [pipeline] INFO JOB 8ef554f8 STAGE 3: writing markdown files
+2026-08-04 09:39:22 [pipeline] INFO JOB 8ef554f8 STAGE 3 DONE: 4 files written to data/adedcc10/11552d9b/, 0.0s
+2026-08-04 09:39:22 [pipeline] INFO JOB 8ef554f8 STAGE 4: enriching 4 sections
+2026-08-04 09:39:22 [pipeline] DEBUG JOB 8ef554f8 ENRICH 1/4: 01_chapter_1_combat_rules.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:22 [pipeline] DEBUG JOB 8ef554f8 ENRICH 2/4: 02_chapter_2_character_classes.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:22 [pipeline] DEBUG JOB 8ef554f8 ENRICH 3/4: 03_chapter_3_spell_lists.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:22 [pipeline] DEBUG JOB 8ef554f8 ENRICH 4/4: 04_chapter_4_monster_bestiary.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:22 [pipeline] INFO JOB 8ef554f8 STAGE 4 DONE: 4/4 sections enriched, 0.0s
+2026-08-04 09:39:22 [pipeline] INFO JOB 8ef554f8 STAGE 5: building FTS5 index
+2026-08-04 09:39:22 [pipeline] INFO JOB 8ef554f8 STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-04 09:39:22 [pipeline] INFO JOB 8ef554f8 COMPLETE: doc=11552d9b title="rpg"
+2026-08-04 09:39:22 [pipeline] INFO JOB 6d137d9a START doc=7e22376d user=c22677c5 pdf=original.pdf
+2026-08-04 09:39:22 [pipeline] INFO JOB 6d137d9a STAGE 1: extracting text from original.pdf
+2026-08-04 09:39:22 [pipeline] INFO JOB 6d137d9a STAGE 1 DONE: 4 pages, 0 OCR, 977 chars, 0.0s
+2026-08-04 09:39:22 [pipeline] INFO JOB 6d137d9a COVER: extracted cover.jpg
+2026-08-04 09:39:22 [pipeline] INFO JOB 6d137d9a STAGE 2: detecting structure
+2026-08-04 09:39:22 [pipeline] INFO JOB 6d137d9a STAGE 2 DONE: 4 chapters, 4 nodes, 4 leaves, 0.0s
+2026-08-04 09:39:22 [pipeline] INFO JOB 6d137d9a STAGE 3: writing markdown files
+2026-08-04 09:39:22 [pipeline] INFO JOB 6d137d9a STAGE 3 DONE: 4 files written to data/c22677c5/7e22376d/, 0.0s
+2026-08-04 09:39:22 [pipeline] INFO JOB 6d137d9a STAGE 4: enriching 4 sections
+2026-08-04 09:39:22 [pipeline] DEBUG JOB 6d137d9a ENRICH 1/4: 01_chapter_1_combat_rules.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:22 [pipeline] DEBUG JOB 6d137d9a ENRICH 2/4: 02_chapter_2_character_classes.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:22 [pipeline] DEBUG JOB 6d137d9a ENRICH 3/4: 03_chapter_3_spell_lists.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:22 [pipeline] DEBUG JOB 6d137d9a ENRICH 4/4: 04_chapter_4_monster_bestiary.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:22 [pipeline] INFO JOB 6d137d9a STAGE 4 DONE: 4/4 sections enriched, 0.0s
+2026-08-04 09:39:22 [pipeline] INFO JOB 6d137d9a STAGE 5: building FTS5 index
+2026-08-04 09:39:22 [pipeline] INFO JOB 6d137d9a STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-04 09:39:22 [pipeline] INFO JOB 6d137d9a COMPLETE: doc=7e22376d title="rpg"
+2026-08-04 09:39:22 [pipeline] INFO JOB 955bdf1f START doc=1e9a4647 user=aeb0e67e pdf=original.pdf
+2026-08-04 09:39:22 [pipeline] INFO JOB 955bdf1f STAGE 1: extracting text from original.pdf
+2026-08-04 09:39:22 [pipeline] INFO JOB 955bdf1f STAGE 1 DONE: 4 pages, 0 OCR, 977 chars, 0.0s
+2026-08-04 09:39:22 [pipeline] INFO JOB 955bdf1f COVER: extracted cover.jpg
+2026-08-04 09:39:22 [pipeline] INFO JOB 955bdf1f STAGE 2: detecting structure
+2026-08-04 09:39:22 [pipeline] INFO JOB 955bdf1f STAGE 2 DONE: 4 chapters, 4 nodes, 4 leaves, 0.0s
+2026-08-04 09:39:22 [pipeline] INFO JOB 955bdf1f STAGE 3: writing markdown files
+2026-08-04 09:39:22 [pipeline] INFO JOB 955bdf1f STAGE 3 DONE: 4 files written to data/aeb0e67e/1e9a4647/, 0.0s
+2026-08-04 09:39:22 [pipeline] INFO JOB 955bdf1f STAGE 4: enriching 4 sections
+2026-08-04 09:39:22 [pipeline] DEBUG JOB 955bdf1f ENRICH 1/4: 01_chapter_1_combat_rules.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:22 [pipeline] DEBUG JOB 955bdf1f ENRICH 2/4: 02_chapter_2_character_classes.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:22 [pipeline] DEBUG JOB 955bdf1f ENRICH 3/4: 03_chapter_3_spell_lists.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:22 [pipeline] DEBUG JOB 955bdf1f ENRICH 4/4: 04_chapter_4_monster_bestiary.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:22 [pipeline] INFO JOB 955bdf1f STAGE 4 DONE: 4/4 sections enriched, 0.0s
+2026-08-04 09:39:22 [pipeline] INFO JOB 955bdf1f STAGE 5: building FTS5 index
+2026-08-04 09:39:22 [pipeline] INFO JOB 955bdf1f STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-04 09:39:22 [pipeline] INFO JOB 955bdf1f COMPLETE: doc=1e9a4647 title="rpg"
+2026-08-04 09:39:22 [pipeline] INFO JOB 3189b6ba START doc=529c6db9 user=e5965de2 pdf=original.pdf
+2026-08-04 09:39:22 [pipeline] INFO JOB 3189b6ba STAGE 1: extracting text from original.pdf
+2026-08-04 09:39:22 [pipeline] INFO JOB 3189b6ba STAGE 1 DONE: 4 pages, 0 OCR, 977 chars, 0.0s
+2026-08-04 09:39:22 [pipeline] INFO JOB 3189b6ba COVER: extracted cover.jpg
+2026-08-04 09:39:22 [pipeline] INFO JOB 3189b6ba STAGE 2: detecting structure
+2026-08-04 09:39:22 [pipeline] INFO JOB 3189b6ba STAGE 2 DONE: 4 chapters, 4 nodes, 4 leaves, 0.0s
+2026-08-04 09:39:22 [pipeline] INFO JOB 3189b6ba STAGE 3: writing markdown files
+2026-08-04 09:39:22 [pipeline] INFO JOB 3189b6ba STAGE 3 DONE: 4 files written to data/e5965de2/529c6db9/, 0.0s
+2026-08-04 09:39:22 [pipeline] INFO JOB 3189b6ba STAGE 4: enriching 4 sections
+2026-08-04 09:39:22 [pipeline] DEBUG JOB 3189b6ba ENRICH 1/4: 01_chapter_1_combat_rules.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:22 [pipeline] DEBUG JOB 3189b6ba ENRICH 2/4: 02_chapter_2_character_classes.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:22 [pipeline] DEBUG JOB 3189b6ba ENRICH 3/4: 03_chapter_3_spell_lists.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:22 [pipeline] DEBUG JOB 3189b6ba ENRICH 4/4: 04_chapter_4_monster_bestiary.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:22 [pipeline] INFO JOB 3189b6ba STAGE 4 DONE: 4/4 sections enriched, 0.0s
+2026-08-04 09:39:22 [pipeline] INFO JOB 3189b6ba STAGE 5: building FTS5 index
+2026-08-04 09:39:22 [pipeline] INFO JOB 3189b6ba STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-04 09:39:22 [pipeline] INFO JOB 3189b6ba COMPLETE: doc=529c6db9 title="rpg"
+2026-08-04 09:39:22 [agent] DEBUG fts_search: query='goblin' db=/tmp/pytest-of-jason/pytest-212/test_fts_search_finds_goblin0/db uid=e5965de220904a38a52362af7fc76541 -> 4 results
+2026-08-04 09:39:23 [pipeline] INFO JOB 50c8fa73 START doc=7d6374f4 user=1f27bc81 pdf=original.pdf
+2026-08-04 09:39:23 [pipeline] INFO JOB 50c8fa73 STAGE 1: extracting text from original.pdf
+2026-08-04 09:39:23 [pipeline] INFO JOB 50c8fa73 STAGE 1 DONE: 4 pages, 0 OCR, 977 chars, 0.0s
+2026-08-04 09:39:23 [pipeline] INFO JOB 50c8fa73 COVER: extracted cover.jpg
+2026-08-04 09:39:23 [pipeline] INFO JOB 50c8fa73 STAGE 2: detecting structure
+2026-08-04 09:39:23 [pipeline] INFO JOB 50c8fa73 STAGE 2 DONE: 4 chapters, 4 nodes, 4 leaves, 0.0s
+2026-08-04 09:39:23 [pipeline] INFO JOB 50c8fa73 STAGE 3: writing markdown files
+2026-08-04 09:39:23 [pipeline] INFO JOB 50c8fa73 STAGE 3 DONE: 4 files written to data/1f27bc81/7d6374f4/, 0.0s
+2026-08-04 09:39:23 [pipeline] INFO JOB 50c8fa73 STAGE 4: enriching 4 sections
+2026-08-04 09:39:23 [pipeline] DEBUG JOB 50c8fa73 ENRICH 1/4: 01_chapter_1_combat_rules.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:23 [pipeline] DEBUG JOB 50c8fa73 ENRICH 2/4: 02_chapter_2_character_classes.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:23 [pipeline] DEBUG JOB 50c8fa73 ENRICH 3/4: 03_chapter_3_spell_lists.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:23 [pipeline] DEBUG JOB 50c8fa73 ENRICH 4/4: 04_chapter_4_monster_bestiary.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:23 [pipeline] INFO JOB 50c8fa73 STAGE 4 DONE: 4/4 sections enriched, 0.0s
+2026-08-04 09:39:23 [pipeline] INFO JOB 50c8fa73 STAGE 5: building FTS5 index
+2026-08-04 09:39:23 [pipeline] INFO JOB 50c8fa73 STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-04 09:39:23 [pipeline] INFO JOB 50c8fa73 COMPLETE: doc=7d6374f4 title="rpg"
+2026-08-04 09:39:23 [agent] DEBUG fts_search: query='armor class' db=/tmp/pytest-of-jason/pytest-212/test_fts_search_finds_ac0/db uid=1f27bc811d4243acb69fd6aae85002f7 -> 2 results
+2026-08-04 09:39:23 [pipeline] INFO JOB d799f4cb START doc=ea996b08 user=08eabfb1 pdf=original.pdf
+2026-08-04 09:39:23 [pipeline] INFO JOB d799f4cb STAGE 1: extracting text from original.pdf
+2026-08-04 09:39:23 [pipeline] INFO JOB d799f4cb STAGE 1 DONE: 4 pages, 0 OCR, 977 chars, 0.0s
+2026-08-04 09:39:23 [pipeline] INFO JOB d799f4cb COVER: extracted cover.jpg
+2026-08-04 09:39:23 [pipeline] INFO JOB d799f4cb STAGE 2: detecting structure
+2026-08-04 09:39:23 [pipeline] INFO JOB d799f4cb STAGE 2 DONE: 4 chapters, 4 nodes, 4 leaves, 0.0s
+2026-08-04 09:39:23 [pipeline] INFO JOB d799f4cb STAGE 3: writing markdown files
+2026-08-04 09:39:23 [pipeline] INFO JOB d799f4cb STAGE 3 DONE: 4 files written to data/08eabfb1/ea996b08/, 0.0s
+2026-08-04 09:39:23 [pipeline] INFO JOB d799f4cb STAGE 4: enriching 4 sections
+2026-08-04 09:39:23 [pipeline] DEBUG JOB d799f4cb ENRICH 1/4: 01_chapter_1_combat_rules.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:23 [pipeline] DEBUG JOB d799f4cb ENRICH 2/4: 02_chapter_2_character_classes.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:23 [pipeline] DEBUG JOB d799f4cb ENRICH 3/4: 03_chapter_3_spell_lists.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:23 [pipeline] DEBUG JOB d799f4cb ENRICH 4/4: 04_chapter_4_monster_bestiary.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:23 [pipeline] INFO JOB d799f4cb STAGE 4 DONE: 4/4 sections enriched, 0.0s
+2026-08-04 09:39:23 [pipeline] INFO JOB d799f4cb STAGE 5: building FTS5 index
+2026-08-04 09:39:23 [pipeline] INFO JOB d799f4cb STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-04 09:39:23 [pipeline] INFO JOB d799f4cb COMPLETE: doc=ea996b08 title="rpg"
+2026-08-04 09:39:23 [agent] DEBUG fts_search: no docs in collection 6f826506b0bf4aee93bbeaf2763d3d16
+2026-08-04 09:39:23 [pipeline] INFO JOB 7c403fdc START doc=da078465 user=f9a47e76 pdf=original.pdf
+2026-08-04 09:39:23 [pipeline] INFO JOB 7c403fdc STAGE 1: extracting text from original.pdf
+2026-08-04 09:39:23 [pipeline] INFO JOB 7c403fdc STAGE 1 DONE: 4 pages, 0 OCR, 977 chars, 0.0s
+2026-08-04 09:39:23 [pipeline] INFO JOB 7c403fdc COVER: extracted cover.jpg
+2026-08-04 09:39:23 [pipeline] INFO JOB 7c403fdc STAGE 2: detecting structure
+2026-08-04 09:39:23 [pipeline] INFO JOB 7c403fdc STAGE 2 DONE: 4 chapters, 4 nodes, 4 leaves, 0.0s
+2026-08-04 09:39:23 [pipeline] INFO JOB 7c403fdc STAGE 3: writing markdown files
+2026-08-04 09:39:23 [pipeline] INFO JOB 7c403fdc STAGE 3 DONE: 4 files written to data/f9a47e76/da078465/, 0.0s
+2026-08-04 09:39:23 [pipeline] INFO JOB 7c403fdc STAGE 4: enriching 4 sections
+2026-08-04 09:39:23 [pipeline] DEBUG JOB 7c403fdc ENRICH 1/4: 01_chapter_1_combat_rules.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:23 [pipeline] DEBUG JOB 7c403fdc ENRICH 2/4: 02_chapter_2_character_classes.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:23 [pipeline] DEBUG JOB 7c403fdc ENRICH 3/4: 03_chapter_3_spell_lists.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:23 [pipeline] DEBUG JOB 7c403fdc ENRICH 4/4: 04_chapter_4_monster_bestiary.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:23 [pipeline] INFO JOB 7c403fdc STAGE 4 DONE: 4/4 sections enriched, 0.0s
+2026-08-04 09:39:23 [pipeline] INFO JOB 7c403fdc STAGE 5: building FTS5 index
+2026-08-04 09:39:23 [pipeline] INFO JOB 7c403fdc STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-04 09:39:23 [pipeline] INFO JOB 7c403fdc COMPLETE: doc=da078465 title="rpg"
+2026-08-04 09:39:23 [pipeline] INFO JOB 181a7fd5 START doc=b899931c user=d811c72d pdf=original.pdf
+2026-08-04 09:39:23 [pipeline] INFO JOB 181a7fd5 STAGE 1: extracting text from original.pdf
+2026-08-04 09:39:23 [pipeline] INFO JOB 181a7fd5 STAGE 1 DONE: 4 pages, 0 OCR, 977 chars, 0.0s
+2026-08-04 09:39:23 [pipeline] INFO JOB 181a7fd5 COVER: extracted cover.jpg
+2026-08-04 09:39:23 [pipeline] INFO JOB 181a7fd5 STAGE 2: detecting structure
+2026-08-04 09:39:23 [pipeline] INFO JOB 181a7fd5 STAGE 2 DONE: 4 chapters, 4 nodes, 4 leaves, 0.0s
+2026-08-04 09:39:23 [pipeline] INFO JOB 181a7fd5 STAGE 3: writing markdown files
+2026-08-04 09:39:23 [pipeline] INFO JOB 181a7fd5 STAGE 3 DONE: 4 files written to data/d811c72d/b899931c/, 0.0s
+2026-08-04 09:39:23 [pipeline] INFO JOB 181a7fd5 STAGE 4: enriching 4 sections
+2026-08-04 09:39:23 [pipeline] DEBUG JOB 181a7fd5 ENRICH 1/4: 01_chapter_1_combat_rules.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:23 [pipeline] DEBUG JOB 181a7fd5 ENRICH 2/4: 02_chapter_2_character_classes.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:23 [pipeline] DEBUG JOB 181a7fd5 ENRICH 3/4: 03_chapter_3_spell_lists.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:23 [pipeline] DEBUG JOB 181a7fd5 ENRICH 4/4: 04_chapter_4_monster_bestiary.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:23 [pipeline] INFO JOB 181a7fd5 STAGE 4 DONE: 4/4 sections enriched, 0.0s
+2026-08-04 09:39:23 [pipeline] INFO JOB 181a7fd5 STAGE 5: building FTS5 index
+2026-08-04 09:39:23 [pipeline] INFO JOB 181a7fd5 STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-04 09:39:23 [pipeline] INFO JOB 181a7fd5 COMPLETE: doc=b899931c title="rpg"
+2026-08-04 09:39:23 [pipeline] INFO JOB e2139a9a START doc=ad82fa16 user=7624471b pdf=original.pdf
+2026-08-04 09:39:23 [pipeline] INFO JOB e2139a9a STAGE 1: extracting text from original.pdf
+2026-08-04 09:39:23 [pipeline] INFO JOB e2139a9a STAGE 1 DONE: 4 pages, 0 OCR, 977 chars, 0.0s
+2026-08-04 09:39:23 [pipeline] INFO JOB e2139a9a COVER: extracted cover.jpg
+2026-08-04 09:39:23 [pipeline] INFO JOB e2139a9a STAGE 2: detecting structure
+2026-08-04 09:39:23 [pipeline] INFO JOB e2139a9a STAGE 2 DONE: 4 chapters, 4 nodes, 4 leaves, 0.0s
+2026-08-04 09:39:23 [pipeline] INFO JOB e2139a9a STAGE 3: writing markdown files
+2026-08-04 09:39:23 [pipeline] INFO JOB e2139a9a STAGE 3 DONE: 4 files written to data/7624471b/ad82fa16/, 0.0s
+2026-08-04 09:39:23 [pipeline] INFO JOB e2139a9a STAGE 4: enriching 4 sections
+2026-08-04 09:39:23 [pipeline] DEBUG JOB e2139a9a ENRICH 1/4: 01_chapter_1_combat_rules.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:23 [pipeline] DEBUG JOB e2139a9a ENRICH 2/4: 02_chapter_2_character_classes.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:23 [pipeline] DEBUG JOB e2139a9a ENRICH 3/4: 03_chapter_3_spell_lists.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:23 [pipeline] DEBUG JOB e2139a9a ENRICH 4/4: 04_chapter_4_monster_bestiary.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:23 [pipeline] INFO JOB e2139a9a STAGE 4 DONE: 4/4 sections enriched, 0.0s
+2026-08-04 09:39:23 [pipeline] INFO JOB e2139a9a STAGE 5: building FTS5 index
+2026-08-04 09:39:23 [pipeline] INFO JOB e2139a9a STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-04 09:39:23 [pipeline] INFO JOB e2139a9a COMPLETE: doc=ad82fa16 title="rpg"
+2026-08-04 09:39:24 [pipeline] INFO JOB d2ae1880 START doc=723dfe1c user=06efd0a2 pdf=original.pdf
+2026-08-04 09:39:24 [pipeline] INFO JOB d2ae1880 STAGE 1: extracting text from original.pdf
+2026-08-04 09:39:24 [pipeline] INFO JOB d2ae1880 STAGE 1 DONE: 4 pages, 0 OCR, 977 chars, 0.0s
+2026-08-04 09:39:24 [pipeline] INFO JOB d2ae1880 COVER: extracted cover.jpg
+2026-08-04 09:39:24 [pipeline] INFO JOB d2ae1880 STAGE 2: detecting structure
+2026-08-04 09:39:24 [pipeline] INFO JOB d2ae1880 STAGE 2 DONE: 4 chapters, 4 nodes, 4 leaves, 0.0s
+2026-08-04 09:39:24 [pipeline] INFO JOB d2ae1880 STAGE 3: writing markdown files
+2026-08-04 09:39:24 [pipeline] INFO JOB d2ae1880 STAGE 3 DONE: 4 files written to data/06efd0a2/723dfe1c/, 0.0s
+2026-08-04 09:39:24 [pipeline] INFO JOB d2ae1880 STAGE 4: enriching 4 sections
+2026-08-04 09:39:24 [pipeline] DEBUG JOB d2ae1880 ENRICH 1/4: 01_chapter_1_combat_rules.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:24 [pipeline] DEBUG JOB d2ae1880 ENRICH 2/4: 02_chapter_2_character_classes.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:24 [pipeline] DEBUG JOB d2ae1880 ENRICH 3/4: 03_chapter_3_spell_lists.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:24 [pipeline] DEBUG JOB d2ae1880 ENRICH 4/4: 04_chapter_4_monster_bestiary.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:24 [pipeline] INFO JOB d2ae1880 STAGE 4 DONE: 4/4 sections enriched, 0.0s
+2026-08-04 09:39:24 [pipeline] INFO JOB d2ae1880 STAGE 5: building FTS5 index
+2026-08-04 09:39:24 [pipeline] INFO JOB d2ae1880 STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-04 09:39:24 [pipeline] INFO JOB d2ae1880 COMPLETE: doc=723dfe1c title="rpg"
+2026-08-04 09:39:24 [agent] INFO QUERY START: "What is a goblin's AC?" (history=0 turns)
+2026-08-04 09:39:24 [agent] DEBUG fts_search: query='goblin AC' db=/tmp/pytest-of-jason/pytest-212/test_ask_question_gets_answer0/db uid=06efd0a27d7c4e7cb3410588015f15c0 -> 4 results
+2026-08-04 09:39:24 [agent] INFO   iter 1: fts_search({"query": "goblin AC"}) -> [{"path": "723dfe1c21ba4aaa82c6fe8a547eef09/04_chapter_4_monster_bestiary.md", "title": "Chapter 4: Monster Bestiary", "... (0.0s)
+2026-08-04 09:39:24 [agent] INFO   iter 2: read_file({"path": "DUMMY/combat.md"}) -> (file not found: DUMMY/combat.md)... (0.0s)
+2026-08-04 09:39:24 [agent] INFO   iter 3: DONE called (0.0s)
+2026-08-04 09:39:24 [agent] INFO QUERY DONE: "What is a goblin's AC?" -> "A goblin has AC 13 and 7 hit points. It attacks with a shortsword dealing 1d6+2 damage." (iters=3, cites=1, suggestions=3, 0.0s)
+2026-08-04 09:39:24 [pipeline] INFO JOB 7428bf7a START doc=8dfe6672 user=02f3e009 pdf=original.pdf
+2026-08-04 09:39:24 [pipeline] INFO JOB 7428bf7a STAGE 1: extracting text from original.pdf
+2026-08-04 09:39:24 [pipeline] INFO JOB 7428bf7a STAGE 1 DONE: 4 pages, 0 OCR, 977 chars, 0.0s
+2026-08-04 09:39:24 [pipeline] INFO JOB 7428bf7a COVER: extracted cover.jpg
+2026-08-04 09:39:24 [pipeline] INFO JOB 7428bf7a STAGE 2: detecting structure
+2026-08-04 09:39:24 [pipeline] INFO JOB 7428bf7a STAGE 2 DONE: 4 chapters, 4 nodes, 4 leaves, 0.0s
+2026-08-04 09:39:24 [pipeline] INFO JOB 7428bf7a STAGE 3: writing markdown files
+2026-08-04 09:39:24 [pipeline] INFO JOB 7428bf7a STAGE 3 DONE: 4 files written to data/02f3e009/8dfe6672/, 0.0s
+2026-08-04 09:39:24 [pipeline] INFO JOB 7428bf7a STAGE 4: enriching 4 sections
+2026-08-04 09:39:24 [pipeline] DEBUG JOB 7428bf7a ENRICH 1/4: 01_chapter_1_combat_rules.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:24 [pipeline] DEBUG JOB 7428bf7a ENRICH 2/4: 02_chapter_2_character_classes.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:24 [pipeline] DEBUG JOB 7428bf7a ENRICH 3/4: 03_chapter_3_spell_lists.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:24 [pipeline] DEBUG JOB 7428bf7a ENRICH 4/4: 04_chapter_4_monster_bestiary.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:24 [pipeline] INFO JOB 7428bf7a STAGE 4 DONE: 4/4 sections enriched, 0.0s
+2026-08-04 09:39:24 [pipeline] INFO JOB 7428bf7a STAGE 5: building FTS5 index
+2026-08-04 09:39:24 [pipeline] INFO JOB 7428bf7a STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-04 09:39:24 [pipeline] INFO JOB 7428bf7a COMPLETE: doc=8dfe6672 title="rpg"
+2026-08-04 09:39:24 [agent] INFO QUERY START: "What is a goblin's AC?" (history=0 turns)
+2026-08-04 09:39:24 [agent] DEBUG fts_search: query='goblin AC' db=/tmp/pytest-of-jason/pytest-212/test_ask_followup_question_in_0/db uid=02f3e00950a8464c8b5b2ebbde1a8a13 -> 4 results
+2026-08-04 09:39:24 [agent] INFO   iter 1: fts_search({"query": "goblin AC"}) -> [{"path": "8dfe6672c26a4221b4ed32073e0dc0cd/04_chapter_4_monster_bestiary.md", "title": "Chapter 4: Monster Bestiary", "... (0.0s)
+2026-08-04 09:39:24 [agent] INFO   iter 2: read_file({"path": "DUMMY/combat.md"}) -> (file not found: DUMMY/combat.md)... (0.0s)
+2026-08-04 09:39:24 [agent] INFO   iter 3: DONE called (0.0s)
+2026-08-04 09:39:24 [agent] INFO QUERY DONE: "What is a goblin's AC?" -> "A goblin has AC 13 and 7 hit points. It attacks with a shortsword dealing 1d6+2 damage." (iters=3, cites=1, suggestions=3, 0.0s)
+2026-08-04 09:39:24 [agent] INFO QUERY START: "What weapons can goblins use?" (history=1 turns)
+2026-08-04 09:39:24 [agent] INFO   iter 1: DONE called (0.0s)
+2026-08-04 09:39:24 [agent] INFO QUERY DONE: "What weapons can goblins use?" -> "A goblin has AC 13 and 7 hit points. It attacks with a shortsword dealing 1d6+2 damage." (iters=1, cites=1, suggestions=3, 0.0s)
+2026-08-04 09:39:24 [pipeline] INFO JOB cf5897b5 START doc=dab43b45 user=a8b948a2 pdf=original.pdf
+2026-08-04 09:39:24 [pipeline] INFO JOB cf5897b5 STAGE 1: extracting text from original.pdf
+2026-08-04 09:39:24 [pipeline] INFO JOB cf5897b5 STAGE 1 DONE: 4 pages, 0 OCR, 977 chars, 0.0s
+2026-08-04 09:39:24 [pipeline] INFO JOB cf5897b5 COVER: extracted cover.jpg
+2026-08-04 09:39:24 [pipeline] INFO JOB cf5897b5 STAGE 2: detecting structure
+2026-08-04 09:39:24 [pipeline] INFO JOB cf5897b5 STAGE 2 DONE: 4 chapters, 4 nodes, 4 leaves, 0.0s
+2026-08-04 09:39:24 [pipeline] INFO JOB cf5897b5 STAGE 3: writing markdown files
+2026-08-04 09:39:24 [pipeline] INFO JOB cf5897b5 STAGE 3 DONE: 4 files written to data/a8b948a2/dab43b45/, 0.0s
+2026-08-04 09:39:24 [pipeline] INFO JOB cf5897b5 STAGE 4: enriching 4 sections
+2026-08-04 09:39:24 [pipeline] DEBUG JOB cf5897b5 ENRICH 1/4: 01_chapter_1_combat_rules.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:24 [pipeline] DEBUG JOB cf5897b5 ENRICH 2/4: 02_chapter_2_character_classes.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:24 [pipeline] DEBUG JOB cf5897b5 ENRICH 3/4: 03_chapter_3_spell_lists.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:24 [pipeline] DEBUG JOB cf5897b5 ENRICH 4/4: 04_chapter_4_monster_bestiary.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:24 [pipeline] INFO JOB cf5897b5 STAGE 4 DONE: 4/4 sections enriched, 0.0s
+2026-08-04 09:39:24 [pipeline] INFO JOB cf5897b5 STAGE 5: building FTS5 index
+2026-08-04 09:39:24 [pipeline] INFO JOB cf5897b5 STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-04 09:39:24 [pipeline] INFO JOB cf5897b5 COMPLETE: doc=dab43b45 title="rpg"
+2026-08-04 09:39:24 [agent] INFO QUERY START: "What is a goblin's AC?" (history=0 turns)
+2026-08-04 09:39:24 [agent] DEBUG fts_search: query='goblin AC' db=/tmp/pytest-of-jason/pytest-212/test_session_list_shows_sessio0/db uid=a8b948a23a8841daa5fb4791226d4bea -> 4 results
+2026-08-04 09:39:24 [agent] INFO   iter 1: fts_search({"query": "goblin AC"}) -> [{"path": "dab43b45c15d498bad92daf941ca1934/04_chapter_4_monster_bestiary.md", "title": "Chapter 4: Monster Bestiary", "... (0.0s)
+2026-08-04 09:39:24 [agent] INFO   iter 2: read_file({"path": "DUMMY/combat.md"}) -> (file not found: DUMMY/combat.md)... (0.0s)
+2026-08-04 09:39:24 [agent] INFO   iter 3: DONE called (0.0s)
+2026-08-04 09:39:24 [agent] INFO QUERY DONE: "What is a goblin's AC?" -> "A goblin has AC 13 and 7 hit points. It attacks with a shortsword dealing 1d6+2 damage." (iters=3, cites=1, suggestions=3, 0.0s)
+2026-08-04 09:39:24 [pipeline] INFO JOB 6919e581 START doc=59040a76 user=6f279198 pdf=original.pdf
+2026-08-04 09:39:24 [pipeline] INFO JOB 6919e581 STAGE 1: extracting text from original.pdf
+2026-08-04 09:39:24 [pipeline] INFO JOB 6919e581 STAGE 1 DONE: 4 pages, 0 OCR, 977 chars, 0.0s
+2026-08-04 09:39:24 [pipeline] INFO JOB 6919e581 COVER: extracted cover.jpg
+2026-08-04 09:39:24 [pipeline] INFO JOB 6919e581 STAGE 2: detecting structure
+2026-08-04 09:39:24 [pipeline] INFO JOB 6919e581 STAGE 2 DONE: 4 chapters, 4 nodes, 4 leaves, 0.0s
+2026-08-04 09:39:24 [pipeline] INFO JOB 6919e581 STAGE 3: writing markdown files
+2026-08-04 09:39:24 [pipeline] INFO JOB 6919e581 STAGE 3 DONE: 4 files written to data/6f279198/59040a76/, 0.0s
+2026-08-04 09:39:24 [pipeline] INFO JOB 6919e581 STAGE 4: enriching 4 sections
+2026-08-04 09:39:24 [pipeline] DEBUG JOB 6919e581 ENRICH 1/4: 01_chapter_1_combat_rules.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:24 [pipeline] DEBUG JOB 6919e581 ENRICH 2/4: 02_chapter_2_character_classes.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:24 [pipeline] DEBUG JOB 6919e581 ENRICH 3/4: 03_chapter_3_spell_lists.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:24 [pipeline] DEBUG JOB 6919e581 ENRICH 4/4: 04_chapter_4_monster_bestiary.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:24 [pipeline] INFO JOB 6919e581 STAGE 4 DONE: 4/4 sections enriched, 0.0s
+2026-08-04 09:39:24 [pipeline] INFO JOB 6919e581 STAGE 5: building FTS5 index
+2026-08-04 09:39:24 [pipeline] INFO JOB 6919e581 STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-04 09:39:24 [pipeline] INFO JOB 6919e581 COMPLETE: doc=59040a76 title="rpg"
+2026-08-04 09:39:24 [agent] INFO QUERY START: "What is a goblin's AC?" (history=0 turns)
+2026-08-04 09:39:24 [agent] DEBUG fts_search: query='goblin AC' db=/tmp/pytest-of-jason/pytest-212/test_citation_links_to_pdf0/db uid=6f2791988c0446f99670bbe06ca863d1 -> 4 results
+2026-08-04 09:39:24 [agent] INFO   iter 1: fts_search({"query": "goblin AC"}) -> [{"path": "59040a76887e421c93c5ac09ad62b564/04_chapter_4_monster_bestiary.md", "title": "Chapter 4: Monster Bestiary", "... (0.0s)
+2026-08-04 09:39:24 [agent] INFO   iter 2: read_file({"path": "DUMMY/combat.md"}) -> (file not found: DUMMY/combat.md)... (0.0s)
+2026-08-04 09:39:24 [agent] INFO   iter 3: DONE called (0.0s)
+2026-08-04 09:39:24 [agent] INFO QUERY DONE: "What is a goblin's AC?" -> "A goblin has AC 13 and 7 hit points. It attacks with a shortsword dealing 1d6+2 damage." (iters=3, cites=1, suggestions=3, 0.0s)
+2026-08-04 09:39:25 [pipeline] INFO JOB 3c41bfc0 START doc=faa9867d user=ed3abcfb pdf=original.pdf
+2026-08-04 09:39:25 [pipeline] INFO JOB 3c41bfc0 STAGE 1: extracting text from original.pdf
+2026-08-04 09:39:25 [pipeline] INFO JOB 3c41bfc0 STAGE 1 DONE: 4 pages, 0 OCR, 977 chars, 0.0s
+2026-08-04 09:39:25 [pipeline] INFO JOB 3c41bfc0 COVER: extracted cover.jpg
+2026-08-04 09:39:25 [pipeline] INFO JOB 3c41bfc0 STAGE 2: detecting structure
+2026-08-04 09:39:25 [pipeline] INFO JOB 3c41bfc0 STAGE 2 DONE: 4 chapters, 4 nodes, 4 leaves, 0.0s
+2026-08-04 09:39:25 [pipeline] INFO JOB 3c41bfc0 STAGE 3: writing markdown files
+2026-08-04 09:39:25 [pipeline] INFO JOB 3c41bfc0 STAGE 3 DONE: 4 files written to data/ed3abcfb/faa9867d/, 0.0s
+2026-08-04 09:39:25 [pipeline] INFO JOB 3c41bfc0 STAGE 4: enriching 4 sections
+2026-08-04 09:39:25 [pipeline] DEBUG JOB 3c41bfc0 ENRICH 1/4: 01_chapter_1_combat_rules.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:25 [pipeline] DEBUG JOB 3c41bfc0 ENRICH 2/4: 02_chapter_2_character_classes.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:25 [pipeline] DEBUG JOB 3c41bfc0 ENRICH 3/4: 03_chapter_3_spell_lists.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:25 [pipeline] DEBUG JOB 3c41bfc0 ENRICH 4/4: 04_chapter_4_monster_bestiary.md -> summary="Rules for combat and character classes in the RPG." keywords=['combat', 'AC', 'goblin', 'knight', 'sorcerer']
+2026-08-04 09:39:25 [pipeline] INFO JOB 3c41bfc0 STAGE 4 DONE: 4/4 sections enriched, 0.0s
+2026-08-04 09:39:25 [pipeline] INFO JOB 3c41bfc0 STAGE 5: building FTS5 index
+2026-08-04 09:39:25 [pipeline] INFO JOB 3c41bfc0 STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-04 09:39:25 [pipeline] INFO JOB 3c41bfc0 COMPLETE: doc=faa9867d title="rpg"
+2026-08-04 09:39:25 [agent] INFO QUERY START: "What is a goblin's AC?" (history=0 turns)
+2026-08-04 09:39:25 [agent] DEBUG fts_search: query='goblin AC' db=/tmp/pytest-of-jason/pytest-212/test_suggestion_buttons_have_d0/db uid=ed3abcfb55f7423195ac1de0a1ca5687 -> 4 results
+2026-08-04 09:39:25 [agent] INFO   iter 1: fts_search({"query": "goblin AC"}) -> [{"path": "faa9867df34d4de58b0625dc593f5183/04_chapter_4_monster_bestiary.md", "title": "Chapter 4: Monster Bestiary", "... (0.0s)
+2026-08-04 09:39:25 [agent] INFO   iter 2: read_file({"path": "DUMMY/combat.md"}) -> (file not found: DUMMY/combat.md)... (0.0s)
+2026-08-04 09:39:25 [agent] INFO   iter 3: DONE called (0.0s)
+2026-08-04 09:39:25 [agent] INFO QUERY DONE: "What is a goblin's AC?" -> "A goblin has AC 13 and 7 hit points. It attacks with a shortsword dealing 1d6+2 damage." (iters=3, cites=1, suggestions=3, 0.0s)
+2026-08-04 09:39:25 [agent] INFO QUERY START: "What is goblin AC?" (history=0 turns)
+2026-08-04 09:39:25 [agent] INFO   iter 1: read_file({"path": "doc/combat.md"}) -> # Combat Rules Goblin AC 13.... (0.0s)
+2026-08-04 09:39:25 [agent] INFO   iter 2: DEDUP skip read_file(doc/combat.md) — already read (0.0s)
+2026-08-04 09:39:25 [agent] INFO   iter 3: DONE called (0.0s)
+2026-08-04 09:39:25 [agent] INFO QUERY DONE: "What is goblin AC?" -> "Done." (iters=3, cites=0, suggestions=0, 0.0s)
+2026-08-04 09:39:25 [agent] INFO QUERY START: "Find goblin" (history=0 turns)
+2026-08-04 09:39:25 [agent] INFO   iter 1: fts_search({"query": "goblin"}) -> []... (0.0s)
+2026-08-04 09:39:25 [agent] INFO   iter 2: DEDUP skip fts_search(goblin) — already searched (0.0s)
+2026-08-04 09:39:25 [agent] INFO   iter 3: DONE called (0.0s)
+2026-08-04 09:39:25 [agent] INFO QUERY DONE: "Find goblin" -> "Done." (iters=3, cites=0, suggestions=0, 0.0s)
+2026-08-04 09:39:25 [agent] INFO QUERY START: "test" (history=0 turns)
+2026-08-04 09:39:25 [agent] INFO   iter 1: fts_search({"query": "x"}) -> []... (0.0s)
+2026-08-04 09:39:25 [agent] INFO   iter 2: DEDUP skip fts_search(x) — already searched (0.0s)
+2026-08-04 09:39:25 [agent] INFO   iter 3: DEDUP skip fts_search(x) — already searched (0.0s)
+2026-08-04 09:39:25 [agent] INFO   iter 4: DEDUP skip fts_search(x) — already searched (0.0s)
+2026-08-04 09:39:25 [agent] INFO   iter 5: DEDUP skip fts_search(x) — already searched (0.0s)
+2026-08-04 09:39:25 [agent] INFO   iter 6: DEDUP skip fts_search(x) — already searched (0.0s)
+2026-08-04 09:39:25 [agent] INFO   iter 7: DEDUP skip fts_search(x) — already searched (0.0s)
+2026-08-04 09:39:25 [agent] INFO   iter 8: DEDUP skip fts_search(x) — already searched (0.0s)
+2026-08-04 09:39:25 [agent] INFO   iter 9: DEDUP skip fts_search(x) — already searched (0.0s)
+2026-08-04 09:39:25 [agent] INFO   iter 10: DEDUP skip fts_search(x) — already searched (0.0s)
+2026-08-04 09:39:25 [agent] INFO   iter 11: DEDUP skip fts_search(x) — already searched (0.0s)
+2026-08-04 09:39:25 [agent] INFO   iter 12: DEDUP skip fts_search(x) — already searched (0.0s)
+2026-08-04 09:39:25 [agent] INFO   iter 13: DEDUP skip fts_search(x) — already searched (0.0s)
+2026-08-04 09:39:25 [agent] INFO   iter 14: DEDUP skip fts_search(x) — already searched (0.0s)
+2026-08-04 09:39:25 [agent] INFO   iter 15: DEDUP skip fts_search(x) — already searched (0.0s)
+2026-08-04 09:39:25 [agent] WARNING QUERY BUDGET EXHAUSTED: "test" (iters=15, 0.0s)
+2026-08-04 09:39:25 [agent] INFO QUERY START: "impossible question" (history=0 turns)
+2026-08-04 09:39:25 [agent] INFO   iter 1: fts_search({"query": "x"}) -> []... (0.0s)
+2026-08-04 09:39:25 [agent] INFO   iter 2: DEDUP skip fts_search(x) — already searched (0.0s)
+2026-08-04 09:39:25 [agent] INFO   iter 3: DEDUP skip fts_search(x) — already searched (0.0s)
+2026-08-04 09:39:25 [agent] WARNING QUERY BUDGET EXHAUSTED: "impossible question" (iters=3, 0.0s)
+2026-08-04 09:39:25 [pipeline] INFO JOB 45d6089a START doc=7af06135 user=025876cf pdf=original.pdf
+2026-08-04 09:39:25 [pipeline] INFO JOB 45d6089a STAGE 1: extracting text from original.pdf
+2026-08-04 09:39:25 [pipeline] INFO JOB 45d6089a STAGE 1 DONE: 4 pages, 0 OCR, 977 chars, 0.0s
+2026-08-04 09:39:25 [pipeline] INFO JOB 45d6089a COVER: extracted cover.jpg
+2026-08-04 09:39:25 [pipeline] INFO JOB 45d6089a STAGE 2: detecting structure
+2026-08-04 09:39:25 [pipeline] INFO JOB 45d6089a STAGE 2 DONE: 4 chapters, 4 nodes, 4 leaves, 0.0s
+2026-08-04 09:39:25 [pipeline] INFO JOB 45d6089a STAGE 3: writing markdown files
+2026-08-04 09:39:25 [pipeline] INFO JOB 45d6089a STAGE 3 DONE: 4 files written to data/025876cf/7af06135/, 0.0s
+2026-08-04 09:39:25 [pipeline] INFO JOB 45d6089a STAGE 4: enriching 4 sections
+2026-08-04 09:39:26 [pipeline] DEBUG JOB 45d6089a ENRICH 1/4: 01_chapter_1_combat_rules.md -> summary="This section introduces combat rules, including how to calcu" keywords=['armor class', 'hit points', 'goblin', 'knight', 'barbarian', 'sorcerer', 'mystic']
+2026-08-04 09:39:28 [pipeline] DEBUG JOB 45d6089a ENRICH 2/4: 02_chapter_2_character_classes.md -> summary="This section introduces four character classes with differen" keywords=['knights', 'barbarians', 'sorcerers', 'mystics', 'hit dice', 'armor class', 'spells', 'fireball']
+2026-08-04 09:39:29 [pipeline] DEBUG JOB 45d6089a ENRICH 3/4: 03_chapter_3_spell_lists.md -> summary="This section covers basic spell descriptions including Fireb" keywords=['fireball', 'healing word', 'goblin', 'orc', 'dragon', 'skeleton']
+2026-08-04 09:39:29 [pipeline] DEBUG JOB 45d6089a ENRICH 4/4: 04_chapter_4_monster_bestiary.md -> summary="This section details various monsters including goblins, orc" keywords=['monster', 'bestiary', 'goblin', 'orc', 'dragon', 'skeleton', 'ac', 'hp']
+2026-08-04 09:39:29 [pipeline] INFO JOB 45d6089a STAGE 4 DONE: 4/4 sections enriched, 4.2s
+2026-08-04 09:39:29 [pipeline] INFO JOB 45d6089a STAGE 5: building FTS5 index
+2026-08-04 09:39:29 [pipeline] INFO JOB 45d6089a STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-04 09:39:29 [pipeline] INFO JOB 45d6089a COMPLETE: doc=7af06135 title="rpg"
+2026-08-04 09:39:29 [agent] INFO QUERY START: "What is a goblin's AC?" (history=0 turns)
+2026-08-04 09:39:30 [agent] DEBUG fts_search: query='goblin AC' db=/tmp/pytest-of-jason/pytest-212/test_real_pipeline_and_qa0/db uid=025876cf642a4d8190645efc10e50a51 -> 3 results
+2026-08-04 09:39:30 [agent] INFO   iter 1: fts_search({"query": "goblin AC"}) -> [{"path": "7af0613506d54e2486d3f19b152e3f34/04_chapter_4_monster_bestiary.md", "title": "Chapter 4: Monster Bestiary", "... (0.4s)
+2026-08-04 09:39:31 [agent] INFO   iter 2: read_file({"path": "7af0613506d54e2486d3f19b152e3f34/01_chapter_1_combat_rules.md"}) -> --- summary: "This section introduces combat rules, including how to calculate hits based on Armor Class (AC) and hit po... (0.9s)
+2026-08-04 09:39:32 [agent] INFO   iter 3: content without tool calls, re-prompting for done (1.5s)
+2026-08-04 09:39:35 [agent] INFO   iter 4: DONE called (2.7s)
+2026-08-04 09:39:35 [agent] INFO QUERY DONE: "What is a goblin's AC?" -> "A goblin's Armor Class (AC) is 13." (iters=4, cites=2, suggestions=0, 5.5s)
+2026-08-04 09:39:35 [pipeline] INFO JOB e46476e8 START doc=a8f03147 user=7c384e85 pdf=original.pdf
+2026-08-04 09:39:35 [pipeline] INFO JOB e46476e8 STAGE 1: extracting text from original.pdf
+2026-08-04 09:39:35 [pipeline] INFO JOB e46476e8 STAGE 1 DONE: 4 pages, 0 OCR, 977 chars, 0.0s
+2026-08-04 09:39:35 [pipeline] INFO JOB e46476e8 COVER: extracted cover.jpg
+2026-08-04 09:39:35 [pipeline] INFO JOB e46476e8 STAGE 2: detecting structure
+2026-08-04 09:39:35 [pipeline] INFO JOB e46476e8 STAGE 2 DONE: 4 chapters, 4 nodes, 4 leaves, 0.0s
+2026-08-04 09:39:35 [pipeline] INFO JOB e46476e8 STAGE 3: writing markdown files
+2026-08-04 09:39:35 [pipeline] INFO JOB e46476e8 STAGE 3 DONE: 4 files written to data/7c384e85/a8f03147/, 0.0s
+2026-08-04 09:39:35 [pipeline] INFO JOB e46476e8 STAGE 4: enriching 4 sections
+2026-08-04 09:39:36 [pipeline] DEBUG JOB e46476e8 ENRICH 1/4: 01_chapter_1_combat_rules.md -> summary="This section introduces combat rules, including how to deter" keywords=['armor class', 'hit points', 'attack bonus', 'goblin', 'knight', 'barbarian', 'sorcerer', 'mystic']
+2026-08-04 09:39:38 [pipeline] DEBUG JOB e46476e8 ENRICH 2/4: 02_chapter_2_character_classes.md -> summary="This section introduces four character classes with differen" keywords=['knights', 'barbarians', 'sorcerers', 'mystics', 'hit dice', 'armor class', 'spells', 'fireball']
+2026-08-04 09:39:39 [pipeline] DEBUG JOB e46476e8 ENRICH 3/4: 03_chapter_3_spell_lists.md -> summary="This section covers basic spell descriptions including Fireb" keywords=['fireball', 'healing word', 'goblin', 'orc', 'dragon', 'skeleton']
+2026-08-04 09:39:39 [pipeline] DEBUG JOB e46476e8 ENRICH 4/4: 04_chapter_4_monster_bestiary.md -> summary="This section details various monsters including goblin, orc," keywords=['monster', 'bestiary', 'goblin', 'orc', 'dragon', 'skeleton', 'attributes']
+2026-08-04 09:39:39 [pipeline] INFO JOB e46476e8 STAGE 4 DONE: 4/4 sections enriched, 4.2s
+2026-08-04 09:39:39 [pipeline] INFO JOB e46476e8 STAGE 5: building FTS5 index
+2026-08-04 09:39:39 [pipeline] INFO JOB e46476e8 STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-04 09:39:39 [pipeline] INFO JOB e46476e8 COMPLETE: doc=a8f03147 title="rpg"
+2026-08-04 09:39:40 [pipeline] INFO JOB f84d201a START doc=19359f46 user=130ef155 pdf=original.pdf
+2026-08-04 09:39:40 [pipeline] INFO JOB f84d201a STAGE 1: extracting text from original.pdf
+2026-08-04 09:39:40 [pipeline] INFO JOB f84d201a STAGE 1 DONE: 1 pages, 0 OCR, 46 chars, 0.1s
+2026-08-04 09:39:40 [pipeline] INFO JOB f84d201a COVER: extracted cover.jpg
+2026-08-04 09:39:40 [pipeline] INFO JOB f84d201a STAGE 2: detecting structure
+2026-08-04 09:39:40 [pipeline] INFO JOB f84d201a STAGE 2 DONE: 1 chapters, 1 nodes, 1 leaves, 0.0s
+2026-08-04 09:39:40 [pipeline] INFO JOB f84d201a STAGE 3: writing markdown files
+2026-08-04 09:39:40 [pipeline] INFO JOB f84d201a STAGE 3 DONE: 1 files written to data/130ef155/19359f46/, 0.0s
+2026-08-04 09:39:40 [pipeline] INFO JOB f84d201a STAGE 4: enriching 1 sections
+2026-08-04 09:39:40 [pipeline] DEBUG JOB f84d201a ENRICH 1/1: 01_chapter_1_monsterscid10goblins_have_ac_15.md -> summary="Monster rules." keywords=['monster']
+2026-08-04 09:39:40 [pipeline] INFO JOB f84d201a STAGE 4 DONE: 1/1 sections enriched, 0.0s
+2026-08-04 09:39:40 [pipeline] INFO JOB f84d201a STAGE 5: building FTS5 index
+2026-08-04 09:39:40 [pipeline] INFO JOB f84d201a STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-04 09:39:40 [pipeline] INFO JOB f84d201a COMPLETE: doc=19359f46 title="book"
+2026-08-04 09:39:40 [pipeline] INFO JOB 0dc851d8 START doc=repro_do user=83782f06 pdf=original.pdf
+2026-08-04 09:39:40 [pipeline] INFO JOB 0dc851d8 STAGE 1: extracting text from original.pdf
+2026-08-04 09:39:40 [pipeline] INFO JOB 0dc851d8 STAGE 1 DONE: 1 pages, 0 OCR, 44 chars, 0.1s
+2026-08-04 09:39:40 [pipeline] INFO JOB 0dc851d8 COVER: extracted cover.jpg
+2026-08-04 09:39:40 [pipeline] INFO JOB 0dc851d8 STAGE 2: detecting structure
+2026-08-04 09:39:40 [pipeline] INFO JOB 0dc851d8 STAGE 2 DONE: 1 chapters, 1 nodes, 1 leaves, 0.0s
+2026-08-04 09:39:40 [pipeline] INFO JOB 0dc851d8 STAGE 3: writing markdown files
+2026-08-04 09:39:40 [pipeline] INFO JOB 0dc851d8 STAGE 3 DONE: 1 files written to data/83782f06/repro_do/, 0.0s
+2026-08-04 09:39:40 [pipeline] INFO JOB 0dc851d8 STAGE 4: enriching 1 sections
+2026-08-04 09:39:40 [pipeline] DEBUG JOB 0dc851d8 ENRICH 1/1: 01_chapter_1_combatcid10goblins_have_ac_15.md -> summary="Reprocessed." keywords=['combat']
+2026-08-04 09:39:40 [pipeline] INFO JOB 0dc851d8 STAGE 4 DONE: 1/1 sections enriched, 0.0s
+2026-08-04 09:39:40 [pipeline] INFO JOB 0dc851d8 STAGE 5: building FTS5 index
+2026-08-04 09:39:40 [pipeline] INFO JOB 0dc851d8 STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-04 09:39:40 [pipeline] INFO JOB 0dc851d8 COMPLETE: doc=repro_do title="Repro Book"
+2026-08-04 09:39:40 [pipeline] INFO JOB 1df7882b START doc=bad_doc user=0ebec0f2 pdf=bad.pdf
+2026-08-04 09:39:40 [pipeline] INFO JOB 1df7882b STAGE 1: extracting text from bad.pdf
+2026-08-04 09:39:40 [pipeline] ERROR JOB 1df7882b FAILED: doc=bad_doc error=Stream has ended unexpectedly
+2026-08-04 09:39:41 [agent] INFO QUERY START: "What is AC?" (history=0 turns)
+2026-08-04 09:39:41 [agent] DEBUG fts_search: query='dragon' db=/tmp/pytest-of-jason/pytest-212/test_alice_cannot_search_bobs_0/db uid=53776992a2dc4f519213918ec6da88a0 -> 0 results
+2026-08-04 09:39:41 [agent] DEBUG fts_search: query='goblin' db=/tmp/pytest-of-jason/pytest-212/test_alice_cannot_search_bobs_0/db uid=53776992a2dc4f519213918ec6da88a0 -> 1 results
+2026-08-04 09:39:42 [pipeline] INFO JOB 573bdccf START doc=ef1b4895 user=a1ab9b60 pdf=original.pdf
+2026-08-04 09:39:42 [pipeline] INFO JOB 573bdccf STAGE 1: extracting text from original.pdf
+2026-08-04 09:39:42 [pipeline] INFO JOB 573bdccf STAGE 1 DONE: 2 pages, 0 OCR, 71 chars, 0.1s
+2026-08-04 09:39:42 [pipeline] INFO JOB 573bdccf COVER: extracted cover.jpg
+2026-08-04 09:39:42 [pipeline] INFO JOB 573bdccf STAGE 2: detecting structure
+2026-08-04 09:39:42 [pipeline] INFO JOB 573bdccf STAGE 2 DONE: 1 chapters, 1 nodes, 1 leaves, 0.0s
+2026-08-04 09:39:42 [pipeline] INFO JOB 573bdccf STAGE 3: writing markdown files
+2026-08-04 09:39:42 [pipeline] INFO JOB 573bdccf STAGE 3 DONE: 1 files written to data/a1ab9b60/ef1b4895/, 0.0s
+2026-08-04 09:39:42 [pipeline] INFO JOB 573bdccf STAGE 4: enriching 1 sections
+2026-08-04 09:39:42 [pipeline] DEBUG JOB 573bdccf ENRICH 1/1: 01_chapter_1_combat.md -> summary="Combat rules for goblins." keywords=['goblin', 'combat', 'AC']
+2026-08-04 09:39:42 [pipeline] INFO JOB 573bdccf STAGE 4 DONE: 1/1 sections enriched, 0.0s
+2026-08-04 09:39:42 [pipeline] INFO JOB 573bdccf STAGE 5: building FTS5 index
+2026-08-04 09:39:42 [pipeline] INFO JOB 573bdccf STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-04 09:39:42 [pipeline] INFO JOB 573bdccf COMPLETE: doc=ef1b4895 title="combat"
+2026-08-04 09:39:42 [agent] DEBUG fts_search: query='goblin' db=/tmp/pytest-of-jason/pytest-212/test_full_pdf_processing_pipel0/db uid=a1ab9b60a34f41c8b01d14572ebffba6 -> 1 results
+2026-08-04 09:39:43 [pipeline] INFO JOB 14148854 START doc=d1 user=alice pdf=test.pdf
+2026-08-04 09:39:43 [pipeline] INFO JOB 14148854 STAGE 1: extracting text from test.pdf
+2026-08-04 09:39:43 [pipeline] INFO JOB 14148854 STAGE 1 DONE: 1 pages, 0 OCR, 46 chars, 0.1s
+2026-08-04 09:39:43 [pipeline] WARNING JOB 14148854 COVER: failed to extract cover: [Errno 2] No such file or directory: '/tmp/pytest-of-jason/pytest-212/test_runner_end_to_end0/data/alice/d1/cover.jpg'
+2026-08-04 09:39:43 [pipeline] INFO JOB 14148854 STAGE 2: detecting structure
+2026-08-04 09:39:43 [pipeline] INFO JOB 14148854 STAGE 2 DONE: 1 chapters, 1 nodes, 1 leaves, 0.0s
+2026-08-04 09:39:43 [pipeline] INFO JOB 14148854 STAGE 3: writing markdown files
+2026-08-04 09:39:43 [pipeline] INFO JOB 14148854 STAGE 3 DONE: 1 files written to data/alice/d1/, 0.0s
+2026-08-04 09:39:43 [pipeline] INFO JOB 14148854 STAGE 4: enriching 1 sections
+2026-08-04 09:39:43 [pipeline] DEBUG JOB 14148854 ENRICH 1/1: 01_chapter_1_combat.md -> summary="Combat rules." keywords=['combat', 'goblin']
+2026-08-04 09:39:43 [pipeline] INFO JOB 14148854 STAGE 4 DONE: 1/1 sections enriched, 0.0s
+2026-08-04 09:39:43 [pipeline] INFO JOB 14148854 STAGE 5: building FTS5 index
+2026-08-04 09:39:43 [pipeline] INFO JOB 14148854 STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-04 09:39:43 [pipeline] INFO JOB 14148854 COMPLETE: doc=d1 title="Test Book"
+2026-08-04 09:39:43 [pipeline] INFO JOB 0577bb17 START doc=d1 user=alice pdf=bad.pdf
+2026-08-04 09:39:43 [pipeline] INFO JOB 0577bb17 STAGE 1: extracting text from bad.pdf
+2026-08-04 09:39:43 [pipeline] ERROR JOB 0577bb17 FAILED: doc=d1 error=Stream has ended unexpectedly
+2026-08-04 09:39:43 [agent] DEBUG fts_search: query='goblin' db=/tmp/pytest-of-jason/pytest-212/test_fts_search0/db uid=alice -> 1 results
+2026-08-04 09:39:43 [agent] DEBUG fts_search: query='goblin' db=/tmp/pytest-of-jason/pytest-212/test_execute_dispatch0/db uid=alice -> 1 results
+2026-08-04 09:41:22 [pipeline] INFO JOB adf63657 START doc=b089ab69 user=1638caae pdf=original.pdf
+2026-08-04 09:41:22 [pipeline] INFO JOB adf63657 STAGE 1: extracting text from original.pdf

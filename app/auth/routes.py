@@ -5,9 +5,10 @@ from pathlib import Path
 from app.auth.passwords import verify_password
 from app.auth.session import sign_session
 from app.storage.shared_db import init_shared_db, get_user_by_username
+from app.web.template_utils import create_templates
 
 router = APIRouter()
-_templates = Jinja2Templates(directory=str(Path(__file__).parent.parent / "web" / "templates"))
+_templates = create_templates(str(Path(__file__).parent.parent / "web" / "templates"))
 _db_dir = None
 
 
