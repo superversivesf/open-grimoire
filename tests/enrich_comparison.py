@@ -151,32 +151,53 @@ def get_query_questions() -> list[str]:
 # ---------------------------------------------------------------------------
 
 def score_enrichment(result: EnrichResult, section: dict) -> float:
-    """Score an enrichment result 0-1 based on quality metrics."""
+    """Score an enrichment result 0-1 based on quality metrics.
+
+    Uses continuous bell-curve scoring for length-based metrics:
+    - Peak at optimal value, gradual decline on both sides
+    - Too short = not informative enough
+    - Too long = not a summary anymore
+    """
     score = 0.0
 
-    # JSON valid (30%)
+    # JSON valid (25%) — binary, this is pass/fail
     if result.json_valid:
-        score += 0.3
-
-    # Summary exists and is reasonable length (25%)
-    if result.summary_words >= 5:
-        score += 0.1
-    if result.summary_words >= 10:
-        score += 0.1
-    if result.summary_words > 50:
-        score -= 0.05  # too long, not a summary
-    if result.summary_words > 100:
-        score -= 0.05
-
-    # Keywords present (20%)
-    if result.keyword_count >= 3:
-        score += 0.1
-    if result.keyword_count >= 5:
-        score += 0.1
-
-    # Topic match — does summary mention words from the section title? (25%)
-    if result.topic_match:
         score += 0.25
+
+    # Summary length (30%) — bell curve peaking at ~25 words
+    # Optimal range: 15-35 words. Too short (<10) or too long (>50) penalized.
+    w = result.summary_words
+    if w == 0:
+        pass  # no points
+    elif w < 10:
+        score += 0.05 * (w / 10)  # ramp up from 0
+    elif w <= 35:
+        score += 0.25 + 0.05 * (1 - abs(w - 25) / 25)  # peak at 25 words
+    elif w <= 60:
+        score += 0.20 - 0.10 * ((w - 35) / 25)  # gradual decline
+    else:
+        score += max(0, 0.05 - 0.01 * ((w - 60) / 20))  # too long, minimal points
+
+    # Keyword count (25%) — bell curve peaking at ~6 keywords
+    # Too few (<3) = not enough index terms, too many (>10) = noisy
+    k = result.keyword_count
+    if k == 0:
+        pass
+    elif k < 3:
+        score += 0.05 * (k / 3)
+    elif k <= 8:
+        score += 0.20 + 0.05 * (1 - abs(k - 6) / 6)
+    else:
+        score += max(0, 0.15 - 0.02 * (k - 8))
+
+    # Topic match — does summary mention words from the section title? (20%)
+    if result.topic_match:
+        # Continuous: more title words matched = higher score
+        title_words = set(w.lower() for w in section["title"].split() if len(w) > 3)
+        if title_words:
+            summary_lower = result.summary.lower()
+            match_ratio = sum(1 for w in title_words if w in summary_lower) / len(title_words)
+            score += 0.20 * match_ratio
 
     return max(0.0, min(1.0, score))
 
@@ -258,32 +279,56 @@ async def test_enrich_model(model_name: str, samples: list[dict], cfg, num_ctx: 
 # ---------------------------------------------------------------------------
 
 def score_query(result: QueryResult) -> float:
-    """Score a query result 0-1."""
+    """Score a query result 0-1 using continuous curves.
+
+    - Answer length: peaks at 50-150 words (informative but concise)
+    - Done called: binary (terminated properly)
+    - Citations: more is better up to 3-4
+    - Efficiency: fewer iterations is better, gradual decline
+    """
     score = 0.0
 
-    # Answer exists and is substantive (30%)
-    if result.answer_words >= 10:
-        score += 0.15
-    if result.answer_words >= 30:
-        score += 0.15
+    # Answer length (25%) — bell curve peaking at ~80 words
+    w = result.answer_words
+    if w == 0:
+        pass
+    elif w < 20:
+        score += 0.05 * (w / 20)
+    elif w <= 150:
+        score += 0.20 + 0.05 * (1 - abs(w - 80) / 80)
+    elif w <= 300:
+        score += 0.15 - 0.05 * ((w - 150) / 150)
+    else:
+        score += max(0, 0.05)
 
-    # Done was called properly (25%)
+    # Done was called properly (25%) — binary
     if result.done_called:
         score += 0.25
 
-    # Has citations (25%)
-    if len(result.cites) >= 1:
-        score += 0.15
-    if len(result.cites) >= 2:
-        score += 0.1
+    # Citations (25%) — more is better up to 3, diminishing after
+    c = len(result.cites)
+    if c == 0:
+        pass
+    elif c == 1:
+        score += 0.10
+    elif c == 2:
+        score += 0.18
+    elif c <= 4:
+        score += 0.22 + 0.03 * (c - 2) / 2  # small bonus for 3-4
+    else:
+        score += 0.25  # capped
 
-    # Efficiency — fewer iterations is better (20%)
-    if result.iterations <= 3:
-        score += 0.2
-    elif result.iterations <= 6:
-        score += 0.1
-    elif result.iterations <= 10:
-        score += 0.05
+    # Efficiency — iterations used (25%) — continuous decline
+    # 1-3 iters = excellent, 4-6 = good, 7-10 = fair, 11+ = poor
+    it = result.iterations
+    if it <= 3:
+        score += 0.25
+    elif it <= 6:
+        score += 0.25 - 0.03 * (it - 3)  # 0.22-0.16
+    elif it <= 10:
+        score += 0.15 - 0.02 * (it - 6)  # 0.13-0.07
+    else:
+        score += max(0, 0.05 - 0.01 * (it - 10))
 
     return max(0.0, min(1.0, score))
 
@@ -331,19 +376,21 @@ async def test_query_model(model_name: str, questions: list[str], cfg, toolbox, 
 # Model Discovery
 # ---------------------------------------------------------------------------
 
-def get_available_models(cfg, tools_only: bool = True, max_local_size_mb: int = 12000) -> list[str]:
-    """Get available models, filtered by tool support and local GPU size."""
+def get_available_models(cfg, tools_only: bool = False, max_local_size_mb: int = 12000) -> list[str]:
+    """Get available models, filtered by size and capabilities.
+
+    For enrichment, we don't need tool support — just JSON output.
+    For query, we need tool calling.
+    """
     import urllib.request
     try:
-        data = json.loads(urllib.request.urlopen(f"{cfg.ollama_host}/api/tags").read())
+        data = json.loads(urllib_request.urlopen(f"{cfg.ollama_host}/api/tags").read())
     except Exception:
         return []
 
     models = []
     for m in data["models"]:
         caps = m.get("capabilities", [])
-        if tools_only and "tools" not in caps:
-            continue
         name = m["name"]
         size_mb = m.get("size", 0) // 1024 // 1024
         is_cloud = ":cloud" in name
@@ -352,6 +399,12 @@ def get_available_models(cfg, tools_only: bool = True, max_local_size_mb: int = 
             continue
         # Skip models too large for local GPU
         if not is_cloud and size_mb > max_local_size_mb:
+            continue
+        # For query mode, require tool support. For enrich, any model works.
+        if tools_only and "tools" not in caps:
+            continue
+        # Skip embedding models
+        if "completion" not in caps and "tools" not in caps:
             continue
         models.append(name)
 
@@ -451,8 +504,10 @@ async def main():
     if args.models:
         model_list = args.models.split(",")
     else:
-        model_list = get_available_models(cfg)
-        print(f"Auto-detected models with tool support: {model_list}")
+        # Enrichment doesn't need tool support; query does
+        needs_tools = args.mode == "query"
+        model_list = get_available_models(cfg, tools_only=needs_tools)
+        print(f"Auto-detected models ({'tool-support' if needs_tools else 'all'}): {model_list}")
 
     if not model_list:
         print("No models available. Check Ollama is running.")
