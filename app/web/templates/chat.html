@@ -28,7 +28,8 @@
       hx-target="#chat-log"
       hx-swap="beforeend"
       hx-indicator="#chat-spinner"
-      hx-disabled-elt="#chat-form button, #chat-form input">
+      hx-disabled-elt="#chat-form button, #chat-form input"
+      hx-on::after-request="this.querySelector('input[name=question]').value=''">
   <input type="text" name="question" placeholder="Ask a follow-up question..." required>
   <button type="submit" class="rpg-btn">Send &#9654;</button>
 </form>
