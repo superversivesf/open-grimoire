@@ -1,51 +1,131 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
   <defs>
-    <linearGradient id="bookCover" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#3d2b5e"/>
+    <!-- deep background glow -->
+    <radialGradient id="bgGlow" cx="50%" cy="55%" r="60%">
+      <stop offset="0%" stop-color="#4a2d7a" stop-opacity="0.6"/>
+      <stop offset="30%" stop-color="#2a1a4a" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#1a1625" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- book cover gradient - more vibrant -->
+    <linearGradient id="bookCoverL" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#5a3a8e"/>
+      <stop offset="50%" stop-color="#3d2b5e"/>
       <stop offset="100%" stop-color="#1e1a2e"/>
     </linearGradient>
-    <linearGradient id="pages" x1="50%" y1="0%" x2="50%" y2="100%">
-      <stop offset="0%" stop-color="#f5f0e8"/>
-      <stop offset="100%" stop-color="#d4c8b8"/>
+    <linearGradient id="bookCoverR" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#5a3a8e"/>
+      <stop offset="50%" stop-color="#3d2b5e"/>
+      <stop offset="100%" stop-color="#1e1a2e"/>
     </linearGradient>
+
+    <!-- page gradient with warmth -->
+    <linearGradient id="pages" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#fff5e0"/>
+      <stop offset="40%" stop-color="#f0e4d0"/>
+      <stop offset="100%" stop-color="#c8b8a0"/>
+    </linearGradient>
+
+    <!-- page warmth glow from runes -->
+    <radialGradient id="pageGlow" cx="50%" cy="20%" r="60%">
+      <stop offset="0%" stop-color="#ffb74d" stop-opacity="0.25"/>
+      <stop offset="50%" stop-color="#ff8a3d" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="#ffb74d" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- intense rune glow -->
     <radialGradient id="runeGlow" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#ffb74d" stop-opacity="0.9"/>
-      <stop offset="40%" stop-color="#b388ff" stop-opacity="0.6"/>
+      <stop offset="0%" stop-color="#ffd966" stop-opacity="1"/>
+      <stop offset="30%" stop-color="#ffb74d" stop-opacity="0.7"/>
+      <stop offset="60%" stop-color="#b388ff" stop-opacity="0.4"/>
       <stop offset="100%" stop-color="#b388ff" stop-opacity="0"/>
     </radialGradient>
-    <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="2.5" result="blur"/>
+
+    <!-- amber rune gradient -->
+    <radialGradient id="amberRune" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#fff3a0" stop-opacity="1"/>
+      <stop offset="40%" stop-color="#ffb74d" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#ff8a3d" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- purple rune gradient -->
+    <radialGradient id="purpleRune" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#e0c4ff" stop-opacity="1"/>
+      <stop offset="40%" stop-color="#b388ff" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#7c4dff" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- strong glow filter -->
+    <filter id="strongGlow" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur stdDeviation="3" result="blur1"/>
+      <feGaussianBlur stdDeviation="6" in="SourceGraphic" result="blur2"/>
       <feMerge>
-        <feMergeNode in="blur"/>
+        <feMergeNode in="blur2"/>
+        <feMergeNode in="blur1"/>
         <feMergeNode in="SourceGraphic"/>
       </feMerge>
     </filter>
+
+    <!-- soft ambient glow -->
+    <filter id="ambientGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="8"/>
+    </filter>
+
+    <!-- page edge highlight -->
+    <linearGradient id="pageHighlight" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- book spine glow -->
+    <linearGradient id="spineGlow" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#ffd966" stop-opacity="0.8"/>
+      <stop offset="50%" stop-color="#b388ff" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#7c4dff" stop-opacity="0.2"/>
+    </linearGradient>
   </defs>
 
-  <!-- background circle -->
-  <circle cx="64" cy="64" r="60" fill="#1a1625"/>
+  <!-- background -->
+  <circle cx="64" cy="64" r="62" fill="#1a1625"/>
+  <circle cx="64" cy="64" r="62" fill="url(#bgGlow)"/>
 
-  <!-- book - left cover (back) -->
+  <!-- ambient glow behind everything -->
+  <ellipse cx="64" cy="48" rx="40" ry="28" fill="#b388ff" opacity="0.15" filter="url(#ambientGlow)"/>
+  <ellipse cx="64" cy="44" rx="25" ry="18" fill="#ffb74d" opacity="0.2" filter="url(#ambientGlow)"/>
+
+  <!-- book - left cover -->
   <path d="M 64 28 Q 40 24 20 30 L 20 32 L 22 34 L 22 98 L 60 100 L 64 96 Z"
-        fill="url(#bookCover)" stroke="#4a3a6e" stroke-width="1.5" stroke-linejoin="round"/>
+        fill="url(#bookCoverL)" stroke="#6a4aae" stroke-width="1.5" stroke-linejoin="round"/>
 
-  <!-- book - right cover (front) -->
+  <!-- book - right cover -->
   <path d="M 64 28 Q 88 24 108 30 L 108 32 L 106 34 L 106 98 L 68 100 L 64 96 Z"
-        fill="url(#bookCover)" stroke="#4a3a6e" stroke-width="1.5" stroke-linejoin="round"/>
+        fill="url(#bookCoverR)" stroke="#6a4aae" stroke-width="1.5" stroke-linejoin="round"/>
+
+  <!-- cover decorative borders -->
+  <path d="M 24 36 L 24 96" stroke="#7c4dff" stroke-width="0.5" opacity="0.4" fill="none"/>
+  <path d="M 104 36 L 104 96" stroke="#7c4dff" stroke-width="0.5" opacity="0.4" fill="none"/>
 
   <!-- left page -->
   <path d="M 64 30 L 26 33 L 26 96 L 62 98 L 64 96 Z"
-        fill="url(#pages)" opacity="0.95"/>
+        fill="url(#pages)"/>
+  <path d="M 64 30 L 26 33 L 26 96 L 62 98 L 64 96 Z"
+        fill="url(#pageGlow)"/>
 
   <!-- right page -->
   <path d="M 64 30 L 102 33 L 102 96 L 66 98 L 64 96 Z"
-        fill="url(#pages)" opacity="0.95"/>
+        fill="url(#pages)"/>
+  <path d="M 64 30 L 102 33 L 102 96 L 66 98 L 64 96 Z"
+        fill="url(#pageGlow)"/>
 
-  <!-- spine shadow -->
-  <path d="M 64 28 L 64 96 L 62 98 L 62 30 Z" fill="#2a1e40" opacity="0.6"/>
+  <!-- page top edge highlight -->
+  <path d="M 26 33 L 64 30 L 102 33" stroke="url(#pageHighlight)" stroke-width="1.5" fill="none"/>
 
-  <!-- page line details (left) -->
-  <g stroke="#a09080" stroke-width="0.8" opacity="0.4">
+  <!-- glowing spine -->
+  <path d="M 64 28 L 64 96" stroke="url(#spineGlow)" stroke-width="2.5" fill="none" filter="url(#strongGlow)"/>
+  <path d="M 64 28 L 64 96" stroke="#ffd966" stroke-width="1" fill="none" opacity="0.8"/>
+
+  <!-- page text lines (left) -->
+  <g stroke="#a09080" stroke-width="0.7" opacity="0.35">
     <line x1="32" y1="42" x2="56" y2="43"/>
     <line x1="32" y1="48" x2="56" y2="49"/>
     <line x1="32" y1="54" x2="52" y2="55"/>
@@ -56,8 +136,8 @@
     <line x1="32" y1="84" x2="56" y2="85"/>
   </g>
 
-  <!-- page line details (right) -->
-  <g stroke="#a09080" stroke-width="0.8" opacity="0.4">
+  <!-- page text lines (right) -->
+  <g stroke="#a09080" stroke-width="0.7" opacity="0.35">
     <line x1="72" y1="43" x2="96" y2="42"/>
     <line x1="72" y1="49" x2="96" y2="48"/>
     <line x1="72" y1="55" x2="96" y2="54"/>
@@ -68,30 +148,62 @@
     <line x1="72" y1="85" x2="96" y2="84"/>
   </g>
 
-  <!-- glowing runes rising from the book -->
-  <g filter="url(#softGlow)">
-    <!-- central rune -->
-    <circle cx="64" cy="55" r="3" fill="#ffb74d"/>
-    <!-- surrounding runes -->
-    <circle cx="50" cy="48" r="1.8" fill="#b388ff"/>
-    <circle cx="78" cy="48" r="1.8" fill="#b388ff"/>
-    <circle cx="44" cy="38" r="1.5" fill="#ffb74d" opacity="0.8"/>
-    <circle cx="84" cy="38" r="1.5" fill="#ffb74d" opacity="0.8"/>
-    <circle cx="64" cy="35" r="1.5" fill="#b388ff"/>
-    <!-- sparkle trails -->
-    <circle cx="40" cy="28" r="1" fill="#ffb74d" opacity="0.6"/>
-    <circle cx="88" cy="28" r="1" fill="#ffb74d" opacity="0.6"/>
-    <circle cx="64" cy="22" r="1.2" fill="#b388ff" opacity="0.5"/>
-    <circle cx="54" cy="26" r="0.8" fill="#ffb74d" opacity="0.5"/>
-    <circle cx="74" cy="26" r="0.8" fill="#ffb74d" opacity="0.5"/>
+  <!-- glowing rune symbols on pages -->
+  <g filter="url(#strongGlow)">
+    <!-- central large rune - raven/eye shape -->
+    <path d="M 64 48 Q 58 44 56 48 Q 58 52 64 50 Q 70 52 72 48 Q 70 44 64 48 Z"
+          fill="#ffd966" opacity="0.9"/>
+    <!-- rune vertical stroke -->
+    <line x1="64" y1="46" x2="64" y2="54" stroke="#ffb74d" stroke-width="1.2"/>
+
+    <!-- left page runes -->
+    <path d="M 42 52 L 46 56 L 42 60 L 38 56 Z" fill="#b388ff" opacity="0.7"/>
+    <circle cx="40" cy="56" r="1.5" fill="#e0c4ff"/>
+
+    <!-- right page runes -->
+    <path d="M 86 52 L 90 56 L 86 60 L 82 56 Z" fill="#b388ff" opacity="0.7"/>
+    <circle cx="88" cy="56" r="1.5" fill="#e0c4ff"/>
   </g>
 
-  <!-- soft glow behind runes -->
-  <ellipse cx="64" cy="40" rx="30" ry="20" fill="url(#runeGlow)" opacity="0.5"/>
+  <!-- rising glowing particles - amber -->
+  <g filter="url(#strongGlow)">
+    <circle cx="64" cy="38" r="3" fill="url(#amberRune)"/>
+    <circle cx="50" cy="42" r="2.2" fill="url(#amberRune)"/>
+    <circle cx="78" cy="42" r="2.2" fill="url(#amberRune)"/>
+    <circle cx="44" cy="32" r="1.8" fill="#ffb74d" opacity="0.8"/>
+    <circle cx="84" cy="32" r="1.8" fill="#ffb74d" opacity="0.8"/>
+  </g>
 
-  <!-- book corner decorations (gold studs) -->
-  <circle cx="26" cy="34" r="1.5" fill="#ffb74d" opacity="0.7"/>
-  <circle cx="102" cy="34" r="1.5" fill="#ffb74d" opacity="0.7"/>
-  <circle cx="26" cy="96" r="1.5" fill="#ffb74d" opacity="0.7"/>
-  <circle cx="102" cy="96" r="1.5" fill="#ffb74d" opacity="0.7"/>
+  <!-- rising glowing particles - purple -->
+  <g filter="url(#strongGlow)">
+    <circle cx="58" cy="28" r="2" fill="url(#purpleRune)"/>
+    <circle cx="70" cy="28" r="2" fill="url(#purpleRune)"/>
+    <circle cx="64" cy="20" r="1.5" fill="#e0c4ff" opacity="0.7"/>
+  </g>
+
+  <!-- tiny sparkles -->
+  <g filter="url(#strongGlow)">
+    <circle cx="40" cy="22" r="1" fill="#ffd966" opacity="0.6"/>
+    <circle cx="88" cy="22" r="1" fill="#ffd966" opacity="0.6"/>
+    <circle cx="54" cy="18" r="0.8" fill="#b388ff" opacity="0.5"/>
+    <circle cx="74" cy="18" r="0.8" fill="#b388ff" opacity="0.5"/>
+    <circle cx="64" cy="14" r="0.6" fill="#ffd966" opacity="0.4"/>
+  </g>
+
+  <!-- outer glow halo -->
+  <ellipse cx="64" cy="40" rx="35" ry="22" fill="url(#runeGlow)" opacity="0.4" filter="url(#ambientGlow)"/>
+
+  <!-- gold corner studs with glow -->
+  <g filter="url(#strongGlow)">
+    <circle cx="26" cy="34" r="2" fill="#ffd966"/>
+    <circle cx="102" cy="34" r="2" fill="#ffd966"/>
+    <circle cx="26" cy="96" r="2" fill="#ffd966"/>
+    <circle cx="102" cy="96" r="2" fill="#ffd966"/>
+  </g>
+
+  <!-- cover runic borders -->
+  <g stroke="#ffd966" stroke-width="0.5" opacity="0.4" fill="none">
+    <path d="M 26 36 L 26 40 M 26 44 L 26 48 M 26 52 L 26 56 M 26 60 L 26 64 M 26 68 L 26 72 M 26 76 L 26 80 M 26 84 L 26 88 M 26 92 L 26 94"/>
+    <path d="M 102 36 L 102 40 M 102 44 L 102 48 M 102 52 L 102 56 M 102 60 L 102 64 M 102 68 L 102 72 M 102 76 L 102 80 M 102 84 L 102 88 M 102 92 L 102 94"/>
+  </g>
 </svg>
