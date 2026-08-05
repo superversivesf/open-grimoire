@@ -2,7 +2,7 @@
 {% block title %}Login — Open Grimoire{% endblock %}
 {% block content %}
 <div class="rpg-card rpg-login-card">
-  <span class="icon" style="font-size:2.5rem;">&#9876;</span>
+  <img src="/static/logo.svg" alt="Open Grimoire" class="rpg-login-logo">
   <p class="rpg-meta" style="text-align:center; margin-top:0.5rem; margin-bottom:1.5rem;">Sign in to search your RPG manuals</p>
   {% if error %}<p class="rpg-error" style="text-align:center;">{{ error }}</p>{% endif %}
   <form method="post" action="/login">

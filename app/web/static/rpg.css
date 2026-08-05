@@ -51,6 +51,17 @@ body {
   letter-spacing: 0.5px;
 }
 .rpg-nav-brand .icon { font-size: 1.4rem; }
+.rpg-nav-logo {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+}
+.rpg-login-logo {
+  width: 96px;
+  height: 96px;
+  margin: 0 auto;
+  display: block;
+}
 .rpg-nav-links { display: flex; gap: 1rem; align-items: center; }
 .rpg-nav-links a { color: var(--rpg-text-dim); text-decoration: none; transition: color 0.2s; }
 .rpg-nav-links a:hover { color: var(--rpg-primary); }

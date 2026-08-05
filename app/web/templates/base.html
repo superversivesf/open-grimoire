@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
   <title>{% block title %}Open Grimoire{% endblock %}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap">
@@ -12,7 +13,7 @@
 <body>
   <nav class="rpg-nav">
     <a href="/" class="rpg-nav-brand">
-      <span class="icon">&#9876;</span> Open Grimoire
+      <img src="/static/logo.svg" alt="Open Grimoire" class="rpg-nav-logo"> Open Grimoire
     </a>
     <div class="rpg-nav-links">
       {% if user_id %}
