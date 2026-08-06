@@ -11415,3 +11415,8 @@ In Dragon Warriors, there isn't a single "AC" (Armour Class) like" (iters=5, cit
 2026-08-06 08:33:22 [agent] WARNING QUERY BUDGET EXHAUSTED: "impossible question" (iters=3, 0.0s)
 2026-08-06 08:33:23 [agent] DEBUG fts_search: query='goblin AC' db=/tmp/pytest-of-jason/pytest-229/test_real_pipeline_and_qa0/db uid=45e54ae368c047c19996ef1795f06721 -> 3 results
 2026-08-06 08:33:23 [agent] INFO   iter 1: fts_search({"query": "goblin AC"}) -> [{"path": "8b49b38a650144c8ad002a43280c8d24/04_chapter_4_monster_bestiary.md", "title": "Chapter 4: Monster Bestiary", "... (14.9s)
+2026-08-06 08:33:31 [pipeline] DEBUG JOB b157189a ENRICH 1/4: 01_chapter_1_combat_rules.md -> summary="This section introduces combat rules where Armor Class (AC) " keywords=['armor class', 'attack bonus', 'goblin', 'knights', 'barbarians', 'sorcerers', 'mystics']
+2026-08-06 08:33:39 [agent] INFO   iter 2: read_file({"path": "8b49b38a650144c8ad002a43280c8d24/01_chapter_1_combat_rules.md"}) -> --- summary: "This section introduces combat rules, including how to determine if an attack hits based on Armor Class (A... (16.7s)
+2026-08-06 08:33:49 [pipeline] DEBUG JOB b157189a ENRICH 2/4: 02_chapter_2_character_classes.md -> summary="This section introduces four character classes (knights, bar" keywords=['character classes', 'armor class', 'hit dice', 'spells', 'fireball', 'magic missile', 'healing word']
+2026-08-06 08:34:09 [agent] INFO   iter 3: content without tool calls, re-prompting for done (29.6s)
+2026-08-06 08:34:17 [pipeline] DEBUG JOB b157189a ENRICH 3/4: 03_chapter_3_spell_lists.md -> summary="This section covers basic spell descriptions including Fireb" keywords=['fireball', 'magic missile', 'healing word', 'goblin', 'orc', 'dragon', 'skeleton']

@@ -1,3 +1,3 @@
 # Open Grimoire — nightly backup at 3 AM
 # Install: crontab -e, then add:
-0 3 * * * /home/jason/Repos/rpg-master/scripts/backup.sh /opt/backups/open-grimoire >> /opt/backups/open-grimoire/cron.log 2>&1
+0 3 * * * /home/jason/Repos/rpg-master/scripts/backup.sh /home/jason/backups/open-grimoire >> /home/jason/backups/open-grimoire/cron.log 2>&1

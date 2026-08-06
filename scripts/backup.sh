@@ -6,7 +6,7 @@
 
 set -euo pipefail
 
-BACKUP_DIR="${1:-/opt/backups/open-grimoire}"
+BACKUP_DIR="${1:-/home/jason/backups/open-grimoire}"
 SOURCE_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 TIMESTAMP=$(date +"%Y%m%d-%H%M%S")
 BACKUP_PATH="${BACKUP_DIR}/${TIMESTAMP}"
