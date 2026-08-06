@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+{% block title %}Admin — Open Grimoire{% endblock %}
+{% block content %}
+<div class="rpg-breadcrumb">
+  <a href="/">&#128218; Library</a>
+  <span class="sep">/</span>
+  <span>Admin</span>
+</div>
+
+<div class="rpg-page-header">
+  <h1 class="rpg-page-title"><span class="icon">&#9881;</span> Admin Dashboard</h1>
+</div>
+
+<!-- Cost Summary -->
+<div class="rpg-card-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 1.5rem;">
+  <div class="rpg-collection-card" style="text-align: center;">
+    <h3 style="font-size: 0.9rem; color: var(--rpg-text-dim);">Query Cost (30d)</h3>
+    <p style="font-size: 1.8rem; font-weight: bold; color: var(--rpg-accent);">${{ "%.4f"|format(total_query_cost) }}</p>
+  </div>
+  <div class="rpg-collection-card" style="text-align: center;">
+    <h3 style="font-size: 0.9rem; color: var(--rpg-text-dim);">Enrichment Cost (30d)</h3>
+    <p style="font-size: 1.8rem; font-weight: bold; color: var(--rpg-success);">${{ "%.4f"|format(total_enrich_cost) }}</p>
+  </div>
+  <div class="rpg-collection-card" style="text-align: center;">
+    <h3 style="font-size: 0.9rem; color: var(--rpg-text-dim);">Total Cost (30d)</h3>
+    <p style="font-size: 1.8rem; font-weight: bold; color: var(--rpg-primary);">${{ "%.4f"|format(total_cost) }}</p>
+  </div>
+  <div class="rpg-collection-card" style="text-align: center;">
+    <h3 style="font-size: 0.9rem; color: var(--rpg-text-dim);">Est. Cost / 1000 Queries</h3>
+    <p style="font-size: 1.8rem; font-weight: bold; color: var(--rpg-pending);">${{ "%.2f"|format(cost_per_1000) }}</p>
+  </div>
+</div>
+
+<!-- Usage Stats -->
+<div class="rpg-card" style="margin-bottom: 1.5rem;">
+  <h3>&#128202; Usage Summary (Last 30 Days)</h3>
+  <table class="rpg-table" style="width: 100%; margin-top: 1rem;">
+    <tr>
+      <th>Metric</th>
+      <th>Queries</th>
+      <th>Enrichments</th>
+    </tr>
+    <tr>
+      <td>Total runs</td>
+      <td>{{ summary.queries.count or 0 }}</td>
+      <td>{{ summary.enrichments.count or 0 }}</td>
+    </tr>
+    <tr>
+      <td>Total iterations / sections</td>
+      <td>{{ summary.queries.total_iters or 0 }}</td>
+      <td>{{ summary.enrichments.total_sections or 0 }}</td>
+    </tr>
+    <tr>
+      <td>Est. input tokens</td>
+      <td>{{ "{:,}".format(summary.queries.total_input or 0) }}</td>
+      <td>{{ "{:,}".format(summary.enrichments.total_input or 0) }}</td>
+    </tr>
+    <tr>
+      <td>Est. output tokens</td>
+      <td>{{ "{:,}".format(summary.queries.total_output or 0) }}</td>
+      <td>{{ "{:,}".format(summary.enrichments.total_output or 0) }}</td>
+    </tr>
+    <tr>
+      <td>Total time (seconds)</td>
+      <td>{{ "%.0f"|format(summary.queries.total_time or 0) }}</td>
+      <td>{{ "%.0f"|format(summary.enrichments.total_time or 0) }}</td>
+    </tr>
+    <tr>
+      <td>Total citations</td>
+      <td>{{ summary.queries.total_citations or 0 }}</td>
+      <td>—</td>
+    </tr>
+  </table>
+</div>
+
+<!-- By Model -->
+<div class="rpg-card" style="margin-bottom: 1.5rem;">
+  <h3>&#129302; Usage by Model</h3>
+  {% if summary.by_model %}
+  <table class="rpg-table" style="width: 100%; margin-top: 1rem;">
+    <tr>
+      <th>Model</th>
+      <th>Queries</th>
+      <th>Avg Iters</th>
+      <th>Input Tokens</th>
+      <th>Output Tokens</th>
+      <th>Time (s)</th>
+    </tr>
+    {% for m in summary.by_model %}
+    <tr>
+      <td>{{ m.model }}</td>
+      <td>{{ m.count }}</td>
+      <td>{{ "%.1f"|format(m.total_iters / m.count if m.count else 0) }}</td>
+      <td>{{ "{:,}".format(m.total_input or 0) }}</td>
+      <td>{{ "{:,}".format(m.total_output or 0) }}</td>
+      <td>{{ "%.0f"|format(m.total_time or 0) }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p class="rpg-meta">No queries logged yet.</p>
+  {% endif %}
+</div>
+
+<!-- By User -->
+<div class="rpg-card" style="margin-bottom: 1.5rem;">
+  <h3>&#128100; Usage by User</h3>
+  {% if summary.by_user %}
+  <table class="rpg-table" style="width: 100%; margin-top: 1rem;">
+    <tr>
+      <th>User</th>
+      <th>Queries</th>
+      <th>Iters</th>
+      <th>Input Tokens</th>
+      <th>Output Tokens</th>
+      <th>Time (s)</th>
+    </tr>
+    {% for u in summary.by_user %}
+    <tr>
+      <td>{{ u.username or u.user_id[:12] + '...' }}</td>
+      <td>{{ u.query_count }}</td>
+      <td>{{ u.total_iters or 0 }}</td>
+      <td>{{ "{:,}".format(u.total_input or 0) }}</td>
+      <td>{{ "{:,}".format(u.total_output or 0) }}</td>
+      <td>{{ "%.0f"|format(u.total_time or 0) }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p class="rpg-meta">No user queries logged yet.</p>
+  {% endif %}
+</div>
+
+<!-- Recent Queries -->
+<div class="rpg-card" style="margin-bottom: 1.5rem;">
+  <h3>&#128221; Recent Queries</h3>
+  {% if summary.recent_queries %}
+  <table class="rpg-table" style="width: 100%; margin-top: 1rem;">
+    <tr>
+      <th>Time</th>
+      <th>User</th>
+      <th>Question</th>
+      <th>Model</th>
+      <th>Iters</th>
+      <th>Cites</th>
+      <th>Time</th>
+    </tr>
+    {% for q in summary.recent_queries %}
+    <tr>
+      <td style="font-size: 0.8rem;">{{ q.created_at }}</td>
+      <td>{{ q.username or '?' }}</td>
+      <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis;">{{ q.question[:60] }}</td>
+      <td style="font-size: 0.8rem;">{{ q.model }}</td>
+      <td>{{ q.iterations }}</td>
+      <td>{{ q.citations }}</td>
+      <td>{{ "%.1f"|format(q.elapsed_sec) }}s</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p class="rpg-meta">No queries logged yet.</p>
+  {% endif %}
+</div>
+
+<!-- Recent Enrichments -->
+<div class="rpg-card" style="margin-bottom: 1.5rem;">
+  <h3>&#128218; Recent Enrichments</h3>
+  {% if summary.recent_enrichments %}
+  <table class="rpg-table" style="width: 100%; margin-top: 1rem;">
+    <tr>
+      <th>Time</th>
+      <th>User</th>
+      <th>Model</th>
+      <th>Sections</th>
+      <th>Succeeded</th>
+      <th>Time</th>
+    </tr>
+    {% for e in summary.recent_enrichments %}
+    <tr>
+      <td style="font-size: 0.8rem;">{{ e.created_at }}</td>
+      <td>{{ e.username or '?' }}</td>
+      <td style="font-size: 0.8rem;">{{ e.model }}</td>
+      <td>{{ e.sections }}</td>
+      <td>{{ e.succeeded }}</td>
+      <td>{{ "%.0f"|format(e.elapsed_sec) }}s</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p class="rpg-meta">No enrichments logged yet.</p>
+  {% endif %}
+</div>
+
+<!-- Users -->
+<div class="rpg-card">
+  <h3>&#128101; Registered Users</h3>
+  <table class="rpg-table" style="width: 100%; margin-top: 1rem;">
+    <tr>
+      <th>Username</th>
+      <th>Admin</th>
+      <th>Created</th>
+    </tr>
+    {% for u in users %}
+    <tr>
+      <td>{{ u.username }}</td>
+      <td>{{ "Yes" if u.is_admin else "No" }}</td>
+      <td>{{ u.created_at }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+
+{% endblock %}

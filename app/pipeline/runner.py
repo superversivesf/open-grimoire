@@ -7,8 +7,10 @@ from app.pipeline.tier import tier_document
 from app.pipeline.enrich import Enricher
 from app.pipeline.index import index_document
 from app.storage.user_db import init_user_db, update_doc_status, update_enrich_progress
-from app.storage.shared_db import init_shared_db, complete_job
+from app.storage.shared_db import init_shared_db, complete_job, log_enrichment, register_shared_book, link_user_book, find_shared_book, find_existing_user_for_book, unlink_user_book
 from app.storage.paths import user_data_dir
+from app.pipeline.content_hash import content_hash
+from app.usage.tokens import estimate_tokens
 from app.logging_utils import get_logger
 
 log = get_logger("pipeline")
@@ -43,6 +45,47 @@ class PipelineRunner:
             log.info(f"JOB {job_id[:8]} STAGE 1 DONE: {total_pages} pages, {ocr_pages} OCR, {text_chars} chars, {time.time()-t0:.1f}s")
             if not blocks or not any(b["text"].strip() for b in blocks):
                 raise ValueError("no text extracted from PDF")
+
+            # Compute content hash for book sharing
+            full_text = "\n".join(b["text"] for b in blocks)
+            chash = content_hash(full_text)
+
+            # Check if this book already exists in the shared registry
+            existing = find_shared_book(conn, chash)
+            if existing:
+                # Find a user who already has this book processed
+                existing_user = find_existing_user_for_book(conn, chash)
+                if existing_user and existing_user["user_id"] != user_id:
+                    log.info(f"JOB {job_id[:8]} SHARED BOOK: content hash matches existing book from user {existing_user['user_id'][:8]}")
+                    # Copy the existing book's processed data instead of reprocessing
+                    source_dir = self.data_dir / existing_user["user_id"] / existing_user["doc_id"]
+                    if source_dir.exists():
+                        import shutil
+                        if doc_dir.exists():
+                            shutil.rmtree(doc_dir)
+                        shutil.copytree(source_dir, doc_dir)
+                        # Copy FTS rows from source user's DB
+                        source_uconn = init_user_db(self.db_dir, existing_user["user_id"])
+                        fts_rows = source_uconn.execute(
+                            "SELECT path, title, summary, keywords, content FROM documents_fts WHERE path LIKE ?",
+                            (f"{existing_user['doc_id']}/%",),
+                        ).fetchall()
+                        source_uconn.close()
+                        for row in fts_rows:
+                            old_path = row["path"]
+                            new_path = f"{doc_id}/{old_path[len(existing_user['doc_id'])+1:]}"
+                            uconn.execute(
+                                "INSERT INTO documents_fts (path, title, summary, keywords, content) VALUES (?, ?, ?, ?, ?)",
+                                (new_path, row["title"], row["summary"], row["keywords"], row["content"]),
+                            )
+                        uconn.commit()
+
+                        # Register and link
+                        link_user_book(conn, str(user_id), str(doc_id), chash, "")
+                        update_doc_status(uconn, doc_id, "done")
+                        complete_job(conn, job_id)
+                        log.info(f"JOB {job_id[:8]} SHARED COMPLETE: copied {len(fts_rows)} FTS rows from existing book")
+                        return
 
             # Extract cover image (first page as JPG)
             try:
@@ -107,6 +150,16 @@ class PipelineRunner:
                         log.warning(f"JOB {job_id[:8]} ENRICH {i+1}/{len(full_paths)} FAILED: {p.name} -> {e}")
                     update_enrich_progress(uconn, doc_id, i + 1, len(leaf_paths))
                 log.info(f"JOB {job_id[:8]} STAGE 4 DONE: {enriched}/{len(leaf_paths)} sections enriched, {time.time()-t0:.1f}s")
+
+                enrich_model = str(getattr(self.gateway, "models", {}).get("enrich", "unknown") or "unknown")
+                enrich_elapsed = time.time() - t0
+                # Estimate tokens: ~500 input tokens per section (content), ~50 output (summary+keywords)
+                est_input = sum(estimate_tokens(p.read_text()[:2000]) for p in full_paths if p.exists())
+                est_output = enriched * 60
+                sconn2 = init_shared_db(self.db_dir)
+                log_enrichment(sconn2, user_id, doc_id, enrich_model,
+                               len(leaf_paths), enriched, est_input, est_output, enrich_elapsed)
+                sconn2.close()
             else:
                 log.info(f"JOB {job_id[:8]} STAGE 4 SKIPPED: no gateway")
 
@@ -120,6 +173,10 @@ class PipelineRunner:
             update_doc_status(uconn, doc_id, "done")
             complete_job(conn, job_id)
             log.info(f"JOB {job_id[:8]} COMPLETE: doc={doc_id[:8]} title=\"{doc_title}\"")
+
+            # Register book in shared registry
+            register_shared_book(conn, chash, str(doc_title), int(total_pages))
+            link_user_book(conn, str(user_id), str(doc_id), chash, "")
         except Exception as e:
             update_doc_status(uconn, doc_id, "failed")
             complete_job(conn, job_id, error=str(e))

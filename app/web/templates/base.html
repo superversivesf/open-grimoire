@@ -19,6 +19,9 @@
       {% if user_id %}
       <a href="/">&#128218; Library</a>
       <a href="/sessions">&#128172; Sessions</a>
+      {% if request.state.is_admin %}
+      <a href="/admin">&#9881; Admin</a>
+      {% endif %}
       <form method="post" action="/logout" style="display:inline">
         <button type="submit" class="rpg-btn-secondary">Logout</button>
       </form>

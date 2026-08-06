@@ -12,7 +12,7 @@ from app.storage.user_db import (
     delete_collection, list_docs, get_doc as _get_doc, delete_doc as _delete_doc,
     update_doc_status, create_doc,
 )
-from app.storage.shared_db import init_shared_db, enqueue_job
+from app.storage.shared_db import init_shared_db, unlink_user_book, enqueue_job
 from app.storage.paths import user_data_dir, validate_user_path
 from app.web.template_utils import create_templates
 
@@ -225,6 +225,9 @@ async def delete_doc_route(request: Request, doc_id: str):
             _delete_doc(uconn, doc_id)
     finally:
         uconn.close()
+    sconn = init_shared_db(_db_dir)
+    unlink_user_book(sconn, doc_id)
+    sconn.close()
     doc_dir = _data_dir / uid / doc_id
     if doc_dir.exists():
         shutil.rmtree(doc_dir)

@@ -4,6 +4,7 @@ import time
 import typing
 from app.agent.tools_schema import TOOL_DEFINITIONS, DONE_ONLY_TOOLS
 from app.agent.history import build_messages, trim_history
+from app.usage.tokens import estimate_messages_tokens, estimate_response_tokens
 from app.logging_utils import get_logger
 
 log = get_logger("agent")
@@ -112,6 +113,8 @@ class AgentLoop:
             "cites": result.get("cites", []),
             "suggestions": result.get("suggestions", []),
             "iterations": result.get("iterations", 0),
+            "est_input_tokens": result.get("est_input_tokens", 0),
+            "est_output_tokens": result.get("est_output_tokens", 0),
         }
 
     async def run_stream(self, history: list[dict], new_question: str) -> typing.AsyncGenerator[dict, None]:
@@ -134,16 +137,22 @@ class AgentLoop:
         files_read: set[str] = set()
         searches_done: set[str] = set()
         forced_done = False  # when True, only done tool is offered
+        total_input_tokens = 0
+        total_output_tokens = 0
 
         for iteration in range(1, self.max_iterations + 1):
             t0 = time.time()
             tools = DONE_ONLY_TOOLS if forced_done else TOOL_DEFINITIONS
+            # Track input tokens
+            total_input_tokens += estimate_messages_tokens(messages)
             resp = await self.gateway.call("query", "", tools=tools, messages=messages)
             llm_time = time.time() - t0
             msg = resp.get("message", {})
             tool_calls = msg.get("tool_calls") or []
             content = msg.get("content", "")
+            # Track output tokens
             if content:
+                total_output_tokens += estimate_response_tokens(content)
                 last_content = content
 
             if not tool_calls:
@@ -182,9 +191,10 @@ class AgentLoop:
                     log.info(f"  iter {iteration}: DONE called ({llm_time:.1f}s)")
                     log.info(f"QUERY DONE: \"{new_question}\" -> \"{answer[:100]}\" (iters={iteration}, cites={len(cites)}, suggestions={len(suggestions)}, {elapsed:.1f}s)")
 
-                    # Stream the answer tokens
                     cleaned = clean_answer(answer)
-                    yield {"type": "done", "answer": cleaned, "cites": cites, "suggestions": suggestions, "iterations": iteration}
+                    yield {"type": "done", "answer": cleaned, "cites": cites, "suggestions": suggestions,
+                           "iterations": iteration, "est_input_tokens": total_input_tokens,
+                           "est_output_tokens": total_output_tokens}
                     return
 
                 # --- Dedup checks ---
@@ -242,7 +252,9 @@ class AgentLoop:
 
         elapsed = time.time() - start_time
         log.warning(f"QUERY BUDGET EXHAUSTED: \"{new_question}\" (iters={self.max_iterations}, {elapsed:.1f}s)")
-        # Synthesize fallback from tool results
         fallback = _synthesize_answer(messages, new_question)
         cites = _extract_cites_from_history(messages)
-        yield {"type": "done", "answer": fallback, "cites": cites, "suggestions": [], "iterations": self.max_iterations}
+        yield {"type": "done", "answer": fallback, "cites": cites, "suggestions": [],
+               "iterations": self.max_iterations,
+               "est_input_tokens": total_input_tokens,
+               "est_output_tokens": total_output_tokens}

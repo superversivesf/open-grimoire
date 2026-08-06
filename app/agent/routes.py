@@ -2,11 +2,13 @@ from fastapi import APIRouter, Request, Form
 from fastapi.responses import RedirectResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
+import time
 import json
 from app.auth.middleware import current_user_id
 from app.storage.user_db import (
     init_user_db, create_session, get_session, list_collections, list_docs,
 )
+from app.storage.shared_db import init_shared_db, log_query
 from app.agent.history import load_history, append_turn
 from app.agent.tools import ToolBox
 from app.agent.loop import AgentLoop
@@ -44,7 +46,20 @@ async def start_session(request: Request, collection_id: str = Form(...), questi
         sid = create_session(conn, collection_id, name=question[:80])
         history = load_history(conn, sid)
         loop = _make_loop(request, uid, collection_id)
+        t0 = time.time()
         result = await loop.run(history, question)
+        elapsed = time.time() - t0
+        model = getattr(_gateway, "models", {}).get("query", "unknown")
+        sconn = init_shared_db(_db_dir)
+        log_query(sconn, uid, model, question, result["answer"],
+                  iterations=result.get("iterations", 0),
+                  citations=len(result.get("cites", [])),
+                  est_input_tokens=result.get("est_input_tokens", 0),
+                  est_output_tokens=result.get("est_output_tokens", 0),
+                  elapsed_sec=elapsed,
+                  done_called=result.get("iterations", 0) <= 12,
+                  session_id=sid, collection_id=collection_id)
+        sconn.close()
         append_turn(conn, sid, question, result["answer"], result["cites"], result.get("suggestions"))
         session = get_session(conn, sid)
         return _templates.TemplateResponse(
@@ -68,7 +83,20 @@ async def continue_session(request: Request, session_id: str, question: str = Fo
             return RedirectResponse("/sessions", status_code=303)
         history = load_history(conn, session_id)
         loop = _make_loop(request, uid, session["collection_id"])
+        t0 = time.time()
         result = await loop.run(history, question)
+        elapsed = time.time() - t0
+        model = getattr(_gateway, "models", {}).get("query", "unknown")
+        sconn = init_shared_db(_db_dir)
+        log_query(sconn, uid, model, question, result["answer"],
+                  iterations=result.get("iterations", 0),
+                  citations=len(result.get("cites", [])),
+                  est_input_tokens=result.get("est_input_tokens", 0),
+                  est_output_tokens=result.get("est_output_tokens", 0),
+                  elapsed_sec=elapsed,
+                  done_called=result.get("iterations", 0) <= 12,
+                  session_id=session_id, collection_id=session["collection_id"])
+        sconn.close()
         append_turn(conn, session_id, question, result["answer"], result["cites"], result.get("suggestions"))
         new_turn = {"user": question, "agent": result["answer"], "cites": result["cites"], "suggestions": result.get("suggestions", [])}
         return _templates.TemplateResponse(
