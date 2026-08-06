@@ -27,6 +27,24 @@ def parse_frontmatter(path: Path) -> tuple[dict, str]:
     return fm, body
 
 
+def _flatten_table_line(line: str) -> str:
+    cells = [c.strip() for c in line.strip("|").split("|")]
+    return " ".join(cells)
+
+
+def _clean_content(body: str) -> str:
+    out = []
+    for line in body.splitlines():
+        if line.startswith("|"):
+            cells = [c.strip() for c in line.strip("|").split("|")]
+            if all(re.match(r"^[-:]+$", c) for c in cells):
+                continue  # separator row
+            out.append(" ".join(cells))
+        else:
+            out.append(line)
+    return "\n".join(out)
+
+
 def index_document(conn, leaf_paths: list[str], data_dir: Path, doc_id: str) -> None:
     delete_fts_rows_for_doc(conn, doc_id)
     for rel in leaf_paths:
@@ -38,4 +56,4 @@ def index_document(conn, leaf_paths: list[str], data_dir: Path, doc_id: str) -> 
         keywords = fm.get("keywords", "")
         if isinstance(keywords, list):
             keywords = ", ".join(keywords)
-        insert_fts_row(conn, rel, title, str(summary), str(keywords), body)
+        insert_fts_row(conn, rel, title, str(summary), str(keywords), _clean_content(body))

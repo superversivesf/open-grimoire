@@ -36,6 +36,20 @@ def test_index_document_inserts_rows(tmp_dirs):
     conn.close()
 
 
+def test_index_document_flattens_tables(tmp_dirs):
+    from app.storage.user_db import init_user_db
+    doc_dir = tmp_dirs["data"] / "d1" / "01_chapter"
+    doc_dir.mkdir(parents=True)
+    leaf = doc_dir / "01_section.md"
+    leaf.write_text("---\nsummary: \"Goblin stats.\"\nkeywords: [goblin, AC]\npage: 42\n---\n\n# Goblin\n\n| Name | AC | HP |\n|------|----|----|\n| Goblin | 15 | 7 |\n")
+    conn = init_user_db(tmp_dirs["db"], "alice")
+    index_document(conn, [str(leaf.relative_to(tmp_dirs["data"]))], tmp_dirs["data"], "d1")
+    row = conn.execute("SELECT content FROM documents_fts").fetchone()
+    assert "|" not in row["content"]
+    assert "Goblin 15 7" in row["content"]
+    conn.close()
+
+
 def test_index_document_replaces_old_rows(tmp_dirs):
     from app.storage.user_db import init_user_db, insert_fts_row
     conn = init_user_db(tmp_dirs["db"], "alice")
