@@ -12,14 +12,15 @@ log = get_logger("agent")
 SYSTEM_PROMPT = """You are an RPG rules assistant. You search the user's RPG manual collection to answer questions.
 
 Rules:
-1. ALWAYS use fts_search first to find relevant sections
-2. ALWAYS use read_file to read the full content before answering — never answer from snippets alone
-3. Use done to give your final answer with citations and 3 suggested follow-up questions
-4. If you can't find it after 3 searches, use done and say so
-5. NEVER read the same file twice — you already have its content in the conversation
-6. NEVER repeat the same search twice
+1. ALWAYS use fts_search FIRST. Never use ls or list_index to browse — they waste turns.
+2. After fts_search, use read_file to read the full content of the most relevant result.
+3. Use done to give your final answer with citations and 3 suggested follow-up questions.
+4. If fts_search returns no results, try a different query (2-3 attempts max), then call done.
+5. NEVER read the same file twice.
+6. NEVER use ls — the file structure is flat .md files, not directories. Use fts_search instead.
+7. NEVER try to read index.md files — they don't exist in this collection.
 
-Never answer without first reading a file. The fts_search snippets are too short.
+The fts_search snippets are too short to answer from. Always read_file before answering.
 
 When calling done, always include 3 "suggestions" — short follow-up questions a player might ask next based on what they just learned."""
 
@@ -74,20 +75,68 @@ def _extract_cites_from_history(messages: list[dict]) -> list[dict]:
 
 
 def _synthesize_answer(messages: list[dict], question: str) -> str:
-    """Build a fallback answer from tool results when the model didn't call done."""
-    # Collect all file content from read_file tool results
+    """Build a fallback answer from tool results when the model didn't call done.
+
+    Tries to extract useful content from FTS search results and read files
+    to give the user *something* useful instead of a generic error message.
+    """
+    # Collect FTS search results
+    fts_results = []
+    for msg in messages:
+        if msg.get("role") == "tool" and msg.get("name") == "fts_search":
+            try:
+                import json
+                results = json.loads(msg.get("content", "[]"))
+                for r in results[:5]:
+                    title = r.get("title", "")
+                    snippet = r.get("snippet", "")
+                    path = r.get("path", "")
+                    if title or snippet:
+                        fts_results.append({"title": title, "snippet": snippet, "path": path})
+            except Exception:
+                pass
+
+    # Collect file content from read_file results
     file_contents = []
     for msg in messages:
         if msg.get("role") == "tool" and msg.get("name") == "read_file":
             content = msg.get("content", "")
-            if content and not content.startswith("Error"):
+            if content and "not found" not in content.lower() and "invalid" not in content.lower():
                 file_contents.append(content)
 
-    if not file_contents:
-        return f"I searched the manual but could not find a clear answer to: \"{question}\". Try rephrasing the question or asking about a more specific aspect."
+    # If we have file content, extract the most relevant paragraph
+    if file_contents:
+        # Find paragraphs mentioning keywords from the question
+        question_words = set(w.lower() for w in question.split() if len(w) > 4)
+        best_snippet = ""
+        best_score = 0
+        for content in file_contents:
+            # Strip front-matter
+            if content.startswith("---"):
+                parts = content.split("---", 2)
+                content = parts[2].strip() if len(parts) > 2 else content
+            for para in content.split("\n\n"):
+                para_clean = para.strip()
+                if len(para_clean) < 20 or para_clean.startswith("#"):
+                    continue
+                para_lower = para_clean.lower()
+                score = sum(1 for w in question_words if w in para_lower)
+                if score > best_score:
+                    best_score = score
+                    best_snippet = para_clean
 
-    # Return a simple summary pointing to what was found
-    return f"I found relevant content in the manual but ran out of turns before synthesizing a full answer. The key sections are referenced below — try asking a more specific question about what you need."
+        if best_snippet and best_score > 0:
+            return best_snippet[:500] + "\n\n*This answer was extracted from the manual but the AI ran out of turns to fully synthesize it. Try asking a more specific question for a complete answer.*"
+
+    # If we have FTS results but no file content
+    if fts_results:
+        result_list = "\n".join(
+            f"- **{r['title']}**: {r['snippet'][:100]}..." for r in fts_results[:3]
+        )
+        return f"I found these relevant sections but couldn't fully read them:\n\n{result_list}\n\n*Try asking a more specific question about one of these topics.*"
+
+    # Last resort — no results at all
+    return f"I searched the manual but could not find information about: \"{question}\". Try rephrasing with different keywords (e.g. specific rule names, character classes, or monster names)."
 
 
 class AgentLoop:
@@ -196,6 +245,13 @@ class AgentLoop:
                            "iterations": iteration, "est_input_tokens": total_input_tokens,
                            "est_output_tokens": total_output_tokens}
                     return
+
+                # --- Redirect browsing tools to fts_search early on ---
+                if name in ("ls", "list_index") and iteration <= 3:
+                    log.info(f"  iter {iteration}: redirect {name} -> fts_search ({llm_time:.1f}s)")
+                    messages.append({"role": "assistant", "content": content})
+                    messages.append({"role": "tool", "name": name, "content": f"Don't browse. Use fts_search to find relevant sections directly. For example: fts_search with a query about the user's question."})
+                    continue
 
                 # --- Dedup checks ---
                 if name == "read_file":

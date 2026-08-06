@@ -11420,3 +11420,268 @@ In Dragon Warriors, there isn't a single "AC" (Armour Class) like" (iters=5, cit
 2026-08-06 08:33:49 [pipeline] DEBUG JOB b157189a ENRICH 2/4: 02_chapter_2_character_classes.md -> summary="This section introduces four character classes (knights, bar" keywords=['character classes', 'armor class', 'hit dice', 'spells', 'fireball', 'magic missile', 'healing word']
 2026-08-06 08:34:09 [agent] INFO   iter 3: content without tool calls, re-prompting for done (29.6s)
 2026-08-06 08:34:17 [pipeline] DEBUG JOB b157189a ENRICH 3/4: 03_chapter_3_spell_lists.md -> summary="This section covers basic spell descriptions including Fireb" keywords=['fireball', 'magic missile', 'healing word', 'goblin', 'orc', 'dragon', 'skeleton']
+2026-08-06 08:34:33 [agent] INFO   iter 4: DONE called (23.8s)
+2026-08-06 08:34:33 [agent] INFO QUERY DONE: "What is a goblin's AC?" -> "A goblin's Armor Class (AC) is 13." (iters=4, cites=1, suggestions=0, 85.0s)
+2026-08-06 08:34:33 [pipeline] INFO JOB 411fe954 START doc=240e50c1 user=7c4d5822 pdf=original.pdf
+2026-08-06 08:34:33 [pipeline] INFO JOB 411fe954 STAGE 1: extracting text from original.pdf
+2026-08-06 08:34:33 [pipeline] INFO JOB 411fe954 STAGE 1 DONE: 4 pages, 0 OCR, 977 chars, 0.0s
+2026-08-06 08:34:33 [pipeline] INFO JOB 411fe954 COVER: extracted cover.jpg
+2026-08-06 08:34:33 [pipeline] INFO JOB 411fe954 STAGE 2: detecting structure
+2026-08-06 08:34:33 [pipeline] INFO JOB 411fe954 STAGE 2 DONE: 4 chapters, 4 nodes, 4 leaves, 0.0s
+2026-08-06 08:34:33 [pipeline] INFO JOB 411fe954 STAGE 3: writing markdown files
+2026-08-06 08:34:33 [pipeline] INFO JOB 411fe954 STAGE 3 DONE: 4 files written to data/7c4d5822/240e50c1/, 0.0s
+2026-08-06 08:34:33 [pipeline] INFO JOB 411fe954 STAGE 4: enriching 4 sections
+2026-08-06 08:34:40 [pipeline] DEBUG JOB b157189a ENRICH 4/4: 04_chapter_4_monster_bestiary.md -> summary="This section details various monsters including goblin, orc," keywords=['monster', 'bestiary', 'goblin', 'orc', 'dragon', 'skeleton', 'attributes']
+2026-08-06 08:34:40 [pipeline] INFO JOB b157189a STAGE 4 DONE: 4/4 sections enriched, 78.8s
+2026-08-06 08:34:40 [pipeline] INFO JOB b157189a STAGE 5: building FTS5 index
+2026-08-06 08:34:40 [pipeline] INFO JOB b157189a STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-06 08:34:40 [pipeline] INFO JOB b157189a COMPLETE: doc=4c30b1fc title="rpg"
+2026-08-06 08:34:41 [pipeline] INFO JOB bf1d2c9c START doc=4507992f user=b7ae16e0 pdf=original.pdf
+2026-08-06 08:34:41 [pipeline] INFO JOB bf1d2c9c STAGE 1: extracting text from original.pdf
+2026-08-06 08:34:41 [pipeline] INFO JOB bf1d2c9c STAGE 1 DONE: 1 pages, 0 OCR, 46 chars, 0.1s
+2026-08-06 08:34:41 [pipeline] INFO JOB bf1d2c9c COVER: extracted cover.jpg
+2026-08-06 08:34:41 [pipeline] INFO JOB bf1d2c9c STAGE 2: detecting structure
+2026-08-06 08:34:41 [pipeline] INFO JOB bf1d2c9c STAGE 2 DONE: 1 chapters, 1 nodes, 1 leaves, 0.0s
+2026-08-06 08:34:41 [pipeline] INFO JOB bf1d2c9c STAGE 3: writing markdown files
+2026-08-06 08:34:41 [pipeline] INFO JOB bf1d2c9c STAGE 3 DONE: 1 files written to data/b7ae16e0/4507992f/, 0.0s
+2026-08-06 08:34:41 [pipeline] INFO JOB bf1d2c9c STAGE 4: enriching 1 sections
+2026-08-06 08:34:41 [pipeline] DEBUG JOB bf1d2c9c ENRICH 1/1: 01_chapter_1_monsterscid10goblins_have_ac_15.md -> summary="Monster rules." keywords=['monster']
+2026-08-06 08:34:41 [pipeline] INFO JOB bf1d2c9c STAGE 4 DONE: 1/1 sections enriched, 0.0s
+2026-08-06 08:34:41 [pipeline] INFO JOB bf1d2c9c STAGE 5: building FTS5 index
+2026-08-06 08:34:41 [pipeline] INFO JOB bf1d2c9c STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-06 08:34:41 [pipeline] INFO JOB bf1d2c9c COMPLETE: doc=4507992f title="book"
+2026-08-06 08:34:42 [pipeline] INFO JOB 3a243b3a START doc=repro_do user=c784958b pdf=original.pdf
+2026-08-06 08:34:42 [pipeline] INFO JOB 3a243b3a STAGE 1: extracting text from original.pdf
+2026-08-06 08:34:42 [pipeline] INFO JOB 3a243b3a STAGE 1 DONE: 1 pages, 0 OCR, 44 chars, 0.1s
+2026-08-06 08:34:42 [pipeline] INFO JOB 3a243b3a COVER: extracted cover.jpg
+2026-08-06 08:34:42 [pipeline] INFO JOB 3a243b3a STAGE 2: detecting structure
+2026-08-06 08:34:42 [pipeline] INFO JOB 3a243b3a STAGE 2 DONE: 1 chapters, 1 nodes, 1 leaves, 0.0s
+2026-08-06 08:34:42 [pipeline] INFO JOB 3a243b3a STAGE 3: writing markdown files
+2026-08-06 08:34:42 [pipeline] INFO JOB 3a243b3a STAGE 3 DONE: 1 files written to data/c784958b/repro_do/, 0.0s
+2026-08-06 08:34:42 [pipeline] INFO JOB 3a243b3a STAGE 4: enriching 1 sections
+2026-08-06 08:34:42 [pipeline] DEBUG JOB 3a243b3a ENRICH 1/1: 01_chapter_1_combatcid10goblins_have_ac_15.md -> summary="Reprocessed." keywords=['combat']
+2026-08-06 08:34:42 [pipeline] INFO JOB 3a243b3a STAGE 4 DONE: 1/1 sections enriched, 0.0s
+2026-08-06 08:34:42 [pipeline] INFO JOB 3a243b3a STAGE 5: building FTS5 index
+2026-08-06 08:34:42 [pipeline] INFO JOB 3a243b3a STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-06 08:34:42 [pipeline] INFO JOB 3a243b3a COMPLETE: doc=repro_do title="Repro Book"
+2026-08-06 08:34:42 [pipeline] INFO JOB ddae1c2d START doc=bad_doc user=43853877 pdf=bad.pdf
+2026-08-06 08:34:42 [pipeline] INFO JOB ddae1c2d STAGE 1: extracting text from bad.pdf
+2026-08-06 08:34:42 [pipeline] ERROR JOB ddae1c2d FAILED: doc=bad_doc error=Stream has ended unexpectedly
+2026-08-06 08:34:43 [agent] INFO QUERY START: "What is AC?" (history=0 turns)
+2026-08-06 08:34:44 [agent] DEBUG fts_search: query='dragon' db=/tmp/pytest-of-jason/pytest-228/test_alice_cannot_search_bobs_0/db uid=441990f5695d4bbea9d2ac262c0adb29 -> 0 results
+2026-08-06 08:34:44 [agent] DEBUG fts_search: query='goblin' db=/tmp/pytest-of-jason/pytest-228/test_alice_cannot_search_bobs_0/db uid=441990f5695d4bbea9d2ac262c0adb29 -> 1 results
+2026-08-06 08:34:45 [pipeline] INFO JOB 7d5efc12 START doc=62337724 user=37cad4a4 pdf=original.pdf
+2026-08-06 08:34:45 [pipeline] INFO JOB 7d5efc12 STAGE 1: extracting text from original.pdf
+2026-08-06 08:34:45 [pipeline] INFO JOB 7d5efc12 STAGE 1 DONE: 2 pages, 0 OCR, 71 chars, 0.1s
+2026-08-06 08:34:45 [pipeline] INFO JOB 7d5efc12 COVER: extracted cover.jpg
+2026-08-06 08:34:45 [pipeline] INFO JOB 7d5efc12 STAGE 2: detecting structure
+2026-08-06 08:34:45 [pipeline] INFO JOB 7d5efc12 STAGE 2 DONE: 1 chapters, 1 nodes, 1 leaves, 0.0s
+2026-08-06 08:34:45 [pipeline] INFO JOB 7d5efc12 STAGE 3: writing markdown files
+2026-08-06 08:34:45 [pipeline] INFO JOB 7d5efc12 STAGE 3 DONE: 1 files written to data/37cad4a4/62337724/, 0.0s
+2026-08-06 08:34:45 [pipeline] INFO JOB 7d5efc12 STAGE 4: enriching 1 sections
+2026-08-06 08:34:45 [pipeline] DEBUG JOB 7d5efc12 ENRICH 1/1: 01_chapter_1_combat.md -> summary="Combat rules for goblins." keywords=['goblin', 'combat', 'AC']
+2026-08-06 08:34:45 [pipeline] INFO JOB 7d5efc12 STAGE 4 DONE: 1/1 sections enriched, 0.0s
+2026-08-06 08:34:45 [pipeline] INFO JOB 7d5efc12 STAGE 5: building FTS5 index
+2026-08-06 08:34:45 [pipeline] INFO JOB 7d5efc12 STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-06 08:34:45 [pipeline] INFO JOB 7d5efc12 COMPLETE: doc=62337724 title="combat"
+2026-08-06 08:34:45 [agent] DEBUG fts_search: query='goblin' db=/tmp/pytest-of-jason/pytest-228/test_full_pdf_processing_pipel0/db uid=37cad4a4130e4bb28edf6362078a3b14 -> 1 results
+2026-08-06 08:34:47 [pipeline] INFO JOB 39b333dc START doc=d1 user=alice pdf=test.pdf
+2026-08-06 08:34:47 [pipeline] INFO JOB 39b333dc STAGE 1: extracting text from test.pdf
+2026-08-06 08:34:47 [pipeline] INFO JOB 39b333dc STAGE 1 DONE: 1 pages, 0 OCR, 46 chars, 0.1s
+2026-08-06 08:34:47 [pipeline] WARNING JOB 39b333dc COVER: failed to extract cover: [Errno 2] No such file or directory: '/tmp/pytest-of-jason/pytest-228/test_runner_end_to_end0/data/alice/d1/cover.jpg'
+2026-08-06 08:34:47 [pipeline] INFO JOB 39b333dc STAGE 2: detecting structure
+2026-08-06 08:34:47 [pipeline] INFO JOB 39b333dc STAGE 2 DONE: 1 chapters, 1 nodes, 1 leaves, 0.0s
+2026-08-06 08:34:47 [pipeline] INFO JOB 39b333dc STAGE 3: writing markdown files
+2026-08-06 08:34:47 [pipeline] INFO JOB 39b333dc STAGE 3 DONE: 1 files written to data/alice/d1/, 0.0s
+2026-08-06 08:34:47 [pipeline] INFO JOB 39b333dc STAGE 4: enriching 1 sections
+2026-08-06 08:34:47 [pipeline] DEBUG JOB 39b333dc ENRICH 1/1: 01_chapter_1_combat.md -> summary="Combat rules." keywords=['combat', 'goblin']
+2026-08-06 08:34:47 [pipeline] INFO JOB 39b333dc STAGE 4 DONE: 1/1 sections enriched, 0.0s
+2026-08-06 08:34:47 [pipeline] INFO JOB 39b333dc STAGE 5: building FTS5 index
+2026-08-06 08:34:47 [pipeline] INFO JOB 39b333dc STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-06 08:34:47 [pipeline] INFO JOB 39b333dc COMPLETE: doc=d1 title="Test Book"
+2026-08-06 08:34:47 [pipeline] INFO JOB 25fab5d1 START doc=d1 user=alice pdf=bad.pdf
+2026-08-06 08:34:47 [pipeline] INFO JOB 25fab5d1 STAGE 1: extracting text from bad.pdf
+2026-08-06 08:34:47 [pipeline] ERROR JOB 25fab5d1 FAILED: doc=d1 error=Stream has ended unexpectedly
+2026-08-06 08:34:48 [agent] DEBUG fts_search: query='goblin' db=/tmp/pytest-of-jason/pytest-228/test_fts_search0/db uid=alice -> 1 results
+2026-08-06 08:34:48 [agent] DEBUG fts_search: query='goblin' db=/tmp/pytest-of-jason/pytest-228/test_execute_dispatch0/db uid=alice -> 1 results
+2026-08-06 08:34:50 [pipeline] DEBUG JOB 411fe954 ENRICH 1/4: 01_chapter_1_combat_rules.md -> summary="This section introduces combat rules, including how to deter" keywords=['armor class', 'hit points', 'attack bonus', 'goblin', 'knight', 'barbarian', 'sorcerer', 'mystic']
+2026-08-06 08:34:58 [pipeline] DEBUG JOB 411fe954 ENRICH 2/4: 02_chapter_2_character_classes.md -> summary="This section introduces four character classes with differen" keywords=['knights', 'barbarians', 'sorcerers', 'mystics', 'hit dice', 'armor class', 'spells', 'fireball']
+2026-08-06 08:35:06 [pipeline] DEBUG JOB 411fe954 ENRICH 3/4: 03_chapter_3_spell_lists.md -> summary="This section covers basic spell descriptions including Fireb" keywords=['fireball', 'healing word', 'goblin', 'orc', 'dragon', 'skeleton']
+2026-08-06 08:35:12 [pipeline] DEBUG JOB 411fe954 ENRICH 4/4: 04_chapter_4_monster_bestiary.md -> summary="This section details various monsters including goblin, orc," keywords=['monster', 'bestiary', 'goblin', 'orc', 'dragon', 'skeleton', 'attributes']
+2026-08-06 08:35:12 [pipeline] INFO JOB 411fe954 STAGE 4 DONE: 4/4 sections enriched, 38.9s
+2026-08-06 08:35:12 [pipeline] INFO JOB 411fe954 STAGE 5: building FTS5 index
+2026-08-06 08:35:12 [pipeline] INFO JOB 411fe954 STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-06 08:35:12 [pipeline] INFO JOB 411fe954 COMPLETE: doc=240e50c1 title="rpg"
+2026-08-06 09:12:44 [agent] INFO QUERY START: "Is there a starter adventure in this manual?" (history=0 turns)
+2026-08-06 09:12:45 [agent] INFO   iter 1: ls({"dir": "/"}) -> []... (1.8s)
+2026-08-06 09:12:46 [agent] INFO   iter 2: ls({"dir": "/"}) -> []... (1.0s)
+2026-08-06 09:12:47 [agent] INFO   iter 3: ls({"dir": "."}) -> ["0e3c0269266549019fb5ff0ff407b9d5", "5111bb1ac69e462197886579e8686499", "5976fb08e2984e64a75f8cb764167ce0", "62c9132dfb... (1.1s)
+2026-08-06 09:12:50 [agent] INFO   iter 4: ls({"dir": "0e3c0269266549019fb5ff0ff407b9d5"}) -> ["01_civiuans.md", "02_consolidated_effects_of_age_table.md", "03_3_anderson_loses_1_point_from_each_his_str_agility_4xs... (2.6s)
+2026-08-06 09:12:50 [agent] INFO   iter 4: ls({"dir": "5111bb1ac69e462197886579e8686499"}) -> ["01_dragon_warriors.md", "02_contents.md", "03_chapter_1_fantasy_roleplay_13_weaponskill_27.md", "04_chapter_2_creating... (2.6s)
+2026-08-06 09:12:50 [agent] INFO   iter 4: ls({"dir": "5976fb08e2984e64a75f8cb764167ce0"}) -> ["01_bestiary.md", "02_bestiary.md", "03_dragon_warriors_bestiary.md", "04_dragon_warriors.md", "05_contents.md", "06_ch... (2.6s)
+2026-08-06 09:12:50 [agent] INFO   iter 4: ls({"dir": "62c9132dfba64d6487c4c9e08abc91fc"}) -> ["01_nine_space_games.md", "02_by_jason_morningstar.md", "03_coronation.md", "04_relationship.md", "05_cognate.md", "06_... (2.6s)
+2026-08-06 09:12:50 [agent] INFO   iter 4: ls({"dir": "8efe241f75d240bab3e2e6d37b851611"}) -> ["01_disinformation.md", "02_in_the.md", "03_green.md", "04_notable.md", "05_events.md", "06_disinformation.md", "07_dis... (2.6s)
+2026-08-06 09:12:50 [agent] INFO   iter 4: ls({"dir": "b089ab69d6d0478f9099e529486bc21b"}) -> ["01_delta.md", "02_green.md", "03_handbook.md", "04_welcome_to.md", "05_apocalypse.md", "06_2_assign_stats_divide_72_po... (2.6s)
+2026-08-06 09:12:50 [agent] INFO   iter 4: ls({"dir": "ca804144500145a0a5822f1bd1cb1cc8"}) -> ["01_jason_morningstar.md", "02_space.md", "03_games.md", "04_a_collection_of_games_by.md", "05_jason_morningstar.md", "... (2.6s)
+2026-08-06 09:12:50 [agent] INFO   iter 4: ls({"dir": "ce44c5f679c8471e8b51b011e117e387"}) -> ["01_the_elven.md", "02_crystals.md", "03_the_elven.md", "04_crystals.md", "05_contents.md", "06_chapter_1_chapter_4.md"... (2.6s)
+2026-08-06 09:12:50 [agent] INFO   iter 4: ls({"dir": "fad160b3ad2c4477847d44ea44dbf81a2"}) -> []... (2.6s)
+2026-08-06 09:12:54 [agent] INFO   iter 5: read_file({"path": "0e3c0269266549019fb5ff0ff407b9d5/index.md"}) -> # Twilight2000-2ndEd_-V2.2  - [CIVIUANS](01_civiuans/index.md) - [CONSOLIDATED EFFECTS OF AGE TABLE](02_consolidated_eff... (4.3s)
+2026-08-06 09:12:54 [agent] INFO   iter 5: read_file({"path": "5111bb1ac69e462197886579e8686499/index.md"}) -> # DW-Rulebook-For-Web  - [DRAGON WARRIORS](01_dragon_warriors/index.md) - [CONTENTS](02_contents/index.md) - [Chapter 1:... (4.3s)
+2026-08-06 09:12:54 [agent] INFO   iter 5: read_file({"path": "5976fb08e2984e64a75f8cb764167ce0/index.md"}) -> # DragonWarriorsBestiary  - [BESTIARY](01_bestiary/index.md) - [BESTIARY](02_bestiary/index.md) - [DRAGON WARRIORS BESTI... (4.3s)
+2026-08-06 09:12:54 [agent] INFO   iter 5: read_file({"path": "62c9132dfba64d6487c4c9e08abc91fc/index.md"}) -> # BPG230-Nine-Space-Games-print-and-play-20260725  - [NINE SPACE GAMES](01_nine_space_games/index.md) - [BY JASON MORNIN... (4.3s)
+2026-08-06 09:12:54 [agent] INFO   iter 5: read_file({"path": "8efe241f75d240bab3e2e6d37b851611/index.md"}) -> # Delta_Green_Handlers_Guide_2023  - [DISINFORMATION](01_disinformation/index.md) - [IN THE](02_in_the/index.md) - [GREE... (4.3s)
+2026-08-06 09:12:54 [agent] INFO   iter 5: read_file({"path": "b089ab69d6d0478f9099e529486bc21b/index.md"}) -> # Delta_Green_Agents_Handbook_2024  - [DELTA](01_delta/index.md) - [GREEN](02_green/index.md) - [HANDBOOK](03_handbook/i... (4.3s)
+2026-08-06 09:12:54 [agent] INFO   iter 5: read_file({"path": "ca804144500145a0a5822f1bd1cb1cc8/index.md"}) -> # BPG230-Nine-Space-Games-full-color-20260725  - [JASON MORNINGSTAR](01_jason_morningstar/index.md) - [SPACE](02_space/i... (4.3s)
+2026-08-06 09:12:54 [agent] INFO   iter 5: read_file({"path": "ce44c5f679c8471e8b51b011e117e387/index.md"}) -> # DragonWarriors - The Elven Crystals  - [THE ELVEN](01_the_elven/index.md) - [CRYSTALS](02_crystals/index.md) - [THE EL... (4.3s)
+2026-08-06 09:12:54 [agent] INFO   iter 5: read_file({"path": "fad160b3ad2c4477847d2ea44dbf81a2/index.md"}) -> # DragonWarriors_-_Players_Guide-023  - [CONTENTS](01_contents/index.md) - [Chapter 1](02_chapter_1/index.md) - [PROFESS... (4.3s)
+2026-08-06 09:12:58 [agent] DEBUG fts_search: query='starter adventure' db=db uid=1638caaebbce47858cbb0188e38658eb -> 0 results
+2026-08-06 09:12:58 [agent] INFO   iter 6: fts_search({"query": "starter adventure"}) -> []... (3.4s)
+2026-08-06 09:12:58 [agent] INFO   iter 6: nudging model to call done
+2026-08-06 09:12:58 [agent] DEBUG fts_search: query='adventure' db=db uid=1638caaebbce47858cbb0188e38658eb -> 5 results
+2026-08-06 09:12:58 [agent] INFO   iter 6: fts_search({"query": "adventure"}) -> [{"path": "0e3c0269266549019fb5ff0ff407b9d5/18_160_of_antibiotics_at_the_last_village_so_when_they_own_course.md", "titl... (3.4s)
+2026-08-06 09:12:58 [agent] INFO   iter 6: nudging model to call done
+2026-08-06 09:13:00 [agent] INFO   iter 7: read_file({"path": "0e3c0269266549019fb5ff0ff407b9d5/05_contents/index.md"}) -> (file not found: 0e3c0269266549019fb5ff0ff407b9d5/05_contents/index.md)... (2.4s)
+2026-08-06 09:13:00 [agent] INFO   iter 7: nudging model to call done
+2026-08-06 09:13:02 [agent] INFO   iter 8: DEDUP skip read_file(0e3c0269266549019fb5ff0ff407b9d5/05_contents/index.md) — already read (2.3s)
+2026-08-06 09:13:06 [agent] INFO   iter 9: read_file({"path": "5111bb1ac69e462197886579e8686499/07_chapter_6_in_the_beginning_50_terminating_a_spell_74/i) -> (file not found: 5111bb1ac69e462197886579e8686499/07_chapter_6_in_the_beginning_50_terminating_a_spell_74/index.md)... (4.0s)
+2026-08-06 09:13:06 [agent] INFO   iter 9: read_file({"path": "5111bb1ac69e462197886579e8686499/55_adventure/index.md"}) -> (file not found: 5111bb1ac69e462197886579e8686499/55_adventure/index.md)... (4.0s)
+2026-08-06 09:13:09 [agent] INFO   iter 10: read_file({"path": "fad160b3ad2c4477847d2ea44dbf81a2/05_contents/index.md"}) -> (file not found: fad160b3ad2c4477847d2ea44dbf81a2/05_contents/index.md)... (2.8s)
+2026-08-06 09:13:13 [agent] INFO   iter 11: read_file({"path": "fad160b3ad2c4477847d2ea44dbf81a2/05_contents.md"}) -> (file not found: fad160b3ad2c4477847d2ea44dbf81a2/05_contents.md)... (3.4s)
+2026-08-06 09:13:24 [agent] INFO   iter 12: read_file({"path": "fad160b3ad2c4477847d2ea44dbf81a2/06_chapter_1_chapter_4/index.md"}) -> (file not found: fad160b3ad2c4477847d2ea44dbf81a2/06_chapter_1_chapter_4/index.md)... (11.7s)
+2026-08-06 09:13:27 [agent] INFO   iter 13: read_file({"path": "fad160b3ad2c4477847d2ea44dbf81a2/09_chapter_1/index.md"}) -> (file not found: fad160b3ad2c4477847d2ea44dbf81a2/09_chapter_1/index.md)... (2.2s)
+2026-08-06 09:13:27 [agent] INFO   iter 13: read_file({"path": "fad160b3ad2c4477847d2ea44dbf81a2/10_ereworn_for/index.md"}) -> (file not found: fad160b3ad2c4477847d2ea44dbf81a2/10_ereworn_for/index.md)... (2.2s)
+2026-08-06 09:13:27 [agent] INFO   iter 13: read_file({"path": "fad160b3ad2c4477847d2ea44dbf81a2/11_the_curious/index.md"}) -> (file not found: fad160b3ad2c4477847d2ea44dbf81a2/11_the_curious/index.md)... (2.2s)
+2026-08-06 09:13:28 [agent] INFO   iter 14: read_file({"path": "fad160b3ad2c4477847d2ea44dbf81a2/01_the_elven.md"}) -> (file not found: fad160b3ad2c4477847d2ea44dbf81a2/01_the_elven.md)... (1.9s)
+2026-08-06 09:13:28 [agent] INFO   iter 14: read_file({"path": "fad160b3ad2c4477847d2ea44dbf81a2/02_crystals.md"}) -> (file not found: fad160b3ad2c4477847d2ea44dbf81a2/02_crystals.md)... (1.9s)
+2026-08-06 09:13:31 [agent] INFO   iter 15: DEDUP skip read_file(fad160b3ad2c4477847d2ea44dbf81a2/01_the_elven.md) — already read (2.0s)
+2026-08-06 09:13:31 [agent] WARNING QUERY BUDGET EXHAUSTED: "Is there a starter adventure in this manual?" (iters=15, 47.0s)
+2026-08-06 09:16:04 [agent] INFO QUERY START: "What is AC?" (history=0 turns)
+2026-08-06 09:16:04 [agent] INFO   iter 1: DONE called (0.0s)
+2026-08-06 09:16:04 [agent] INFO QUERY DONE: "What is AC?" -> "AC is 15." (iters=1, cites=1, suggestions=0, 0.0s)
+2026-08-06 09:16:04 [agent] INFO QUERY START: "Find goblin stats" (history=0 turns)
+2026-08-06 09:16:04 [agent] INFO   iter 1: fts_search({"query": "goblin"}) -> [{"path": "x.md", "title": "Goblin", "snippet": "AC 15"}]... (0.0s)
+2026-08-06 09:16:04 [agent] INFO   iter 2: DONE called (0.0s)
+2026-08-06 09:16:04 [agent] INFO QUERY DONE: "Find goblin stats" -> "Found goblin." (iters=2, cites=0, suggestions=0, 0.0s)
+2026-08-06 09:16:04 [agent] INFO QUERY START: "loop forever" (history=0 turns)
+2026-08-06 09:16:04 [agent] INFO   iter 1: fts_search({"query": "x"}) -> []... (0.0s)
+2026-08-06 09:16:04 [agent] INFO   iter 2: DEDUP skip fts_search(x) — already searched (0.0s)
+2026-08-06 09:16:04 [agent] INFO   iter 3: DEDUP skip fts_search(x) — already searched (0.0s)
+2026-08-06 09:16:04 [agent] WARNING QUERY BUDGET EXHAUSTED: "loop forever" (iters=3, 0.0s)
+2026-08-06 09:16:09 [pipeline] INFO JOB 5a83aa93 START doc=9bb30407 user=972cf5df pdf=original.pdf
+2026-08-06 09:16:09 [pipeline] INFO JOB 5a83aa93 STAGE 1: extracting text from original.pdf
+2026-08-06 09:16:09 [pipeline] INFO JOB 5a83aa93 STAGE 1 DONE: 1 pages, 0 OCR, 46 chars, 0.0s
+2026-08-06 09:16:09 [pipeline] INFO JOB 5a83aa93 COVER: extracted cover.jpg
+2026-08-06 09:16:09 [pipeline] INFO JOB 5a83aa93 STAGE 2: detecting structure
+2026-08-06 09:16:09 [pipeline] INFO JOB 5a83aa93 STAGE 2 DONE: 1 chapters, 1 nodes, 1 leaves, 0.0s
+2026-08-06 09:16:09 [pipeline] INFO JOB 5a83aa93 STAGE 3: writing markdown files
+2026-08-06 09:16:09 [pipeline] INFO JOB 5a83aa93 STAGE 3 DONE: 1 files written to data/972cf5df/9bb30407/, 0.0s
+2026-08-06 09:16:09 [pipeline] INFO JOB 5a83aa93 STAGE 4: enriching 1 sections
+2026-08-06 09:16:09 [pipeline] DEBUG JOB 5a83aa93 ENRICH 1/1: 01_chapter_1_monsterscid10goblins_have_ac_15.md -> summary="Monster rules." keywords=['monster']
+2026-08-06 09:16:09 [pipeline] INFO JOB 5a83aa93 STAGE 4 DONE: 1/1 sections enriched, 0.0s
+2026-08-06 09:16:09 [pipeline] INFO JOB 5a83aa93 STAGE 5: building FTS5 index
+2026-08-06 09:16:09 [pipeline] INFO JOB 5a83aa93 STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-06 09:16:09 [pipeline] INFO JOB 5a83aa93 COMPLETE: doc=9bb30407 title="book"
+2026-08-06 09:16:09 [pipeline] INFO JOB fb3a9ca6 START doc=repro_do user=74e9f18a pdf=original.pdf
+2026-08-06 09:16:09 [pipeline] INFO JOB fb3a9ca6 STAGE 1: extracting text from original.pdf
+2026-08-06 09:16:09 [pipeline] INFO JOB fb3a9ca6 STAGE 1 DONE: 1 pages, 0 OCR, 44 chars, 0.0s
+2026-08-06 09:16:09 [pipeline] INFO JOB fb3a9ca6 COVER: extracted cover.jpg
+2026-08-06 09:16:09 [pipeline] INFO JOB fb3a9ca6 STAGE 2: detecting structure
+2026-08-06 09:16:09 [pipeline] INFO JOB fb3a9ca6 STAGE 2 DONE: 1 chapters, 1 nodes, 1 leaves, 0.0s
+2026-08-06 09:16:09 [pipeline] INFO JOB fb3a9ca6 STAGE 3: writing markdown files
+2026-08-06 09:16:09 [pipeline] INFO JOB fb3a9ca6 STAGE 3 DONE: 1 files written to data/74e9f18a/repro_do/, 0.0s
+2026-08-06 09:16:09 [pipeline] INFO JOB fb3a9ca6 STAGE 4: enriching 1 sections
+2026-08-06 09:16:09 [pipeline] DEBUG JOB fb3a9ca6 ENRICH 1/1: 01_chapter_1_combatcid10goblins_have_ac_15.md -> summary="Reprocessed." keywords=['combat']
+2026-08-06 09:16:09 [pipeline] INFO JOB fb3a9ca6 STAGE 4 DONE: 1/1 sections enriched, 0.0s
+2026-08-06 09:16:09 [pipeline] INFO JOB fb3a9ca6 STAGE 5: building FTS5 index
+2026-08-06 09:16:09 [pipeline] INFO JOB fb3a9ca6 STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-06 09:16:09 [pipeline] INFO JOB fb3a9ca6 COMPLETE: doc=repro_do title="Repro Book"
+2026-08-06 09:16:09 [pipeline] INFO JOB f386484c START doc=bad_doc user=760d5136 pdf=bad.pdf
+2026-08-06 09:16:09 [pipeline] INFO JOB f386484c STAGE 1: extracting text from bad.pdf
+2026-08-06 09:16:09 [pipeline] ERROR JOB f386484c FAILED: doc=bad_doc error=Stream has ended unexpectedly
+2026-08-06 09:16:10 [agent] INFO QUERY START: "What is AC?" (history=0 turns)
+2026-08-06 09:16:10 [agent] DEBUG fts_search: query='dragon' db=/tmp/pytest-of-jason/pytest-233/test_alice_cannot_search_bobs_0/db uid=5fc96c3353414e8c824d3ea9a3310b0e -> 0 results
+2026-08-06 09:16:10 [agent] DEBUG fts_search: query='goblin' db=/tmp/pytest-of-jason/pytest-233/test_alice_cannot_search_bobs_0/db uid=5fc96c3353414e8c824d3ea9a3310b0e -> 1 results
+2026-08-06 09:16:11 [pipeline] INFO JOB 278ea1e2 START doc=9b7f0bf5 user=a86e5593 pdf=original.pdf
+2026-08-06 09:16:11 [pipeline] INFO JOB 278ea1e2 STAGE 1: extracting text from original.pdf
+2026-08-06 09:16:11 [pipeline] INFO JOB 278ea1e2 STAGE 1 DONE: 2 pages, 0 OCR, 71 chars, 0.1s
+2026-08-06 09:16:11 [pipeline] INFO JOB 278ea1e2 COVER: extracted cover.jpg
+2026-08-06 09:16:11 [pipeline] INFO JOB 278ea1e2 STAGE 2: detecting structure
+2026-08-06 09:16:11 [pipeline] INFO JOB 278ea1e2 STAGE 2 DONE: 1 chapters, 1 nodes, 1 leaves, 0.0s
+2026-08-06 09:16:11 [pipeline] INFO JOB 278ea1e2 STAGE 3: writing markdown files
+2026-08-06 09:16:11 [pipeline] INFO JOB 278ea1e2 STAGE 3 DONE: 1 files written to data/a86e5593/9b7f0bf5/, 0.0s
+2026-08-06 09:16:11 [pipeline] INFO JOB 278ea1e2 STAGE 4: enriching 1 sections
+2026-08-06 09:16:11 [pipeline] DEBUG JOB 278ea1e2 ENRICH 1/1: 01_chapter_1_combat.md -> summary="Combat rules for goblins." keywords=['goblin', 'combat', 'AC']
+2026-08-06 09:16:11 [pipeline] INFO JOB 278ea1e2 STAGE 4 DONE: 1/1 sections enriched, 0.0s
+2026-08-06 09:16:11 [pipeline] INFO JOB 278ea1e2 STAGE 5: building FTS5 index
+2026-08-06 09:16:11 [pipeline] INFO JOB 278ea1e2 STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-06 09:16:11 [pipeline] INFO JOB 278ea1e2 COMPLETE: doc=9b7f0bf5 title="combat"
+2026-08-06 09:16:11 [agent] DEBUG fts_search: query='goblin' db=/tmp/pytest-of-jason/pytest-233/test_full_pdf_processing_pipel0/db uid=a86e5593c4f14726b1898ca53a2e7465 -> 1 results
+2026-08-06 09:16:12 [pipeline] INFO JOB d94d8572 START doc=d1 user=alice pdf=test.pdf
+2026-08-06 09:16:12 [pipeline] INFO JOB d94d8572 STAGE 1: extracting text from test.pdf
+2026-08-06 09:16:12 [pipeline] INFO JOB d94d8572 STAGE 1 DONE: 1 pages, 0 OCR, 46 chars, 0.1s
+2026-08-06 09:16:12 [pipeline] WARNING JOB d94d8572 COVER: failed to extract cover: [Errno 2] No such file or directory: '/tmp/pytest-of-jason/pytest-233/test_runner_end_to_end0/data/alice/d1/cover.jpg'
+2026-08-06 09:16:12 [pipeline] INFO JOB d94d8572 STAGE 2: detecting structure
+2026-08-06 09:16:12 [pipeline] INFO JOB d94d8572 STAGE 2 DONE: 1 chapters, 1 nodes, 1 leaves, 0.0s
+2026-08-06 09:16:12 [pipeline] INFO JOB d94d8572 STAGE 3: writing markdown files
+2026-08-06 09:16:12 [pipeline] INFO JOB d94d8572 STAGE 3 DONE: 1 files written to data/alice/d1/, 0.0s
+2026-08-06 09:16:12 [pipeline] INFO JOB d94d8572 STAGE 4: enriching 1 sections
+2026-08-06 09:16:12 [pipeline] DEBUG JOB d94d8572 ENRICH 1/1: 01_chapter_1_combat.md -> summary="Combat rules." keywords=['combat', 'goblin']
+2026-08-06 09:16:12 [pipeline] INFO JOB d94d8572 STAGE 4 DONE: 1/1 sections enriched, 0.0s
+2026-08-06 09:16:12 [pipeline] INFO JOB d94d8572 STAGE 5: building FTS5 index
+2026-08-06 09:16:12 [pipeline] INFO JOB d94d8572 STAGE 5 DONE: FTS5 index built, 0.0s
+2026-08-06 09:16:12 [pipeline] INFO JOB d94d8572 COMPLETE: doc=d1 title="Test Book"
+2026-08-06 09:16:12 [pipeline] INFO JOB efe27ab6 START doc=d1 user=alice pdf=bad.pdf
+2026-08-06 09:16:12 [pipeline] INFO JOB efe27ab6 STAGE 1: extracting text from bad.pdf
+2026-08-06 09:16:12 [pipeline] ERROR JOB efe27ab6 FAILED: doc=d1 error=Stream has ended unexpectedly
+2026-08-06 09:16:13 [agent] DEBUG fts_search: query='goblin' db=/tmp/pytest-of-jason/pytest-233/test_fts_search0/db uid=alice -> 1 results
+2026-08-06 09:16:13 [agent] DEBUG fts_search: query='goblin' db=/tmp/pytest-of-jason/pytest-233/test_execute_dispatch0/db uid=alice -> 1 results
+2026-08-06 09:16:20 [agent] INFO QUERY START: "What is goblin AC?" (history=0 turns)
+2026-08-06 09:16:20 [agent] INFO   iter 1: read_file({"path": "doc/combat.md"}) -> # Combat Rules Goblin AC 13.... (0.0s)
+2026-08-06 09:16:20 [agent] INFO   iter 2: DEDUP skip read_file(doc/combat.md) — already read (0.0s)
+2026-08-06 09:16:20 [agent] INFO   iter 3: DONE called (0.0s)
+2026-08-06 09:16:20 [agent] INFO QUERY DONE: "What is goblin AC?" -> "Done." (iters=3, cites=0, suggestions=0, 0.0s)
+2026-08-06 09:16:20 [agent] INFO QUERY START: "Find goblin" (history=0 turns)
+2026-08-06 09:16:20 [agent] INFO   iter 1: fts_search({"query": "goblin"}) -> []... (0.0s)
+2026-08-06 09:16:20 [agent] INFO   iter 2: DEDUP skip fts_search(goblin) — already searched (0.0s)
+2026-08-06 09:16:20 [agent] INFO   iter 3: DONE called (0.0s)
+2026-08-06 09:16:20 [agent] INFO QUERY DONE: "Find goblin" -> "Done." (iters=3, cites=0, suggestions=0, 0.0s)
+2026-08-06 09:16:20 [agent] INFO QUERY START: "test" (history=0 turns)
+2026-08-06 09:16:20 [agent] INFO   iter 1: fts_search({"query": "x"}) -> []... (0.0s)
+2026-08-06 09:16:20 [agent] INFO   iter 2: DEDUP skip fts_search(x) — already searched (0.0s)
+2026-08-06 09:16:20 [agent] INFO   iter 3: DEDUP skip fts_search(x) — already searched (0.0s)
+2026-08-06 09:16:20 [agent] INFO   iter 4: DEDUP skip fts_search(x) — already searched (0.0s)
+2026-08-06 09:16:20 [agent] INFO   iter 5: DEDUP skip fts_search(x) — already searched (0.0s)
+2026-08-06 09:16:20 [agent] INFO   iter 6: DEDUP skip fts_search(x) — already searched (0.0s)
+2026-08-06 09:16:20 [agent] INFO   iter 7: DEDUP skip fts_search(x) — already searched (0.0s)
+2026-08-06 09:16:20 [agent] INFO   iter 8: DEDUP skip fts_search(x) — already searched (0.0s)
+2026-08-06 09:16:20 [agent] INFO   iter 9: DEDUP skip fts_search(x) — already searched (0.0s)
+2026-08-06 09:16:20 [agent] INFO   iter 10: DEDUP skip fts_search(x) — already searched (0.0s)
+2026-08-06 09:16:20 [agent] INFO   iter 11: DEDUP skip fts_search(x) — already searched (0.0s)
+2026-08-06 09:16:20 [agent] INFO   iter 12: DEDUP skip fts_search(x) — already searched (0.0s)
+2026-08-06 09:16:20 [agent] INFO   iter 13: DEDUP skip fts_search(x) — already searched (0.0s)
+2026-08-06 09:16:20 [agent] INFO   iter 14: DEDUP skip fts_search(x) — already searched (0.0s)
+2026-08-06 09:16:20 [agent] INFO   iter 15: DEDUP skip fts_search(x) — already searched (0.0s)
+2026-08-06 09:16:20 [agent] WARNING QUERY BUDGET EXHAUSTED: "test" (iters=15, 0.0s)
+2026-08-06 09:16:20 [agent] INFO QUERY START: "impossible question" (history=0 turns)
+2026-08-06 09:16:20 [agent] INFO   iter 1: fts_search({"query": "x"}) -> []... (0.0s)
+2026-08-06 09:16:20 [agent] INFO   iter 2: DEDUP skip fts_search(x) — already searched (0.0s)
+2026-08-06 09:16:20 [agent] INFO   iter 3: DEDUP skip fts_search(x) — already searched (0.0s)
+2026-08-06 09:16:20 [agent] WARNING QUERY BUDGET EXHAUSTED: "impossible question" (iters=3, 0.0s)
+2026-08-06 09:18:11 [agent] INFO QUERY START: "Is there a starter adventure in this manual?" (history=0 turns)
+2026-08-06 09:18:12 [agent] DEBUG fts_search: query='starter adventure' db=db uid=1638caaebbce47858cbb0188e38658eb -> 0 results
+2026-08-06 09:18:12 [agent] INFO   iter 1: fts_search({"query": "starter adventure"}) -> []... (1.4s)
+2026-08-06 09:18:13 [agent] DEBUG fts_search: query='adventure' db=db uid=1638caaebbce47858cbb0188e38658eb -> 5 results
+2026-08-06 09:18:13 [agent] INFO   iter 2: fts_search({"query": "adventure"}) -> [{"path": "5111bb1ac69e462197886579e8686499/54_chapter_7.md", "title": "Chapter 7", "snippet": "\n# Chapter 7\n\nChapter... (1.1s)
+2026-08-06 09:18:13 [agent] DEBUG fts_search: query='starter' db=db uid=1638caaebbce47858cbb0188e38658eb -> 0 results
+2026-08-06 09:18:13 [agent] INFO   iter 2: fts_search({"query": "starter"}) -> []... (1.1s)
+2026-08-06 09:18:15 [agent] INFO   iter 3: DEDUP skip fts_search(starter adventure) — already searched (1.4s)
+2026-08-06 09:18:15 [agent] DEBUG fts_search: query='introductory adventure' db=db uid=1638caaebbce47858cbb0188e38658eb -> 5 results
+2026-08-06 09:18:15 [agent] INFO   iter 3: fts_search({"query": "introductory adventure"}) -> [{"path": "5111bb1ac69e462197886579e8686499/235_chapter_19.md", "title": "Chapter 19", "snippet": "\n# Chapter 19\n\nCha... (1.4s)
+2026-08-06 09:18:15 [agent] DEBUG fts_search: query='sample adventure' db=db uid=1638caaebbce47858cbb0188e38658eb -> 5 results
+2026-08-06 09:18:15 [agent] INFO   iter 3: fts_search({"query": "sample adventure"}) -> [{"path": "5111bb1ac69e462197886579e8686499/186_games.md", "title": "GAMES", "snippet": "...this book is a <mark>sample<... (1.4s)
+2026-08-06 09:18:16 [agent] INFO   iter 4: read_file({"path": "5111bb1ac69e462197886579e8686499/236_the_darkness.md"}) -> --- summary: "This section introduces the adventure 'Before Dawn' for Dragon Warriors, explaining how to structure and r... (1.7s)
+2026-08-06 09:18:16 [agent] INFO   iter 4: read_file({"path": "5111bb1ac69e462197886579e8686499/186_games.md"}) -> --- summary: "This section discusses the GamesMaster's role in estimating game-time, which differs from real time, and i... (1.7s)
+2026-08-06 09:18:17 [agent] INFO   iter 5: read_file({"path": "5111bb1ac69e462197886579e8686499/235_chapter_19.md"}) -> --- summary: "An introductory Dragon Warriors scenario for 4-6 first-rank characters, set in a cursed village where a Wh... (1.2s)
+2026-08-06 09:18:20 [agent] INFO   iter 6: DEDUP skip read_file(5111bb1ac69e462197886579e8686499/236_the_darkness.md) — already read (2.5s)
+2026-08-06 09:18:24 [agent] INFO   iter 7: DONE called (4.4s)
+2026-08-06 09:18:24 [agent] INFO QUERY DONE: "Is there a starter adventure in this manual?" -> "Yes, there is a starter adventure in this manual! It's called **"The Darkness Before Dawn"** — an in" (iters=7, cites=3, suggestions=3, 13.8s)
