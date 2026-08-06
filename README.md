@@ -125,6 +125,81 @@ pytest tests/test_e2e_journey.py -v -m e2e
 
 187 tests total, including 38 end-to-end journey tests covering the full user experience from registration through Q&A.
 
+## Deployment
+
+### Docker Compose (Production + Test)
+
+Two environments on the same server — production (port 8050) and test/staging (port 8051).
+
+**Prerequisites:**
+- Docker + Docker Compose installed
+- Ollama running on the host (`ollama serve`)
+- Pull required models: `ollama pull phi4-mini:3.8b deepseek-v4-flash:cloud`
+
+**Deploy:**
+
+```bash
+# Deploy both prod + test
+./scripts/deploy.sh all
+
+# Or deploy individually
+./scripts/deploy.sh prod    # port 8050
+./scripts/deploy.sh test    # port 8051
+
+# Check status
+./scripts/deploy.sh status
+
+# Stop
+./scripts/deploy.sh stop
+```
+
+**First-time setup:**
+- Both environments auto-create an `admin/admin` user on first deploy
+- **Change the admin password immediately**: `docker exec open-grimoire-prod python -m app.cli.user passwd --username admin --password 'new-password'`
+- Create a `.env` file with secure session secrets:
+  ```
+  SESSION_SECRET=your-random-prod-secret
+  TEST_SESSION_SECRET=your-random-test-secret
+  ```
+
+**Nginx config** (for HTTPS on the test subdomain):
+```nginx
+server {
+    listen 443 ssl;
+    server_name test.grim.superversive.net;
+    ssl_certificate     /etc/letsencrypt/live/test.grim.superversive.net/fullchain.pem;
+    ssl_certificate_key  /etc/letsencrypt/live/test.grim.superversive.net/privkey.pem;
+    location / {
+        proxy_pass http://localhost:8051;
+        client_max_body_size 100M;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+    }
+}
+```
+
+### Backup
+
+```bash
+# Manual backup
+./scripts/backup.sh /opt/backups/open-grimoire
+
+# Nightly backup (add to crontab)
+# 0 3 * * * /home/jason/Repos/rpg-master/scripts/backup.sh /opt/backups/open-grimoire
+
+# Restore from backup
+./scripts/restore.sh /opt/backups/open-grimoire/20260806-120000.tar.gz
+```
+
+Backups include:
+- SQLite databases (using `sqlite3 .backup` for consistency)
+- Data directories (PDFs, markdown, covers)
+- Config files
+
+Keeps last 7 days of backups locally. Compressed with timestamp.
+
 ## Tech Stack
 
 - **Backend**: FastAPI, Uvicorn, SQLite (FTS5)

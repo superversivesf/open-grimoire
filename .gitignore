@@ -4,5 +4,11 @@ __pycache__/
 .pytest_cache/
 data/
 db/
+data-prod/
+db-prod/
+data-test/
+db-test/
+logs/
 *.egg-info/
 .venv/
+/opt/backups/

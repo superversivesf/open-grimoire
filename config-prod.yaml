@@ -1,0 +1,20 @@
+ollama:
+  host: http://host.docker.internal:11434
+
+models:
+  query: deepseek-v4-flash:cloud
+  enrich: phi4-mini:3.8b
+  structure: phi4-mini:3.8b
+  vision: gemma3:4b
+
+options:
+  num_ctx: 16384
+
+paths:
+  data_dir: ./data
+  db_dir: ./db
+
+server:
+  host: 0.0.0.0
+  port: 8050
+  secret: change-me-via-SESSION_SECRET-env

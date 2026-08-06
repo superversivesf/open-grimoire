@@ -1,40 +1,48 @@
 services:
-  app:
+  prod:
     build: .
-    container_name: open-grimoire
+    container_name: open-grimoire-prod
     ports:
-      - "8000:8000"
+      - "8050:8050"
+    volumes:
+      - ./data-prod:/app/data
+      - ./db-prod:/app/db
+      - ./config-prod.yaml:/app/config.yaml:ro
     environment:
-      - OLLAMA_HOST=http://ollama:11434
-      - SESSION_SECRET=${SESSION_SECRET:?SESSION_SECRET must be set in .env}
-      # DATA_DIR and DB_DIR are set in the Dockerfile to /app/data and /app/db
-      # Override here if needed:
-      # - DATA_DIR=/app/data
-      # - DB_DIR=/app/db
-    volumes:
-      - app-data:/app/data
-      - app-db:/app/db
-    depends_on:
-      - ollama
+      - OLLAMA_HOST=http://host.docker.internal:11434
+      - SESSION_SECRET=${SESSION_SECRET:-change-me-in-production}
+      - HOST=0.0.0.0
+      - PORT=8050
     restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8050/login')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 
-  ollama:
-    image: ollama/ollama:latest
+  test:
+    build: .
+    container_name: open-grimoire-test
     ports:
-      - "11434:11434"
+      - "8051:8051"
     volumes:
-      - ollama-models:/root/.ollama
-    # If you have an NVIDIA GPU, uncomment these lines:
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           count: 1
-    #           capabilities: [gpu]
+      - ./data-test:/app/data
+      - ./db-test:/app/db
+      - ./config-test.yaml:/app/config.yaml:ro
+    environment:
+      - OLLAMA_HOST=http://host.docker.internal:11434
+      - SESSION_SECRET=${TEST_SESSION_SECRET:-test-secret-change-me}
+      - HOST=0.0.0.0
+      - PORT=8051
     restart: unless-stopped
-
-volumes:
-  app-data:
-  app-db:
-  ollama-models:
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8051/login')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
