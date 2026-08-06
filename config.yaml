@@ -3,7 +3,7 @@ ollama:
 
 models:
   query: deepseek-v4-flash:0731-cloud
-  enrich: deepseek-v4-flash:0731-cloud
+  enrich: phi4-mini:3.8b
   structure: deepseek-v4-flash:0731-cloud
   vision: gemma3:4b
 
