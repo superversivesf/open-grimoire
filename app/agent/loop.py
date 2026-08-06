@@ -2,7 +2,7 @@ import json
 import re
 import time
 import typing
-from app.agent.tools_schema import TOOL_DEFINITIONS, DONE_ONLY_TOOLS
+from app.agent.tools_schema import TOOL_DEFINITIONS, FORCED_DONE_TOOLS
 from app.agent.history import build_messages, trim_history
 from app.usage.tokens import estimate_messages_tokens, estimate_response_tokens
 from app.logging_utils import get_logger
@@ -193,7 +193,7 @@ class AgentLoop:
 
         for iteration in range(1, self.max_iterations + 1):
             t0 = time.time()
-            tools = DONE_ONLY_TOOLS if forced_done else TOOL_DEFINITIONS
+            tools = FORCED_DONE_TOOLS if forced_done else TOOL_DEFINITIONS
             # Track input tokens
             total_input_tokens += estimate_messages_tokens(messages)
             resp = await self.gateway.call("query", "", tools=tools, messages=messages)
@@ -249,7 +249,9 @@ class AgentLoop:
                     return
 
                 # --- If forced_done, reject any tool that isn't 'done' ---
-                if forced_done and name != "done":
+                # BUT allow read_file for files not yet read (model may need
+                # to read a different file that FTS found)
+                if forced_done and name != "done" and name != "read_file":
                     log.info(f"  iter {iteration}: rejecting {name} — forced_done mode ({llm_time:.1f}s)")
                     messages.append({"role": "assistant", "content": content})
                     messages.append({"role": "user", "content": "You must call done now. The only available tool is done. Call it with your answer."})
@@ -269,15 +271,15 @@ class AgentLoop:
                         dedup_read_count += 1
                         log.info(f"  iter {iteration}: DEDUP skip read_file({fpath}) — already read ({llm_time:.1f}s)")
                         messages.append({"role": "assistant", "content": content})
-                        messages.append({"role": "tool", "name": name, "content": f"Already read. You have this file's content above — use it to answer. Do not read it again."})
-                        # After 2 dedup blocks on read_file, force done — model is stuck
-                        if dedup_read_count >= 2 and not forced_done:
+                        messages.append({"role": "tool", "name": name, "content": f"Already read this file. You have its content above. If you need more information, try reading a DIFFERENT file from your fts_search results, or call done with what you know."})
+                        # After 3 dedup blocks on read_file, force done — model is truly stuck
+                        if dedup_read_count >= 3 and not forced_done:
                             forced_done = True
-                            messages.append({"role": "user", "content": "You already have the information from your files. Call done NOW with your answer based on what you've already read. Do not try to read any more files."})
-                            log.info(f"  iter {iteration}: forcing done-only tools (repeated read attempts)")
-                        elif not forced_done and iteration >= 6:
+                            messages.append({"role": "user", "content": "You keep trying to read the same files. Call done NOW with your answer based on what you've already read. If you don't have enough information, say so in your answer."})
+                            log.info(f"  iter {iteration}: forcing done-only tools (3 repeated read attempts)")
+                        elif not forced_done and iteration >= 8:
                             forced_done = True
-                            messages.append({"role": "user", "content": "You already have the information. Call done now with your answer."})
+                            messages.append({"role": "user", "content": "You have searched enough. Call done now with your answer."})
                         continue
                     files_read.add(fpath)
 

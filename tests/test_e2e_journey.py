@@ -949,9 +949,10 @@ class TestAgentLoopJourney:
         toolbox.execute = MagicMock(return_value='[]')
         loop = AgentLoop(gw, toolbox, max_iterations=15)
         result = await loop.run([], "test")
-        # After iter 8, tools should only contain 'done'
+        # After iter 8, tools should only contain 'done' and 'read_file'
         for tools_list in seen_tools[8:]:
-            assert tools_list == ["done"], f"Expected only 'done' tool after iter 8, got {tools_list}"
+            assert "done" in tools_list, f"Expected 'done' tool after iter 8, got {tools_list}"
+            assert "fts_search" not in tools_list, f"Should not offer fts_search after forced_done, got {tools_list}"
 
     @pytest.mark.asyncio
     async def test_loop_budget_exhausted_returns_fallback(self):

@@ -1,4 +1,19 @@
-DONE_ONLY_TOOLS = [
+FORCED_DONE_TOOLS = [
+    {
+        "type": "function",
+        "function": {
+            "name": "read_file",
+            "description": "Read the full content of a markdown file. Only use for files you have NOT already read.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "path": {"type": "string", "description": "Path to the markdown file"},
+                    "lines": {"type": "string", "description": "Optional line range, e.g. '10-30'"},
+                },
+                "required": ["path"],
+            },
+        },
+    },
     {
         "type": "function",
         "function": {
