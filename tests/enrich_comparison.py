@@ -384,7 +384,7 @@ def get_available_models(cfg, tools_only: bool = False, max_local_size_mb: int =
     """
     import urllib.request
     try:
-        data = json.loads(urllib_request.urlopen(f"{cfg.ollama_host}/api/tags").read())
+        data = json.loads(urllib.request.urlopen(f"{cfg.ollama_host}/api/tags").read())
     except Exception:
         return []
 
@@ -393,7 +393,8 @@ def get_available_models(cfg, tools_only: bool = False, max_local_size_mb: int =
         caps = m.get("capabilities", [])
         name = m["name"]
         size_mb = m.get("size", 0) // 1024 // 1024
-        is_cloud = ":cloud" in name
+        # Cloud models have size=0 and "cloud" in the name (with : or -)
+        is_cloud = "cloud" in name.lower() or size_mb == 0
         # Skip kimi-k3 (402 payment required)
         if "kimi" in name:
             continue
@@ -404,7 +405,7 @@ def get_available_models(cfg, tools_only: bool = False, max_local_size_mb: int =
         if tools_only and "tools" not in caps:
             continue
         # Skip embedding models
-        if "completion" not in caps and "tools" not in caps:
+        if "embedding" in name or "embed" in name:
             continue
         models.append(name)
 
