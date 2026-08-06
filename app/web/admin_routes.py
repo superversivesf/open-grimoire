@@ -58,7 +58,7 @@ async def admin_dashboard(request: Request):
     if enrichments:
         enrich_input = enrichments.get("total_input") or 0
         enrich_output = enrichments.get("total_output") or 0
-        total_enrich_cost = estimate_cost_usd("deepseek-v4-flash:cloud", enrich_input, enrich_output)
+        total_enrich_cost = estimate_cost_usd("deepseek-v4-flash:0731-cloud", enrich_input, enrich_output)
 
     sconn.close()
 

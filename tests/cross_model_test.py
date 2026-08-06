@@ -157,8 +157,8 @@ async def main():
     ]
 
     # Models to test
-    enrich_models = ["phi4-mini:3.8b", "deepseek-v4-flash:cloud"]
-    query_model = "deepseek-v4-flash:cloud"
+    enrich_models = ["phi4-mini:3.8b", "deepseek-v4-flash:0731-cloud"]
+    query_model = "deepseek-v4-flash:0731-cloud"
 
     all_results = {}
 
@@ -207,9 +207,9 @@ async def main():
 
     for q in questions:
         phi_fts = all_results["phi4-mini:3.8b"]["fts_results"].get(q, 0)
-        ds_fts = all_results["deepseek-v4-flash:cloud"]["fts_results"].get(q, 0)
+        ds_fts = all_results["deepseek-v4-flash:0731-cloud"]["fts_results"].get(q, 0)
         phi_qa = [r for r in all_results["phi4-mini:3.8b"]["qa_results"] if r["question"] == q]
-        ds_qa = [r for r in all_results["deepseek-v4-flash:cloud"]["qa_results"] if r["question"] == q]
+        ds_qa = [r for r in all_results["deepseek-v4-flash:0731-cloud"]["qa_results"] if r["question"] == q]
         phi_iters = phi_qa[0]["iterations"] if phi_qa else "?"
         ds_iters = ds_qa[0]["iterations"] if ds_qa else "?"
         phi_cites = phi_qa[0]["cites"] if phi_qa else "?"

@@ -49,7 +49,7 @@ The loop includes deduplication (won't re-read files or repeat searches), forced
 ### Prerequisites
 
 - Python 3.11+
-- [Ollama](https://ollama.ai) running locally with at least one model that supports tool calling (e.g. `qwen2.5:7b`, `deepseek-v4-flash:cloud`)
+- [Ollama](https://ollama.ai) running locally with at least one model that supports tool calling (e.g. `qwen2.5:7b`, `deepseek-v4-flash:0731-cloud`)
 - [poppler](https://poppler.freedesktop.org/) for PDF cover extraction (`apt install poppler-utils`)
 - [tesseract](https://github.com/tesseract-ocr/tesseract) for optional OCR (`apt install tesseract-ocr`)
 
@@ -134,7 +134,7 @@ Two environments on the same server — production (port 8050) and test/staging 
 **Prerequisites:**
 - Docker + Docker Compose installed
 - Ollama running on the host (`ollama serve`)
-- Pull required models: `ollama pull phi4-mini:3.8b deepseek-v4-flash:cloud`
+- Pull required models: `ollama pull phi4-mini:3.8b deepseek-v4-flash:0731-cloud`
 
 **Deploy:**
 

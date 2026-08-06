@@ -2,7 +2,7 @@ ollama:
   host: http://host.docker.internal:11434
 
 models:
-  query: deepseek-v4-flash:cloud
+  query: deepseek-v4-flash:0731-cloud
   enrich: phi4-mini:3.8b
   structure: phi4-mini:3.8b
   vision: gemma3:4b

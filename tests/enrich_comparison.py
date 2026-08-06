@@ -8,10 +8,10 @@ Usage:
     .venv/bin/python tests/enrich_comparison.py
 
     # Specific models and sections
-    .venv/bin/python tests/enrich_comparison.py --models "qwen2.5:7b,deepseek-v4-flash:cloud" --samples 10
+    .venv/bin/python tests/enrich_comparison.py --models "qwen2.5:7b,deepseek-v4-flash:0731-cloud" --samples 10
 
     # Query model comparison (Q&A quality)
-    .venv/bin/python tests/enrich_comparison.py --mode query --models "qwen2.5:7b,deepseek-v4-flash:cloud"
+    .venv/bin/python tests/enrich_comparison.py --mode query --models "qwen2.5:7b,deepseek-v4-flash:0731-cloud"
 
     # Full benchmark (enrich + query)
     .venv/bin/python tests/enrich_comparison.py --mode both --samples 20
