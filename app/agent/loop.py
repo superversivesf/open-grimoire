@@ -13,12 +13,13 @@ SYSTEM_PROMPT = """You are an RPG rules assistant. You search the user's RPG man
 
 Rules:
 1. ALWAYS use fts_search FIRST. Never use ls or list_index to browse — they waste turns.
-2. After fts_search, use read_file to read the full content of the most relevant result.
-3. Use done to give your final answer with citations and 3 suggested follow-up questions.
-4. If fts_search returns no results, try a different query (2-3 attempts max), then call done.
-5. NEVER read the same file twice.
-6. NEVER use ls — the file structure is flat .md files, not directories. Use fts_search instead.
-7. NEVER try to read index.md files — they don't exist in this collection.
+2. Use SIMPLE search terms — one or two words, not full sentences. Example: fts_search "goblin" not fts_search "what is a goblin's armor class". Avoid hyphens.
+3. After fts_search, use read_file to read the full content of the most relevant result.
+4. Use done to give your final answer with citations and 3 suggested follow-up questions.
+5. If fts_search returns no results, try a different simpler query (2-3 attempts max), then call done.
+6. NEVER read the same file twice.
+7. NEVER use ls — the file structure is flat .md files, not directories. Use fts_search instead.
+8. NEVER try to read index.md files — they don't exist in this collection.
 
 The fts_search snippets are too short to answer from. Always read_file before answering.
 
@@ -188,6 +189,7 @@ class AgentLoop:
         forced_done = False  # when True, only done tool is offered
         total_input_tokens = 0
         total_output_tokens = 0
+        dedup_read_count = 0  # track repeated read attempts
 
         for iteration in range(1, self.max_iterations + 1):
             t0 = time.time()
@@ -257,10 +259,16 @@ class AgentLoop:
                 if name == "read_file":
                     fpath = args.get("path", "")
                     if fpath in files_read:
+                        dedup_read_count += 1
                         log.info(f"  iter {iteration}: DEDUP skip read_file({fpath}) — already read ({llm_time:.1f}s)")
                         messages.append({"role": "assistant", "content": content})
                         messages.append({"role": "tool", "name": name, "content": f"Already read. You have this file's content above — use it to answer. Do not read it again."})
-                        if not forced_done and iteration >= 6:
+                        # After 2 dedup blocks on read_file, force done — model is stuck
+                        if dedup_read_count >= 2 and not forced_done:
+                            forced_done = True
+                            messages.append({"role": "user", "content": "You already have the information from your files. Call done NOW with your answer based on what you've already read. Do not try to read any more files."})
+                            log.info(f"  iter {iteration}: forcing done-only tools (repeated read attempts)")
+                        elif not forced_done and iteration >= 6:
                             forced_done = True
                             messages.append({"role": "user", "content": "You already have the information. Call done now with your answer."})
                         continue

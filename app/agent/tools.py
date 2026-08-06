@@ -40,15 +40,27 @@ class ToolBox:
             if not doc_ids:
                 log.debug(f"fts_search: no docs in collection {self.collection_id}")
                 return []
-            # Build a filter: only match paths that start with a doc_id from this collection
-            placeholders = ",".join("?" * len(doc_ids))
+            # Sanitize FTS query: wrap each term in double quotes to prevent
+            # FTS5 from interpreting hyphens and special chars as column qualifiers
+            # e.g. "pre-generated" becomes "\"pre-generated\""
+            terms = query.strip().split()
+            safe_terms = []
+            for term in terms:
+                # Already quoted?
+                if term.startswith('"') and term.endswith('"'):
+                    safe_terms.append(term)
+                else:
+                    # Replace hyphens with spaces inside quotes for phrase matching
+                    clean = term.replace('-', ' ')
+                    safe_terms.append(f'"{clean}"')
+            fts_query = ' '.join(safe_terms)
             sql = (f"SELECT path, title, snippet(documents_fts, 4, '<mark>', '</mark>', '...', 10) as snippet, rank "
                    f"FROM documents_fts WHERE documents_fts MATCH ? AND ("
                    + " OR ".join(f"path LIKE ?" for _ in doc_ids)
                    + ") ORDER BY rank LIMIT 5")
-            params = (query,) + tuple(f"{did}/%" for did in doc_ids)
+            params = (fts_query,) + tuple(f"{did}/%" for did in doc_ids)
             rows = conn.execute(sql, params).fetchall()
-            log.debug(f"fts_search: query='{query}' db={self.db_dir} uid={self.user_id} -> {len(rows)} results")
+            log.debug(f"fts_search: query='{query}' fts='{fts_query}' -> {len(rows)} results")
             return [dict(r) for r in rows]
         except Exception as e:
             log.error(f"fts_search ERROR: {e}\n{traceback.format_exc()}")
