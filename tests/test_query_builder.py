@@ -50,3 +50,17 @@ def test_cascade_order_strictest_first():
 
 def test_cascade_empty_for_all_stop_words():
     assert build_query_cascade(["how", "does", "the"]) == []
+
+
+def test_cascade_outputs_execute_against_real_fts5():
+    import sqlite3
+    conn = sqlite3.connect(":memory:")
+    conn.execute("CREATE VIRTUAL TABLE t USING fts5(a, b, c)")
+    conn.execute("INSERT INTO t (a, b, c) VALUES ('goblin', 'armor class', 'AC 15 hp 7')")
+    for fts_query in build_query_cascade(["goblin", "ac"]):
+        rows = conn.execute("SELECT a FROM t WHERE t MATCH ?", (fts_query,)).fetchall()
+        assert isinstance(rows, list)
+    # also single multi-word term with prefix path
+    for fts_query in build_query_cascade(["armor class"]):
+        conn.execute("SELECT a FROM t WHERE t MATCH ?", (fts_query,)).fetchall()
+    conn.close()

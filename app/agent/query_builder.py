@@ -67,7 +67,7 @@ def build_and_query(expanded: list[set[str]]) -> str:
         quoted = [q for m in sorted(members) if (q := _quote(m))]
         if quoted:
             groups.append("(" + " OR ".join(quoted) + ")")
-    return " ".join(groups)
+    return " AND ".join(groups)
 
 
 def build_or_query(expanded: list[set[str]], prefix: bool = False) -> str:
@@ -78,7 +78,7 @@ def build_or_query(expanded: list[set[str]], prefix: bool = False) -> str:
             q = _quote(m)
             if not q:
                 continue
-            if prefix and len(m) >= 4:
+            if prefix and len(m) >= 4 and " " not in q:
                 q = f"{q}*"
             tokens.add(q)
     return " OR ".join(sorted(tokens))
