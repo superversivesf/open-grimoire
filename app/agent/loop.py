@@ -9,19 +9,16 @@ from app.logging_utils import get_logger
 
 log = get_logger("agent")
 
-SYSTEM_PROMPT = """You are an RPG rules assistant. You search the user's RPG manual collection to answer questions.
+SYSTEM_PROMPT = """You are an RPG rules assistant. You search the user's RPG manual collection (one or more books) to answer questions.
 
-Rules:
-1. ALWAYS use fts_search FIRST. Never use ls or list_index to browse — they waste turns.
-2. Use SIMPLE search terms — one or two words, not full sentences. Example: fts_search "goblin" not fts_search "what is a goblin's armor class". Avoid hyphens.
-3. After fts_search, use read_file to read the full content of the most relevant result.
-4. Use done to give your final answer with citations and 3 suggested follow-up questions.
-5. If fts_search returns no results, try a different simpler query (2-3 attempts max), then call done.
-6. NEVER read the same file twice.
-7. NEVER use ls — the file structure is flat .md files, not directories. Use fts_search instead.
-8. NEVER try to read index.md files — they don't exist in this collection.
-
-The fts_search snippets are too short to answer from. Always read_file before answering.
+Search strategy:
+1. ALWAYS start with fts_search — never browse with ls or list_index.
+2. Query with ONE distinctive keyword first — the most specific noun (e.g. "goblin", "sorcerer", "grapple"). If results are too broad, add a second term (e.g. "goblin ac"). Terms are AND-combined; stop words ("how", "what", "is") are ignored and abbreviations (AC, HP, DC, ST, XP) are expanded automatically.
+3. Read the top result with read_file before answering — snippets are too short to answer from.
+4. If fts_search returns nothing, try one different single keyword (2-3 attempts max), or use grep with a regex to find cross-references (e.g. grep "advantage" for every mention).
+5. NEVER read the same file twice.
+6. If the question names a book (e.g. "in the Player's Handbook"), prefer matches from that book.
+7. NEVER read index.md files — they are navigation only.
 
 When calling done, always include 3 "suggestions" — short follow-up questions a player might ask next based on what they just learned."""
 
@@ -275,11 +272,11 @@ class AgentLoop:
                         # After 3 dedup blocks on read_file, force done — model is truly stuck
                         if dedup_read_count >= 3 and not forced_done:
                             forced_done = True
-                            messages.append({"role": "user", "content": "You keep trying to read the same files. Call done NOW with your answer based on what you've already read. If you don't have enough information, say so in your answer."})
+                            messages.append({"role": "user", "content": "You keep trying to read the same files. Call done NOW with your answer based on what you've already read, or use grep to locate the exact passage. If you don't have enough information, say so in your answer."})
                             log.info(f"  iter {iteration}: forcing done-only tools (3 repeated read attempts)")
                         elif not forced_done and iteration >= 8:
                             forced_done = True
-                            messages.append({"role": "user", "content": "You have searched enough. Call done now with your answer."})
+                            messages.append({"role": "user", "content": "You have searched enough. Call the done tool now with your answer based on what you've found. If your searches found nothing, try grep with a regex, or a single different keyword. If you still can't find it, say so in your answer."})
                         continue
                     files_read.add(fpath)
 
@@ -291,7 +288,7 @@ class AgentLoop:
                         messages.append({"role": "tool", "name": name, "content": f"Already searched for \"{q}\". Try a different query or call done."})
                         if not forced_done and iteration >= 6:
                             forced_done = True
-                            messages.append({"role": "user", "content": "You have searched enough. Call done now with your answer."})
+                            messages.append({"role": "user", "content": "You have searched enough. Call the done tool now with your answer based on what you've found. If your searches found nothing, try grep with a regex, or a single different keyword. If you still can't find it, say so in your answer."})
                         continue
                     searches_done.add(q)
 
@@ -317,10 +314,10 @@ class AgentLoop:
                 # After iteration 6, nudge; after 8, force done
                 if iteration >= 8 and not forced_done:
                     forced_done = True
-                    messages.append({"role": "user", "content": "You have enough information. Call done now with your answer and citations."})
+                    messages.append({"role": "user", "content": "You have enough information. Call done now with your answer and citations. Cite the exact paths from your fts_search results."})
                     log.info(f"  iter {iteration}: forcing done-only tools")
                 elif iteration >= 6 and not forced_done:
-                    messages.append({"role": "user", "content": "You have searched enough. Please call the done tool now with your answer based on what you've found. If you didn't find the answer, say so."})
+                    messages.append({"role": "user", "content": "You have searched enough. Please call the done tool now with your answer based on what you've found. If you didn't find the answer, try grep or a different keyword, then say so."})
                     log.info(f"  iter {iteration}: nudging model to call done")
 
         elapsed = time.time() - start_time

@@ -52,11 +52,11 @@ TOOL_DEFINITIONS = [
         "type": "function",
         "function": {
             "name": "fts_search",
-            "description": "Full-text search across all documents in the current collection. Returns ranked matches with path, title, summary, and a snippet. Use this first to find relevant sections.",
+            "description": "Full-text search across all documents in the current collection. Returns ranked matches with path, title, summary, page, and a snippet. Start with ONE distinctive keyword (e.g. 'goblin', 'sorcerer'). Multi-word queries are AND-combined; abbreviations (AC, HP, DC) and stop words are handled automatically. If this returns nothing, try a different single keyword or use grep.",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "query": {"type": "string", "description": "FTS5 query string, e.g. 'goblin AC' or 'grapple prone'"},
+                    "query": {"type": "string", "description": "Search terms, e.g. 'goblin' or 'goblin ac'. Use the most distinctive noun first."},
                 },
                 "required": ["query"],
             },

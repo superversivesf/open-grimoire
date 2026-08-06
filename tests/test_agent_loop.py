@@ -1,6 +1,13 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
-from app.agent.loop import AgentLoop
+from app.agent.loop import AgentLoop, SYSTEM_PROMPT
+
+
+@pytest.mark.asyncio
+async def test_system_prompt_mentions_search_strategy():
+    assert "fts_search" in SYSTEM_PROMPT
+    assert "ONE distinctive keyword" in SYSTEM_PROMPT
+    assert "grep" in SYSTEM_PROMPT
 
 
 @pytest.mark.asyncio

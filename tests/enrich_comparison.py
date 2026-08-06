@@ -220,12 +220,8 @@ async def test_enrich_model(model_name: str, samples: list[dict], cfg, num_ctx: 
     results = []
     for i, sample in enumerate(samples):
         t0 = time.time()
-        prompt = (
-            "Read this RPG manual section and produce a JSON object with "
-            "a 1-2 sentence 'summary' and a list of 3-8 'keywords' (lowercase). "
-            "Return ONLY valid JSON, no prose.\n\n"
-            f"{sample['content']}"
-        )
+        from app.pipeline.enrich import ENRICH_PROMPT
+        prompt = ENRICH_PROMPT.format(content=sample["content"])
         try:
             resp = await gw.call("enrich", prompt)
             raw = resp.get("message", {}).get("content", "")

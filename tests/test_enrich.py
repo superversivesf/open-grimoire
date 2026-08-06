@@ -1,7 +1,7 @@
 import pytest
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
-from app.pipeline.enrich import Enricher
+from app.pipeline.enrich import Enricher, ENRICH_PROMPT
 
 
 @pytest.mark.asyncio
@@ -20,6 +20,20 @@ async def test_enrich_leaf_writes_frontmatter(tmp_path):
     assert "keywords:" in content
     assert "page: 42" in content
     assert "# Goblin" in content
+
+
+@pytest.mark.asyncio
+async def test_enrich_prompt_asks_for_numbers_and_jargon(tmp_path):
+    leaf = tmp_path / "spell.md"
+    leaf.write_text("# Fireball\n\nDeals 8d6 damage.\n")
+    gw = MagicMock()
+    gw.call = AsyncMock(return_value={"message": {"content": '{"summary": "Fireball spell.", "keywords": ["fireball", "evocation", "8d6"]}'}})
+    e = Enricher(gw)
+    await e.enrich_leaf(leaf, page=1)
+    prompt_used = gw.call.await_args.args[1]
+    assert "AC" in prompt_used
+    assert "keywords" in prompt_used
+    assert "Fireball\n\nDeals 8d6 damage." in prompt_used
 
 
 @pytest.mark.asyncio
