@@ -7,7 +7,7 @@ STOP_WORDS = {
     "does", "did", "can", "could", "would", "should", "will", "what", "how",
     "why", "when", "where", "which", "who", "i", "me", "my", "we", "you",
     "your", "not", "no", "as", "by", "from", "up", "down", "there", "that",
-    "this", "these", "those", "about", "into", "than", "then", "if",
+    "this", "these", "those", "about", "into", "than", "then", "if", "s",
 }
 
 SYNONYM_GROUPS = {
@@ -56,7 +56,7 @@ def expand_terms(terms: list[str], extra_synonyms: dict[str, list[str]] | None =
 
 
 def _quote(token: str) -> str | None:
-    clean = _TERM_RE.sub(" ", token).strip()
+    clean = _TERM_RE.sub(" ", token.lower()).strip()
     return f'"{clean}"' if clean else None
 
 

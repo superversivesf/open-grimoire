@@ -27,11 +27,6 @@ def parse_frontmatter(path: Path) -> tuple[dict, str]:
     return fm, body
 
 
-def _flatten_table_line(line: str) -> str:
-    cells = [c.strip() for c in line.strip("|").split("|")]
-    return " ".join(cells)
-
-
 def _clean_content(body: str) -> str:
     out = []
     for line in body.splitlines():

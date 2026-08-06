@@ -3,6 +3,8 @@ import re
 from pathlib import Path
 
 
+# {{/}} escapes are deliberate: the JSON braces must survive .format() below;
+# rendered output equals the literal prompt.
 ENRICH_PROMPT = (
     "You are enriching an RPG rulebook section for search indexing. "
     "Read the section and return ONLY valid JSON, no prose:\n"

@@ -8,6 +8,21 @@ def test_tokenize_drops_stop_words():
     assert tokenize_terms("How does a goblin fight?") == ["goblin", "fight"]
 
 
+def test_tokenize_drops_contraction_suffix():
+    assert tokenize_terms("goblin's ac") == ["goblin", "ac"]
+
+
+def test_cascade_no_single_letter_tokens():
+    cascade = build_query_cascade(["goblin's", "ac"])
+    assert '"s"' not in cascade[0]
+
+
+def test_quote_lowercases_mixed_case():
+    expanded = expand_terms(["Spell"], {"Spell": ["Fireball"]})
+    q = build_or_query(expanded)
+    assert '"spell"' in q and '"fireball"' in q
+
+
 def test_tokenize_handles_hyphens_and_punct():
     assert tokenize_terms("pre-generated stat-block") == ["pre", "generated", "stat", "block"]
 
