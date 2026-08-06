@@ -248,6 +248,13 @@ class AgentLoop:
                            "est_output_tokens": total_output_tokens}
                     return
 
+                # --- If forced_done, reject any tool that isn't 'done' ---
+                if forced_done and name != "done":
+                    log.info(f"  iter {iteration}: rejecting {name} — forced_done mode ({llm_time:.1f}s)")
+                    messages.append({"role": "assistant", "content": content})
+                    messages.append({"role": "user", "content": "You must call done now. The only available tool is done. Call it with your answer."})
+                    continue
+
                 # --- Redirect browsing tools to fts_search early on ---
                 if name in ("ls", "list_index") and iteration <= 3:
                     log.info(f"  iter {iteration}: redirect {name} -> fts_search ({llm_time:.1f}s)")

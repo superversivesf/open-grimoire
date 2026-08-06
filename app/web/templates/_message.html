@@ -16,7 +16,7 @@
     {% set clean_name = cite_file_path.replace('/index.md', '.md').split('/')[-1].replace('_', ' ').replace('.md', '') %}
     <div class="rpg-cite">
       {% if cite_doc_id %}
-      <a href="/docs/{{ cite_doc_id }}/pdf{% if cite_page %}#page={{ cite_page }}{% endif %}" class="rpg-cite-link" target="_blank">
+      <a href="/docs/{{ cite_doc_id }}/pdf{% if cite_page %}?page={{ cite_page }}{% endif %}" class="rpg-cite-link" target="_blank">
         &#128279; {{ clean_name }}{% if cite_page %} (p. {{ cite_page }}){% endif %}
       </a>
       {% else %}

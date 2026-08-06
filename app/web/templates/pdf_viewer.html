@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PDF — Page {{ page }}</title>
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; overflow: hidden; background: #1a1625; }
+    #pdf-frame {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+    #loading {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #b388ff;
+      font-family: Inter, sans-serif;
+      font-size: 1.2rem;
+    }
+  </style>
+</head>
+<body>
+  <div id="loading">Loading PDF — page {{ page }}...</div>
+  <iframe id="pdf-frame" style="display:none;"></iframe>
+  <script>
+    // Use #page= fragment for browsers that support it (Chrome desktop)
+    // and page= query param as fallback (Firefox, Safari)
+    var page = {{ page }};
+    var pdfUrl = '/docs/{{ doc_id }}/pdf#page=' + page + '&toolbar=1&view=FitH';
+    var frame = document.getElementById('pdf-frame');
+    var loading = document.getElementById('loading');
+
+    // Try loading in iframe with fragment anchor
+    frame.src = pdfUrl;
+    frame.onload = function() {
+      loading.style.display = 'none';
+      frame.style.display = 'block';
+    };
+
+    // Fallback: if iframe doesn't load in 3 seconds, redirect to PDF directly
+    setTimeout(function() {
+      if (loading.style.display !== 'none') {
+        window.location.href = pdfUrl;
+      }
+    }, 3000);
+  </script>
+</body>
+</html>

@@ -314,15 +314,24 @@ async def doc_cover(request: Request, doc_id: str):
 
 @router.get("/docs/{doc_id}/pdf")
 async def doc_pdf(request: Request, doc_id: str, page: int = 0):
-    """Serve the original PDF, optionally jumping to a page."""
+    """Serve the original PDF with optional page jump.
+
+    Uses an HTML wrapper with <embed> + JS for reliable page jumping
+    across all browsers (mobile included). The #page= fragment anchor
+    doesn't work reliably on mobile PDF viewers.
+    """
     uid = current_user_id(request)
     if not uid:
         return RedirectResponse("/login", status_code=303)
     pdf_path = _data_dir / uid / doc_id / "original.pdf"
     if pdf_path.exists():
-        if page and page > 1:
-            # Use #page= anchor — browser PDF viewers support this
-            return RedirectResponse(f"/docs/{doc_id}/pdf#page={page}", status_code=303)
+        if page and page > 0:
+            # Return HTML wrapper that scrolls to the right page
+            return _templates.TemplateResponse(
+                request,
+                "pdf_viewer.html",
+                {"user_id": uid, "doc_id": doc_id, "page": page},
+            )
         return FileResponse(str(pdf_path), media_type="application/pdf")
     return RedirectResponse(f"/docs/{doc_id}", status_code=303)
 
