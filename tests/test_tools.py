@@ -9,7 +9,8 @@ def toolbox(tmp_dirs):
     uconn = init_user_db(tmp_dirs["db"], "alice")
     cid = create_collection(uconn, "C")
     create_doc(uconn, "d1", cid, "Book", "h")
-    insert_fts_row(uconn, "d1/c1/s1.md", "Goblin", "AC 15 monster", "goblin,monster", "Goblins are small humanoids with AC 15 and HP 7.")
+    insert_fts_row(uconn, "d1/01_chapter/01_goblin.md", "Goblin", "Goblin stats.", "goblin,monster", "Goblins are small humanoids with AC 15 and HP 7.")
+    insert_fts_row(uconn, "d1/01_chapter/02_knight.md", "Knight", "Knight stats.", "knight,armor", "Knights are armored warriors with AC 16 and HP 13.")
     uconn.close()
     doc_dir = tmp_dirs["data"] / "alice" / "d1"
     doc_dir.mkdir(parents=True)
@@ -25,6 +26,38 @@ def test_fts_search(toolbox):
     results = toolbox.fts_search("goblin")
     assert len(results) >= 1
     assert "goblin" in results[0]["path"].lower() or "Goblin" in results[0]["title"]
+
+
+def test_fts_search_drops_stop_words(toolbox):
+    results = toolbox.fts_search("how does the goblin work?")
+    assert len(results) >= 1
+    assert results[0]["title"] == "Goblin"
+
+
+def test_fts_search_synonym_ac(toolbox):
+    results = toolbox.fts_search("armor class")
+    assert len(results) >= 1
+
+
+def test_fts_search_results_have_summary_and_page(toolbox):
+    results = toolbox.fts_search("goblin")
+    assert results[0]["summary"] == "Goblin stats."
+    assert results[0]["page"] == 42
+
+
+def test_fts_search_and_then_or_fallback(toolbox):
+    # Row 1 has goblin+ac; row 2 has knight+ac. "goblin knight" fails AND, succeeds OR.
+    results = toolbox.fts_search("goblin knight")
+    assert len(results) == 2
+
+
+def test_fts_search_prefix_fallback(toolbox):
+    results = toolbox.fts_search("gobli")  # no exact token; prefix cascade catches it
+    assert len(results) >= 1
+
+
+def test_fts_search_empty_query(toolbox):
+    assert toolbox.fts_search("how what the") == []
 
 
 def test_read_file(toolbox):

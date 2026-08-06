@@ -4,6 +4,7 @@ import random
 import traceback
 from pathlib import Path
 from app.agent.sandbox import safe_read_file, safe_ls, truncate_result
+from app.agent.query_builder import build_query_cascade, tokenize_terms
 from app.storage.user_db import init_user_db
 from app.storage.paths import validate_user_path
 from app.logging_utils import get_logger
@@ -32,7 +33,6 @@ class ToolBox:
     def fts_search(self, query: str) -> list[dict]:
         conn = init_user_db(self.db_dir, self.user_id)
         try:
-            # Get doc_ids for this collection only
             doc_rows = conn.execute(
                 "SELECT doc_id FROM docs WHERE collection_id = ?", (self.collection_id,)
             ).fetchall()
@@ -40,33 +40,79 @@ class ToolBox:
             if not doc_ids:
                 log.debug(f"fts_search: no docs in collection {self.collection_id}")
                 return []
-            # Sanitize FTS query: wrap each term in double quotes to prevent
-            # FTS5 from interpreting hyphens and special chars as column qualifiers
-            # e.g. "pre-generated" becomes "\"pre-generated\""
-            terms = query.strip().split()
-            safe_terms = []
-            for term in terms:
-                # Already quoted?
-                if term.startswith('"') and term.endswith('"'):
-                    safe_terms.append(term)
-                else:
-                    # Replace hyphens with spaces inside quotes for phrase matching
-                    clean = term.replace('-', ' ')
-                    safe_terms.append(f'"{clean}"')
-            fts_query = ' '.join(safe_terms)
-            sql = (f"SELECT path, title, snippet(documents_fts, 4, '<mark>', '</mark>', '...', 10) as snippet, rank "
-                   f"FROM documents_fts WHERE documents_fts MATCH ? AND ("
-                   + " OR ".join(f"path LIKE ?" for _ in doc_ids)
-                   + ") ORDER BY rank LIMIT 5")
-            params = (fts_query,) + tuple(f"{did}/%" for did in doc_ids)
-            rows = conn.execute(sql, params).fetchall()
-            log.debug(f"fts_search: query='{query}' fts='{fts_query}' -> {len(rows)} results")
-            return [dict(r) for r in rows]
+            terms = tokenize_terms(query)
+            if not terms:
+                return []
+            extra = self._keyword_synonyms(conn, doc_ids, terms)
+            cascade = build_query_cascade(terms, extra)
+            scope = "(" + " OR ".join(f"path LIKE ?" for _ in doc_ids) + ")"
+            for fts_query in cascade:
+                sql = (
+                    f"SELECT path, title, summary, "
+                    f"snippet(documents_fts, 4, '<mark>', '</mark>', '...', 10) as snippet, "
+                    f"bm25(documents_fts, 0, 5, 8, 8, 1) as rank "
+                    f"FROM documents_fts WHERE documents_fts MATCH ? AND {scope} "
+                    f"ORDER BY rank LIMIT 5"
+                )
+                params = (fts_query,) + tuple(f"{d}/%" for d in doc_ids)
+                rows = conn.execute(sql, params).fetchall()
+                if rows:
+                    results = []
+                    for r in rows:
+                        item = dict(r)
+                        item["page"] = self._page_for(item["path"])
+                        results.append(item)
+                    log.debug(f"fts_search: query='{query}' -> {len(results)} results (fts='{fts_query}')")
+                    return results
+            log.debug(f"fts_search: query='{query}' -> 0 results across all fallbacks")
+            return []
         except Exception as e:
             log.error(f"fts_search ERROR: {e}\n{traceback.format_exc()}")
             return []
         finally:
             conn.close()
+
+    def _page_for(self, path: str) -> int | None:
+        try:
+            full = self.data_dir / self.user_id / path
+            if not full.is_file():
+                return None
+            text = full.read_text()
+            if not text.startswith("---"):
+                return None
+            end = text.find("\n---\n", 4)
+            if end == -1:
+                return None
+            for line in text[4:end].splitlines():
+                if line.startswith("page:"):
+                    return int(line[5:].strip())
+        except (ValueError, OSError):
+            pass
+        return None
+
+    def _keyword_synonyms(self, conn, doc_ids: list[str], terms: list[str]) -> dict[str, list[str]]:
+        """Per-collection keyword expansion: term -> keyword tokens containing it."""
+        if not terms:
+            return {}
+        placeholders = " OR ".join("path LIKE ?" for _ in doc_ids)
+        rows = conn.execute(
+            f"SELECT keywords FROM documents_fts WHERE {placeholders}",
+            tuple(f"{d}/%" for d in doc_ids),
+        ).fetchall()
+        all_keywords = set()
+        for r in rows:
+            for kw in (r["keywords"] or "").split(","):
+                kw = kw.strip().lower()
+                if kw:
+                    all_keywords.add(kw)
+        extra = {}
+        for t in terms:
+            if len(t) < 4:
+                continue
+            hits = {kw for kw in all_keywords if t in kw or kw in t}
+            if hits:
+                extra[t] = sorted(hits)
+        return extra
 
     def read_file(self, path: str, lines: str | None = None) -> str:
         return safe_read_file(self.data_dir, self.user_id, path, lines)
