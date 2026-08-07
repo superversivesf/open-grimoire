@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse, Response
 from starlette.middleware.base import RequestResponseEndpoint
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
+from urllib.parse import urlparse
 import asyncio
 import uuid
 import httpx
@@ -50,6 +51,19 @@ def create_app(cfg: Config, session_secret: str) -> FastAPI:
         response = await call_next(request)
         response.headers["x-request-id"] = req_id
         return response
+
+    # CSRF protection: reject cross-origin state-changing requests.
+    # SameSite=Lax blocks most browser cross-site POSTs; this covers the rest
+    # (top-level navigation POSTs, older clients, same-site subdomains).
+    @app.middleware("http")
+    async def csrf_origin_middleware(request: Request, call_next: RequestResponseEndpoint) -> Response:
+        if request.method in ("POST", "PUT", "PATCH", "DELETE"):
+            origin = request.headers.get("origin") or request.headers.get("referer", "")
+            host = request.headers.get("host", "")
+            if origin:
+                if urlparse(origin).netloc != host:
+                    return JSONResponse({"error": "cross-origin request blocked"}, status_code=403)
+        return await call_next(request)
 
     # Rate limiter
     app.state.limiter = _get_limiter()
