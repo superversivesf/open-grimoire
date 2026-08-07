@@ -30,6 +30,13 @@ WORKDIR /app
 # only so the image runs standalone; secrets come from the environment.
 COPY config.yaml ./
 
+# Run as a non-root user (fixed UID 10001 — unprivileged, avoids colliding
+# with the host's first user). Host-mounted volumes must be chown 10001:10001.
+RUN useradd --create-home --uid 10001 appuser \
+    && mkdir -p /app/data /app/db \
+    && chown -R appuser:appuser /app
+USER appuser
+
 EXPOSE 8050
 
 CMD ["python", "-m", "app"]
