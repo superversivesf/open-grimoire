@@ -124,6 +124,8 @@ async def continue_session_stream(request: Request, session_id: str, question: s
         return RedirectResponse("/login", status_code=303)
 
     async def event_stream() -> AsyncGenerator[str, None]:
+        # Snapshot session + history up-front, then close the connection —
+        # it must not sit open (holding a write lock) for the whole LLM run.
         conn = init_user_db(_db_dir, uid)
         try:
             session = get_session(conn, session_id)
@@ -131,23 +133,27 @@ async def continue_session_stream(request: Request, session_id: str, question: s
                 yield _sse_format("error", {"message": "Session not found"})
                 return
             history = load_history(conn, session_id)
-            loop = _make_loop(request, uid, session["collection_id"])
-
-            async for event in loop.run_stream(history, question):
-                if event["type"] == "thinking":
-                    yield _sse_format("thinking", {"message": event["message"]})
-                elif event["type"] == "done":
-                    append_turn(conn, session_id, question, event["answer"], event.get("cites", []), event.get("suggestions", []))
-                    yield _sse_format("done", {
-                        "answer": event["answer"],
-                        "cites": event.get("cites", []),
-                        "suggestions": event.get("suggestions", []),
-                        "iterations": event.get("iterations", 0),
-                    })
-                elif event["type"] == "error":
-                    yield _sse_format("error", {"message": event.get("message", "Unknown error")})
         finally:
             conn.close()
+        loop = _make_loop(request, uid, session["collection_id"])
+
+        async for event in loop.run_stream(history, question):
+            if event["type"] == "thinking":
+                yield _sse_format("thinking", {"message": event["message"]})
+            elif event["type"] == "done":
+                conn = init_user_db(_db_dir, uid)
+                try:
+                    append_turn(conn, session_id, question, event["answer"], event.get("cites", []), event.get("suggestions", []))
+                finally:
+                    conn.close()
+                yield _sse_format("done", {
+                    "answer": event["answer"],
+                    "cites": event.get("cites", []),
+                    "suggestions": event.get("suggestions", []),
+                    "iterations": event.get("iterations", 0),
+                })
+            elif event["type"] == "error":
+                yield _sse_format("error", {"message": event.get("message", "Unknown error")})
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
 
