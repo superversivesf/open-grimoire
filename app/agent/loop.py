@@ -174,12 +174,13 @@ class AgentLoop:
                 result = event
                 break
         if result is None:
-            result = {"type": "done", "answer": "I could not find an answer.", "cites": [], "suggestions": [], "iterations": self.max_iterations}
+            result = {"type": "done", "answer": "I could not find an answer.", "cites": [], "suggestions": [], "iterations": self.max_iterations, "done_called": False}
         return {
             "answer": result.get("answer", ""),
             "cites": result.get("cites", []),
             "suggestions": result.get("suggestions", []),
             "iterations": result.get("iterations", 0),
+            "done_called": result.get("done_called", False),
             "est_input_tokens": result.get("est_input_tokens", 0),
             "est_output_tokens": result.get("est_output_tokens", 0),
         }
@@ -244,7 +245,7 @@ class AgentLoop:
                     elapsed = time.time() - start_time
                     answer = clean_answer(last_content) or "I could not find an answer."
                     log.info(f"QUERY DONE: \"{new_question}\" -> \"{answer[:100]}\" (no done call, iters={total_iterations}, {elapsed:.1f}s)")
-                    yield {"type": "done", "answer": answer, "cites": [], "suggestions": [], "iterations": total_iterations}
+                    yield {"type": "done", "answer": answer, "cites": [], "suggestions": [], "iterations": total_iterations, "done_called": False}
                     return
 
             for tc in tool_calls:
@@ -266,7 +267,8 @@ class AgentLoop:
 
                     cleaned = clean_answer(answer)
                     yield {"type": "done", "answer": cleaned, "cites": cites, "suggestions": suggestions,
-                           "iterations": total_iterations, "est_input_tokens": total_input_tokens,
+                           "iterations": total_iterations, "done_called": True,
+                           "est_input_tokens": total_input_tokens,
                            "est_output_tokens": total_output_tokens}
                     return
 
@@ -345,6 +347,6 @@ class AgentLoop:
         fallback = _synthesize_answer(messages, new_question)
         cites = _extract_cites_from_history(messages)
         yield {"type": "done", "answer": fallback, "cites": cites, "suggestions": [],
-               "iterations": total_iterations,
+               "iterations": total_iterations, "done_called": False,
                "est_input_tokens": total_input_tokens,
                "est_output_tokens": total_output_tokens}

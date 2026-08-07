@@ -27,6 +27,34 @@ async def test_loop_calls_done_immediately():
     assert result["answer"] == "AC is 15."
     assert result["cites"][0]["page"] == 42
     assert result["iterations"] == 1
+    assert result["done_called"] is True
+
+
+@pytest.mark.asyncio
+async def test_loop_reports_done_called_false_when_no_done_tool():
+    """A run that ends without calling the done tool must report done_called=False."""
+    gw = MagicMock()
+    gw.call = AsyncMock(return_value={
+        "message": {"content": "Here is the answer.", "tool_calls": []}
+    })
+    toolbox = MagicMock()
+    loop = AgentLoop(gw, toolbox)
+    result = await loop.run([], "What is AC?")
+    assert result["done_called"] is False
+
+
+@pytest.mark.asyncio
+async def test_loop_reports_done_called_false_on_budget_exhaustion():
+    """A run that hits the iteration budget must report done_called=False."""
+    gw = MagicMock()
+    gw.call = AsyncMock(return_value={
+        "message": {"content": "", "tool_calls": [{"function": {"name": "fts_search", "arguments": '{"query": "x"}'}}]}
+    })
+    toolbox = MagicMock()
+    toolbox.execute = MagicMock(return_value='[{"path": "x.md", "title": "X", "snippet": "y"}]')
+    loop = AgentLoop(gw, toolbox, max_iterations=2)
+    result = await loop.run([], "Find x")
+    assert result["done_called"] is False
 
 
 @pytest.mark.asyncio

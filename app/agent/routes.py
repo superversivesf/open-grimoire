@@ -61,7 +61,7 @@ async def start_session(request: Request, collection_id: str = Form(...), questi
                   est_input_tokens=result.get("est_input_tokens", 0),
                   est_output_tokens=result.get("est_output_tokens", 0),
                   elapsed_sec=elapsed,
-                  done_called=result.get("iterations", 0) <= 12,
+                  done_called=result.get("done_called", False),
                   session_id=sid, collection_id=collection_id)
         sconn.close()
         append_turn(conn, sid, question, result["answer"], result["cites"], result.get("suggestions"))
@@ -98,7 +98,7 @@ async def continue_session(request: Request, session_id: str, question: str = Fo
                   est_input_tokens=result.get("est_input_tokens", 0),
                   est_output_tokens=result.get("est_output_tokens", 0),
                   elapsed_sec=elapsed,
-                  done_called=result.get("iterations", 0) <= 12,
+                  done_called=result.get("done_called", False),
                   session_id=session_id, collection_id=session["collection_id"])
         sconn.close()
         append_turn(conn, session_id, question, result["answer"], result["cites"], result.get("suggestions"))
