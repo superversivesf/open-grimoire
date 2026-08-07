@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, Form
+from fastapi import APIRouter, Request, Form, Depends
 from fastapi.responses import RedirectResponse, StreamingResponse, Response
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
@@ -6,6 +6,7 @@ from typing import Any, AsyncGenerator, cast
 import time
 import json
 from app.auth.middleware import current_user_id
+from app.auth.csrf import require_csrf
 from app.storage.user_db import (
     init_user_db, create_session, get_session, list_collections, list_docs,
 )
@@ -40,7 +41,7 @@ def _make_loop(request: Request, uid: str, collection_id: str) -> AgentLoop:
 
 
 @router.post("/sessions")
-async def start_session(request: Request, collection_id: str = Form(...), question: str = Form(...)) -> Response:
+async def start_session(request: Request, collection_id: str = Form(...), question: str = Form(...), _: None = Depends(require_csrf)) -> Response:
     uid = current_user_id(request)
     if not uid:
         return RedirectResponse("/login", status_code=303)
@@ -75,7 +76,7 @@ async def start_session(request: Request, collection_id: str = Form(...), questi
 
 
 @router.post("/sessions/{session_id}")
-async def continue_session(request: Request, session_id: str, question: str = Form(...)) -> Response:
+async def continue_session(request: Request, session_id: str, question: str = Form(...), _: None = Depends(require_csrf)) -> Response:
     uid = current_user_id(request)
     if not uid:
         return RedirectResponse("/login", status_code=303)
@@ -116,7 +117,7 @@ def _sse_format(event_type: str, data: dict[str, Any]) -> str:
 
 
 @router.post("/sessions/{session_id}/stream")
-async def continue_session_stream(request: Request, session_id: str, question: str = Form(...)) -> Response:
+async def continue_session_stream(request: Request, session_id: str, question: str = Form(...), _: None = Depends(require_csrf)) -> Response:
     """SSE streaming endpoint for follow-up questions."""
     uid = current_user_id(request)
     if not uid:

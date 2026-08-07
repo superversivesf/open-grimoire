@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, Form, UploadFile, File
+from fastapi import APIRouter, Request, Form, UploadFile, File, Depends
 from fastapi.responses import RedirectResponse, FileResponse, Response
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
@@ -8,6 +8,7 @@ import uuid
 import shutil
 import markdown as md_lib
 from app.auth.middleware import current_user_id
+from app.auth.csrf import require_csrf
 from app.storage.user_db import (
     init_user_db, list_collections, create_collection, rename_collection,
     delete_collection, list_docs, get_doc as _get_doc, delete_doc as _delete_doc,
@@ -47,7 +48,7 @@ async def library(request: Request) -> Response:
 
 
 @router.post("/collections")
-async def create_collection_route(request: Request, name: str = Form(...)) -> Response:
+async def create_collection_route(request: Request, name: str = Form(...), _: None = Depends(require_csrf)) -> Response:
     uid = current_user_id(request)
     if not uid:
         return RedirectResponse("/login", status_code=303)
@@ -58,7 +59,7 @@ async def create_collection_route(request: Request, name: str = Form(...)) -> Re
 
 
 @router.post("/collections/{collection_id}/rename")
-async def rename_collection_route(request: Request, collection_id: str, name: str = Form(...)) -> Response:
+async def rename_collection_route(request: Request, collection_id: str, name: str = Form(...), _: None = Depends(require_csrf)) -> Response:
     uid = current_user_id(request)
     if not uid:
         return RedirectResponse("/login", status_code=303)
@@ -69,7 +70,7 @@ async def rename_collection_route(request: Request, collection_id: str, name: st
 
 
 @router.post("/collections/{collection_id}/delete")
-async def delete_collection_route(request: Request, collection_id: str) -> Response:
+async def delete_collection_route(request: Request, collection_id: str, _: None = Depends(require_csrf)) -> Response:
     uid = current_user_id(request)
     if not uid:
         return RedirectResponse("/login", status_code=303)
@@ -164,7 +165,7 @@ def _storage_info(data_dir: Path, uid: str) -> dict[str, Any]:
 
 
 @router.post("/upload")
-async def upload(request: Request, collection_id: str = Form(...), files: list[UploadFile] = File(...)) -> Response:
+async def upload(request: Request, collection_id: str = Form(...), files: list[UploadFile] = File(...), _: None = Depends(require_csrf)) -> Response:
     uid = current_user_id(request)
     if not uid:
         return RedirectResponse("/login", status_code=303)
@@ -195,7 +196,7 @@ async def upload(request: Request, collection_id: str = Form(...), files: list[U
 
 
 @router.post("/docs/{doc_id}/reprocess")
-async def reprocess_doc(request: Request, doc_id: str) -> Response:
+async def reprocess_doc(request: Request, doc_id: str, _: None = Depends(require_csrf)) -> Response:
     uid = current_user_id(request)
     if not uid:
         return RedirectResponse("/login", status_code=303)
@@ -216,7 +217,7 @@ async def reprocess_doc(request: Request, doc_id: str) -> Response:
 
 
 @router.post("/docs/{doc_id}/delete")
-async def delete_doc_route(request: Request, doc_id: str) -> Response:
+async def delete_doc_route(request: Request, doc_id: str, _: None = Depends(require_csrf)) -> Response:
     uid = current_user_id(request)
     if not uid:
         return RedirectResponse("/login", status_code=303)

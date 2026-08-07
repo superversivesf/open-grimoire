@@ -30,6 +30,7 @@
       hx-indicator="#chat-spinner"
       hx-disabled-elt="#chat-form button, #chat-form input"
       hx-on::after-request="this.querySelector('input[name=question]').value=''">
+  <input type="hidden" name="_csrf" value="{{ request.state.csrf_token }}">
   <input type="text" name="question" placeholder="Ask a follow-up question..." required>
   <button type="submit" class="rpg-btn">Send &#9654;</button>
 </form>

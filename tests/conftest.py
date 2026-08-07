@@ -3,6 +3,31 @@ from pathlib import Path
 import tempfile
 import os
 from app.config import Config
+from app.auth.session import get_csrf_token
+
+
+def csrf_for(client, secret: str = "testsecret") -> str:
+    """Extract the CSRF token from the client's session cookie."""
+    session = client.cookies.get("session")
+    if session and session.startswith('"') and session.endswith('"'):
+        session = session[1:-1]
+    token = get_csrf_token(session, secret)
+    assert token is not None, "no CSRF token in session cookie"
+    return token
+
+
+@pytest.fixture(autouse=True)
+def disable_csrf_dependency(request, monkeypatch):
+    """No-op the require_csrf dependency for most tests.
+
+    The dedicated CSRF tests (test_csrf_token.py) exercise the real
+    dependency; everything else focuses on other behavior and would
+    otherwise need a token on every POST.
+    """
+    if "test_csrf_token" in request.node.fspath.strpath:
+        return
+    import app.auth.csrf as csrf_mod
+    monkeypatch.setattr(csrf_mod, "CSRF_ENABLED", False)
 
 
 @pytest.fixture

@@ -20,4 +20,5 @@ def create_templates(directory: str) -> Jinja2Templates:
     templates.env.filters["md"] = _render_md
     templates.env.globals["version"] = __version__
     templates.env.globals["is_admin"] = False  # overridden per-request in middleware
+    templates.env.globals["csrf_token"] = None  # set per-request in middleware
     return templates

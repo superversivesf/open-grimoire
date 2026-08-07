@@ -3,7 +3,7 @@ from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoin
 from starlette.requests import Request
 from starlette.responses import Response
 from starlette.types import ASGIApp
-from app.auth.session import verify_session
+from app.auth.session import verify_session, get_csrf_token
 
 
 # Paths that don't require authentication
@@ -42,6 +42,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
         uid, is_admin = verify_session(token, self.session_secret) if token else (None, False)
         request.state.user_id = uid
         request.state.is_admin = is_admin
+        request.state.csrf_token = get_csrf_token(token, self.session_secret) if token else None
 
         # Fallback: if is_admin not in token (old sessions), check DB once
         if uid and not is_admin and self.db_dir:

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, Form, Response
+from fastapi import APIRouter, Request, Form, Response, Depends
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
@@ -6,6 +6,7 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 from app.auth.passwords import verify_password
 from app.auth.session import sign_session
+from app.auth.csrf import require_csrf
 from app.storage.shared_db import init_shared_db, get_user_by_username
 from app.web.template_utils import create_templates
 from app.config import Config
@@ -66,7 +67,7 @@ async def login_submit(request: Request, username: str = Form(...), password: st
 
 
 @router.post("/logout")
-async def logout() -> RedirectResponse:
+async def logout(_: None = Depends(require_csrf)) -> RedirectResponse:
     resp = RedirectResponse("/login", status_code=303)
     resp.delete_cookie("session")
     return resp

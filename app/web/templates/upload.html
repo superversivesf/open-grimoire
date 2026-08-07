@@ -27,6 +27,7 @@
 
 <form id="upload-form" method="post" action="/upload" enctype="multipart/form-data"
       onsubmit="document.getElementById('upload-btn').disabled=true; document.getElementById('upload-btn').classList.add('rpg-btn-loading'); document.getElementById('upload-overlay').style.display='flex';">
+  <input type="hidden" name="_csrf" value="{{ request.state.csrf_token }}">
   <input type="hidden" name="collection_id" value="{{ collection.collection_id }}">
   <label class="rpg-dropzone" for="file-input" id="dropzone">
     <span class="icon">&#128218;</span>

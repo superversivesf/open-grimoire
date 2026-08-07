@@ -4,6 +4,7 @@ from app.main import create_app
 from app.config import Config
 from app.storage.shared_db import init_shared_db, create_user
 from app.auth.passwords import hash_password
+from tests.conftest import csrf_for
 
 
 @pytest.fixture
@@ -36,7 +37,7 @@ async def test_library_empty_after_login(app_with_user):
 async def test_create_collection(app_with_user):
     async with AsyncClient(transport=ASGITransport(app=app_with_user), base_url="http://test") as client:
         await client.post("/login", data={"username": "alice", "password": "pw123"})
-        r = await client.post("/collections", data={"name": "Pathfinder shelf"})
+        r = await client.post("/collections", data={"name": "Pathfinder shelf", "_csrf": csrf_for(client)})
         assert r.status_code in (200, 303)
         r2 = await client.get("/")
         assert "Pathfinder shelf" in r2.text

@@ -22,10 +22,12 @@
       <div class="rpg-book-actions">
         <form method="post" action="/docs/{{ d.doc_id }}/reprocess" style="display:inline"
               onsubmit="this.querySelector('button').textContent='...'; this.querySelector('button').disabled=true;">
+          <input type="hidden" name="_csrf" value="{{ request.state.csrf_token }}">
           <button class="rpg-btn-secondary rpg-btn-sm" type="submit">Reprocess</button>
         </form>
         <form method="post" action="/docs/{{ d.doc_id }}/delete" style="display:inline"
               onsubmit="return confirm('Delete this book?')">
+          <input type="hidden" name="_csrf" value="{{ request.state.csrf_token }}">
           <button class="rpg-btn-danger rpg-btn-sm" type="submit">Delete</button>
         </form>
       </div>

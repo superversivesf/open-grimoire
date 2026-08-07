@@ -4,6 +4,7 @@
 <div class="rpg-page-header">
   <h1 class="rpg-page-title"><span class="icon">&#128218;</span> Your Library</h1>
   <form method="post" action="/collections" class="rpg-inline-form">
+    <input type="hidden" name="_csrf" value="{{ request.state.csrf_token }}">
     <div>
       <label class="rpg-label">New collection</label>
       <input type="text" name="name" placeholder="e.g. Pathfinder, D&D 5e, Call of Cthulhu..." required>
@@ -36,6 +37,7 @@
       <button class="rpg-btn-secondary rpg-btn-sm" onclick="renameCollection('{{ c.collection_id }}', '{{ c.name }}')">&#9998; Rename</button>
       <form method="post" action="/collections/{{ c.collection_id }}/delete" style="display:inline"
             onsubmit="return confirm('Delete collection \"{{ c.name }}\" and all its books? This cannot be undone.')">
+        <input type="hidden" name="_csrf" value="{{ request.state.csrf_token }}">
         <button type="submit" class="rpg-btn-danger rpg-btn-sm">&#128465; Delete</button>
       </form>
     </div>
@@ -48,6 +50,7 @@
   <div class="rpg-upload-card" style="min-width:320px;">
     <h3 style="margin-bottom:1rem;">Rename Collection</h3>
     <form id="rename-form" method="post" action="">
+      <input type="hidden" name="_csrf" value="{{ request.state.csrf_token }}">
       <input type="text" name="name" id="rename-input" placeholder="Collection name" required style="width:100%; margin-bottom:1rem;">
       <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
         <button type="button" class="rpg-btn-secondary" onclick="document.getElementById('rename-modal').style.display='none'">Cancel</button>

@@ -6,6 +6,7 @@ from app.config import Config
 from app.storage.shared_db import init_shared_db, create_user
 from app.storage.user_db import init_user_db, create_collection, list_collections, list_docs
 from app.auth.passwords import hash_password
+from tests.conftest import csrf_for
 
 
 @pytest.fixture
@@ -36,7 +37,7 @@ async def test_upload_single_pdf(app_and_user):
         await client.post("/login", data={"username": "alice", "password": "pw"})
         r = await client.post(
             "/upload",
-            data={"collection_id": cid},
+            data={"collection_id": cid, "_csrf": csrf_for(client, "s")},
             files=[("files", ("book.pdf", buf.getvalue(), "application/pdf"))],
         )
         assert r.status_code == 303
@@ -64,7 +65,7 @@ async def test_upload_multiple_pdfs(app_and_user):
         await client.post("/login", data={"username": "alice", "password": "pw"})
         r = await client.post(
             "/upload",
-            data={"collection_id": cid},
+            data={"collection_id": cid, "_csrf": csrf_for(client, "s")},
             files=[
                 ("files", ("a.pdf", make_pdf("Chapter A"), "application/pdf")),
                 ("files", ("b.pdf", make_pdf("Chapter B"), "application/pdf")),
