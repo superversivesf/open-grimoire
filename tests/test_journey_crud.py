@@ -30,12 +30,11 @@ def _make_pdf(text: str) -> bytes:
 
 
 @pytest.fixture
-def app_with_user(tmp_dirs):
+def app_with_user(tmp_dirs, test_config):
     conn = init_shared_db(tmp_dirs["db"])
     uid = create_user(conn, "alice", hash_password("pw"))
     conn.close()
-    cfg = Config("http://localhost:11434", {"query": "m", "enrich": "m"}, tmp_dirs["data"], tmp_dirs["db"])
-    app = create_app(cfg, session_secret="s")
+    app = create_app(test_config, session_secret="s")
     return app, uid
 
 

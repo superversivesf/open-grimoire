@@ -23,6 +23,13 @@ WATERMARK_PATTERNS = [
     re.compile(r'https?://\S*drivethru\S*', re.IGNORECASE),
     re.compile(r'https?://\S*dtrpg\S*', re.IGNORECASE),
     re.compile(r'watermark\s*:?\s*[^\n]+', re.IGNORECASE),
+    # DriveThruRPG specific: buyer name on each page header/footer
+    re.compile(r'\bprepared\s+for\s+[\w\s]+\b', re.IGNORECASE),
+    re.compile(r'\bpurchased\s+by\s+[\w\s]+\b', re.IGNORECASE),
+    # Per-page unique IDs (often alphanumeric codes)
+    re.compile(r'\b[A-F0-9]{8,}\b', re.IGNORECASE),  # hex IDs
+    # Date stamps in watermarks
+    re.compile(r'\d{4}-\d{2}-\d{2}', re.IGNORECASE),
 ]
 
 # Lines that are purely watermark noise
@@ -32,6 +39,11 @@ WATERMARK_LINE_PATTERNS = [
     re.compile(r'^\s*downloaded by\b', re.IGNORECASE),
     re.compile(r'^\s*watermark\b', re.IGNORECASE),
     re.compile(r'^\s*order\s*#', re.IGNORECASE),
+    # Buyer name lines (often "Prepared for First Last")
+    re.compile(r'^\s*prepared\s+for\s+\w+\s+\w+\s*$', re.IGNORECASE),
+    re.compile(r'^\s*purchased\s+by\s+\w+\s+\w+\s*$', re.IGNORECASE),
+    # Page-specific watermark lines
+    re.compile(r'^\s*[A-F0-9]{8,}\s*$', re.IGNORECASE),
 ]
 
 
@@ -55,9 +67,19 @@ def strip_watermarks(text: str) -> str:
     return text.strip()
 
 
+def _normalize_for_hash(text: str) -> str:
+    """Normalize text for consistent hashing across PDF extractions.
+
+    Splits into words, lowercases, and joins with single space.
+    This preserves semantic content while being robust to line breaks,
+    spacing differences, and page boundary variations in PDF extraction.
+    """
+    words = re.findall(r'\w+', text.lower())
+    return ' '.join(words)
+
+
 def content_hash(text: str) -> str:
     """SHA-256 hash of watermark-stripped, normalized text."""
     stripped = strip_watermarks(text)
-    # Normalize: lowercase, remove all whitespace for robust hashing
-    normalized = re.sub(r'\s+', '', stripped.lower())
+    normalized = _normalize_for_hash(stripped)
     return hashlib.sha256(normalized.encode()).hexdigest()

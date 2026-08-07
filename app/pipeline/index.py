@@ -1,4 +1,5 @@
 import re
+import yaml
 from pathlib import Path
 from app.storage.user_db import insert_fts_row, delete_fts_rows_for_doc
 
@@ -12,18 +13,7 @@ def parse_frontmatter(path: Path) -> tuple[dict, str]:
         return {}, text
     fm_text = text[4:end]
     body = text[end + 5:]
-    fm = {}
-    for line in fm_text.splitlines():
-        if ":" in line:
-            key, _, val = line.partition(":")
-            val = val.strip()
-            if val.startswith('"') and val.endswith('"'):
-                val = val[1:-1]
-            elif val.startswith("[") and val.endswith("]"):
-                val = [x.strip().strip('"') for x in val[1:-1].split(",") if x.strip()]
-            elif val.isdigit():
-                val = int(val)
-            fm[key.strip()] = val
+    fm = yaml.safe_load(fm_text) or {}
     return fm, body
 
 

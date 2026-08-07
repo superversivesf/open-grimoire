@@ -1,5 +1,6 @@
 from pathlib import Path
 from app.storage.paths import validate_user_path
+from app.constants import SANDBOX_TRUNCATE_CHARS
 
 
 def safe_read_file(data_dir: Path, user_id: str, path: str, lines: str | None = None) -> str:
@@ -20,7 +21,7 @@ def safe_read_file(data_dir: Path, user_id: str, path: str, lines: str | None = 
     return truncate_result(text)
 
 
-def truncate_result(text: str, max_chars: int = 16000) -> str:
+def truncate_result(text: str, max_chars: int = SANDBOX_TRUNCATE_CHARS) -> str:
     if len(text) <= max_chars:
         return text
     return text[:max_chars] + "\n\n[... file is long, use read_file(path, lines='N-M') for more]"

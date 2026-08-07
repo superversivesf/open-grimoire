@@ -26,7 +26,7 @@ CONTENT_B = "# Choosing A\n\nChoose your character type."
 
 
 @pytest.fixture
-def app_with_docs(tmp_dirs):
+def app_with_docs(tmp_dirs, test_config):
     conn = init_shared_db(tmp_dirs["db"])
     uid = create_user(conn, "alice", hash_password("pw"))
     conn.close()
@@ -47,8 +47,7 @@ def app_with_docs(tmp_dirs):
         doc_dir.mkdir(parents=True, exist_ok=True)
         (doc_dir / filename).write_text(content)
 
-    cfg = Config("http://localhost:11434", {"query": "m"}, tmp_dirs["data"], tmp_dirs["db"])
-    app = create_app(cfg, "s")
+    app = create_app(test_config, "s")
     return app, uid, cid
 
 

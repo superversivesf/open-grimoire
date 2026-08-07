@@ -1,18 +1,19 @@
 import json
 import re
 from pathlib import Path
+from string import Template
 
 
-# {{/}} escapes are deliberate: the JSON braces must survive .format() below;
-# rendered output equals the literal prompt.
-ENRICH_PROMPT = (
+# Template for enrichment prompt. Uses $content placeholder to avoid
+# JSON brace escaping confusion with str.format().
+ENRICH_PROMPT = Template(
     "You are enriching an RPG rulebook section for search indexing. "
     "Read the section and return ONLY valid JSON, no prose:\n"
-    '{{"summary": "2-3 sentences covering what this section describes, including key game numbers '
+    '{"summary": "2-3 sentences covering what this section describes, including key game numbers '
     '(AC, HP, DC, damage dice, costs, levels) when present.", '
     '"keywords": ["5-10 lowercase keywords: proper nouns, rule names, spell/monster/class names, '
-    'stat abbreviations (ac, hp), and distinctive jargon"]}}\n\n'
-    "{content}"
+    'stat abbreviations (ac, hp), and distinctive jargon"]}\n\n'
+    "$content"
 )
 
 
@@ -22,7 +23,7 @@ class Enricher:
 
     async def enrich_leaf(self, path: Path, page: int | None = None) -> dict:
         content = path.read_text()
-        prompt = ENRICH_PROMPT.format(content=content)
+        prompt = ENRICH_PROMPT.substitute(content=content)
         resp = await self.gateway.call("enrich", prompt)
         raw = resp.get("message", {}).get("content", "")
         result = self._parse_json(raw)

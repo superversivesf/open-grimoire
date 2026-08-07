@@ -2,10 +2,12 @@ import json
 import re
 import time
 import typing
+from enum import Enum
 from app.agent.tools_schema import TOOL_DEFINITIONS, FORCED_DONE_TOOLS
 from app.agent.history import build_messages, trim_history
 from app.usage.tokens import estimate_messages_tokens, estimate_response_tokens
 from app.logging_utils import get_logger
+from app.constants import DEFAULT_MAX_ITERATIONS, STATE_MAX_ITERATIONS as CONST_STATE_MAX_ITERATIONS
 
 log = get_logger("agent")
 
@@ -21,6 +23,29 @@ Search strategy:
 7. NEVER read index.md files — they are navigation only.
 
 When calling done, always include 3 "suggestions" — short follow-up questions a player might ask next based on what they just learned."""
+
+
+class AgentState(Enum):
+    SEARCHING = "searching"
+    READING = "reading"
+    SYNTHESIZING = "synthesizing"
+    DONE = "done"
+
+
+# Max iterations per state
+STATE_MAX_ITERATIONS = {
+    AgentState.SEARCHING: 5,
+    AgentState.READING: 5,
+    AgentState.SYNTHESIZING: 3,
+}
+
+# Tools allowed in each state
+STATE_TOOLS = {
+    AgentState.SEARCHING: TOOL_DEFINITIONS,  # all tools
+    AgentState.READING: [t for t in TOOL_DEFINITIONS if t["function"]["name"] in ("fts_search", "read_file", "grep", "table_extract", "calc", "ls", "done")],
+    AgentState.SYNTHESIZING: FORCED_DONE_TOOLS,
+    AgentState.DONE: FORCED_DONE_TOOLS,
+}
 
 
 def clean_answer(text: str) -> str:
@@ -73,11 +98,7 @@ def _extract_cites_from_history(messages: list[dict]) -> list[dict]:
 
 
 def _synthesize_answer(messages: list[dict], question: str) -> str:
-    """Build a fallback answer from tool results when the model didn't call done.
-
-    Tries to extract useful content from FTS search results and read files
-    to give the user *something* useful instead of a generic error message.
-    """
+    """Build a fallback answer from tool results when the model didn't call done."""
     # Collect FTS search results
     fts_results = []
     for msg in messages:
@@ -104,12 +125,10 @@ def _synthesize_answer(messages: list[dict], question: str) -> str:
 
     # If we have file content, extract the most relevant paragraph
     if file_contents:
-        # Find paragraphs mentioning keywords from the question
         question_words = set(w.lower() for w in question.split() if len(w) > 4)
         best_snippet = ""
         best_score = 0
         for content in file_contents:
-            # Strip front-matter
             if content.startswith("---"):
                 parts = content.split("---", 2)
                 content = parts[2].strip() if len(parts) > 2 else content
@@ -183,22 +202,27 @@ class AgentLoop:
         last_content = ""
         files_read: set[str] = set()
         searches_done: set[str] = set()
-        forced_done = False  # when True, only done tool is offered
         total_input_tokens = 0
         total_output_tokens = 0
-        dedup_read_count = 0  # track repeated read attempts
 
-        for iteration in range(1, self.max_iterations + 1):
+        state = AgentState.SEARCHING
+        state_iterations = 0
+        total_iterations = 0
+        nudge_given = False
+
+        while total_iterations < self.max_iterations:
+            total_iterations += 1
+            state_iterations += 1
             t0 = time.time()
-            tools = FORCED_DONE_TOOLS if forced_done else TOOL_DEFINITIONS
-            # Track input tokens
+
+            tools = STATE_TOOLS[state]
             total_input_tokens += estimate_messages_tokens(messages)
             resp = await self.gateway.call("query", "", tools=tools, messages=messages)
             llm_time = time.time() - t0
             msg = resp.get("message", {})
             tool_calls = msg.get("tool_calls") or []
             content = msg.get("content", "")
-            # Track output tokens
+
             if content:
                 total_output_tokens += estimate_response_tokens(content)
                 last_content = content
@@ -209,17 +233,17 @@ class AgentLoop:
                     if parsed_tc:
                         tool_calls = [parsed_tc]
                         content = ""
-                        log.info(f"  iter {iteration}: parsed text tool call -> {parsed_tc['function']['name']} ({llm_time:.1f}s)")
+                        log.info(f"  iter {total_iterations}: parsed text tool call -> {parsed_tc['function']['name']} ({llm_time:.1f}s)")
                     elif len(content) > 10:
-                        log.info(f"  iter {iteration}: content without tool calls, re-prompting for done ({llm_time:.1f}s)")
+                        log.info(f"  iter {total_iterations}: content without tool calls, re-prompting for done ({llm_time:.1f}s)")
                         messages.append({"role": "assistant", "content": content})
                         messages.append({"role": "user", "content": "Good answer. Now call the done tool with that answer in the 'answer' field, and add any source citations you have in the 'cites' field. Use the exact paths from the fts_search results."})
                         continue
                 if not tool_calls:
                     elapsed = time.time() - start_time
                     answer = clean_answer(last_content) or "I could not find an answer."
-                    log.info(f"QUERY DONE: \"{new_question}\" -> \"{answer[:100]}\" (no done call, iters={iteration}, {elapsed:.1f}s)")
-                    yield {"type": "done", "answer": answer, "cites": [], "suggestions": [], "iterations": iteration}
+                    log.info(f"QUERY DONE: \"{new_question}\" -> \"{answer[:100]}\" (no done call, iters={total_iterations}, {elapsed:.1f}s)")
+                    yield {"type": "done", "answer": answer, "cites": [], "suggestions": [], "iterations": total_iterations}
                     return
 
             for tc in tool_calls:
@@ -236,59 +260,31 @@ class AgentLoop:
                     cites = args.get("cites", [])
                     suggestions = args.get("suggestions", [])
                     elapsed = time.time() - start_time
-                    log.info(f"  iter {iteration}: DONE called ({llm_time:.1f}s)")
-                    log.info(f"QUERY DONE: \"{new_question}\" -> \"{answer[:100]}\" (iters={iteration}, cites={len(cites)}, suggestions={len(suggestions)}, {elapsed:.1f}s)")
+                    log.info(f"  iter {total_iterations}: DONE called ({llm_time:.1f}s)")
+                    log.info(f"QUERY DONE: \"{new_question}\" -> \"{answer[:100]}\" (iters={total_iterations}, cites={len(cites)}, suggestions={len(suggestions)}, {elapsed:.1f}s)")
 
                     cleaned = clean_answer(answer)
                     yield {"type": "done", "answer": cleaned, "cites": cites, "suggestions": suggestions,
-                           "iterations": iteration, "est_input_tokens": total_input_tokens,
+                           "iterations": total_iterations, "est_input_tokens": total_input_tokens,
                            "est_output_tokens": total_output_tokens}
                     return
 
-                # --- If forced_done, reject any tool that isn't 'done' ---
-                # BUT allow read_file for files not yet read (model may need
-                # to read a different file that FTS found)
-                if forced_done and name != "done" and name != "read_file":
-                    log.info(f"  iter {iteration}: rejecting {name} — forced_done mode ({llm_time:.1f}s)")
-                    messages.append({"role": "assistant", "content": content})
-                    messages.append({"role": "user", "content": "You must call done now. The only available tool is done. Call it with your answer."})
-                    continue
-
-                # --- Redirect browsing tools to fts_search early on ---
-                if name in ("ls", "list_index") and iteration <= 3:
-                    log.info(f"  iter {iteration}: redirect {name} -> fts_search ({llm_time:.1f}s)")
-                    messages.append({"role": "assistant", "content": content})
-                    messages.append({"role": "tool", "name": name, "content": f"Don't browse. Use fts_search to find relevant sections directly. For example: fts_search with a query about the user's question."})
-                    continue
-
-                # --- Dedup checks ---
+                # Dedup checks
                 if name == "read_file":
                     fpath = args.get("path", "")
                     if fpath in files_read:
-                        dedup_read_count += 1
-                        log.info(f"  iter {iteration}: DEDUP skip read_file({fpath}) — already read ({llm_time:.1f}s)")
+                        log.info(f"  iter {total_iterations}: DEDUP skip read_file({fpath}) — already read ({llm_time:.1f}s)")
                         messages.append({"role": "assistant", "content": content})
                         messages.append({"role": "tool", "name": name, "content": f"Already read this file. You have its content above. If you need more information, try reading a DIFFERENT file from your fts_search results, or call done with what you know."})
-                        # After 3 dedup blocks on read_file, force done — model is truly stuck
-                        if dedup_read_count >= 3 and not forced_done:
-                            forced_done = True
-                            messages.append({"role": "user", "content": "You keep trying to read the same files. Call done NOW with your answer based on what you've already read, or use grep to locate the exact passage. If you don't have enough information, say so in your answer."})
-                            log.info(f"  iter {iteration}: forcing done-only tools (3 repeated read attempts)")
-                        elif not forced_done and iteration >= 8:
-                            forced_done = True
-                            messages.append({"role": "user", "content": "You have searched enough. Call the done tool now with your answer based on what you've found. If your searches found nothing, try grep with a regex, or a single different keyword. If you still can't find it, say so in your answer."})
                         continue
                     files_read.add(fpath)
 
                 if name == "fts_search":
                     q = args.get("query", "").strip().lower()
                     if q in searches_done:
-                        log.info(f"  iter {iteration}: DEDUP skip fts_search({q}) — already searched ({llm_time:.1f}s)")
+                        log.info(f"  iter {total_iterations}: DEDUP skip fts_search({q}) — already searched ({llm_time:.1f}s)")
                         messages.append({"role": "assistant", "content": content})
                         messages.append({"role": "tool", "name": name, "content": f"Already searched for \"{q}\". Try a different query or call done."})
-                        if not forced_done and iteration >= 6:
-                            forced_done = True
-                            messages.append({"role": "user", "content": "You have searched enough. Call the done tool now with your answer based on what you've found. If your searches found nothing, try grep with a regex, or a single different keyword. If you still can't find it, say so in your answer."})
                         continue
                     searches_done.add(q)
 
@@ -307,24 +303,47 @@ class AgentLoop:
 
                 result = self.toolbox.execute(name, args)
                 result_preview = result[:120].replace("\n", " ")
-                log.info(f"  iter {iteration}: {name}({json.dumps(args)[:100]}) -> {result_preview}... ({llm_time:.1f}s)")
+                log.info(f"  iter {total_iterations}: {name}({json.dumps(args)[:100]}) -> {result_preview}... ({llm_time:.1f}s)")
                 messages.append({"role": "assistant", "content": content})
                 messages.append({"role": "tool", "name": name, "content": result})
 
-                # After iteration 6, nudge; after 8, force done
-                if iteration >= 8 and not forced_done:
-                    forced_done = True
-                    messages.append({"role": "user", "content": "You have enough information. Call done now with your answer and citations. Cite the exact paths from your fts_search results."})
-                    log.info(f"  iter {iteration}: forcing done-only tools")
-                elif iteration >= 6 and not forced_done:
-                    messages.append({"role": "user", "content": "You have searched enough. Please call the done tool now with your answer based on what you've found. If you didn't find the answer, try grep or a different keyword, then say so."})
-                    log.info(f"  iter {iteration}: nudging model to call done")
+                # State transitions based on tool used
+                if name in ("fts_search", "grep", "list_index", "ls"):
+                    state = AgentState.SEARCHING
+                    state_iterations = 0
+                elif name == "read_file":
+                    state = AgentState.READING
+                    state_iterations = 0
+                elif name == "table_extract":
+                    state = AgentState.READING
+                    state_iterations = 0
 
+            # Check state iteration limits and transition
+            max_state_iter = STATE_MAX_ITERATIONS.get(state, 3)
+            if state_iterations >= max_state_iter:
+                if state == AgentState.SEARCHING:
+                    state = AgentState.READING
+                    state_iterations = 0
+                    if not nudge_given:
+                        messages.append({"role": "user", "content": "You have searched enough. Please read the most relevant file from your search results, then call done with your answer."})
+                        nudge_given = True
+                        log.info(f"  iter {total_iterations}: transitioning to READING state")
+                elif state == AgentState.READING:
+                    state = AgentState.SYNTHESIZING
+                    state_iterations = 0
+                    messages.append({"role": "user", "content": "You have read enough. Call the done tool now with your answer and citations. Cite the exact paths from your fts_search results."})
+                    log.info(f"  iter {total_iterations}: transitioning to SYNTHESIZING state")
+                elif state == AgentState.SYNTHESIZING:
+                    state = AgentState.DONE
+                    # Force fallback answer
+                    break
+
+        # Budget exhausted or forced to DONE state
         elapsed = time.time() - start_time
-        log.warning(f"QUERY BUDGET EXHAUSTED: \"{new_question}\" (iters={self.max_iterations}, {elapsed:.1f}s)")
+        log.warning(f"QUERY BUDGET EXHAUSTED: \"{new_question}\" (iters={total_iterations}, {elapsed:.1f}s)")
         fallback = _synthesize_answer(messages, new_question)
         cites = _extract_cites_from_history(messages)
         yield {"type": "done", "answer": fallback, "cites": cites, "suggestions": [],
-               "iterations": self.max_iterations,
+               "iterations": total_iterations,
                "est_input_tokens": total_input_tokens,
                "est_output_tokens": total_output_tokens}

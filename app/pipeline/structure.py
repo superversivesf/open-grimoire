@@ -43,7 +43,7 @@ class Structurer:
 
     def _build_tree(self, headings: list[dict], blocks: list[dict]) -> list[dict]:
         root = []
-        stack = []
+        stack: list[dict] = []
         for i, h in enumerate(headings):
             node = {"title": h["title"], "level": h["level"], "page_start": h["page"], "page_end": h["page"], "text": "", "children": []}
             next_page = headings[i + 1]["page"] if i + 1 < len(headings) else blocks[-1]["page"]

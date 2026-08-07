@@ -8,15 +8,14 @@ from app.auth.passwords import hash_password
 
 
 @pytest.fixture
-def app_with_collection(tmp_dirs, monkeypatch):
+def app_with_collection(tmp_dirs, test_config):
     conn = init_shared_db(tmp_dirs["db"])
     uid = create_user(conn, "alice", hash_password("pw"))
     conn.close()
     uconn = init_user_db(tmp_dirs["db"], uid)
     cid = create_collection(uconn, "PF")
     uconn.close()
-    cfg = Config("http://x", {"query": "m"}, tmp_dirs["data"], tmp_dirs["db"])
-    app = create_app(cfg, "s")
+    app = create_app(test_config, "s")
     return app, cid
 
 

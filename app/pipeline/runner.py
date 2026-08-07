@@ -6,12 +6,13 @@ from app.pipeline.structure import Structurer
 from app.pipeline.tier import tier_document
 from app.pipeline.enrich import Enricher
 from app.pipeline.index import index_document
-from app.storage.user_db import init_user_db, update_doc_status, update_enrich_progress
+from app.storage.user_db import init_user_db, update_doc_status, update_enrich_progress, get_enrich_completed_paths, add_enrich_completed_path
 from app.storage.shared_db import init_shared_db, complete_job, log_enrichment, register_shared_book, link_user_book, find_shared_book, find_existing_user_for_book, unlink_user_book
 from app.storage.paths import user_data_dir
 from app.pipeline.content_hash import content_hash
 from app.usage.tokens import estimate_tokens
 from app.logging_utils import get_logger
+from app.constants import ENRICH_SUMMARY_MAX_CHARS, ENRICH_EST_OUTPUT_TOKENS_PER_SECTION
 
 log = get_logger("pipeline")
 
@@ -132,33 +133,41 @@ class PipelineRunner:
             t0 = time.time()
             update_doc_status(uconn, doc_id, "enriching")
             if self.gateway is not None:
-                log.info(f"JOB {job_id[:8]} STAGE 4: enriching {len(leaf_paths)} sections")
-                update_enrich_progress(uconn, doc_id, 0, len(leaf_paths))
+                # Checkpoint: get already enriched paths
+                completed_paths = set(get_enrich_completed_paths(uconn, doc_id))
+                remaining_paths = [p for p in leaf_paths if p not in completed_paths]
+                log.info(f"JOB {job_id[:8]} STAGE 4: enriching {len(leaf_paths)} sections ({len(completed_paths)} already done, {len(remaining_paths)} remaining)")
+                update_enrich_progress(uconn, doc_id, len(completed_paths), len(leaf_paths))
                 enricher = Enricher(self.gateway)
-                full_paths = [udata / p for p in leaf_paths]
+                full_paths = [udata / p for p in remaining_paths]
                 page_map = self._build_page_map(tree, udata, leaf_paths)
-                enriched = 0
+                enriched = len(completed_paths)
                 for i, p in enumerate(full_paths):
                     page = page_map.get(str(p))
+                    rel_path = remaining_paths[i]
                     try:
                         r = await enricher.enrich_leaf(p, page)
                         enriched += 1
-                        summary = r.get("summary", "")[:60]
+                        add_enrich_completed_path(uconn, doc_id, rel_path)
+                        summary = r.get("summary", "")
+                        if not isinstance(summary, str):
+                            summary = str(summary)
+                        summary = summary[:ENRICH_SUMMARY_MAX_CHARS]
                         keywords = r.get("keywords", [])
-                        log.debug(f"JOB {job_id[:8]} ENRICH {i+1}/{len(full_paths)}: {p.name} -> summary=\"{summary}\" keywords={keywords}")
+                        log.debug(f"JOB {job_id[:8]} ENRICH {enriched}/{len(leaf_paths)}: {p.name} -> summary=\"{summary}\" keywords={keywords}")
                     except Exception as e:
-                        log.warning(f"JOB {job_id[:8]} ENRICH {i+1}/{len(full_paths)} FAILED: {p.name} -> {e}")
-                    update_enrich_progress(uconn, doc_id, i + 1, len(leaf_paths))
+                        log.warning(f"JOB {job_id[:8]} ENRICH {enriched}/{len(leaf_paths)} FAILED: {p.name} -> {e}")
+                    update_enrich_progress(uconn, doc_id, enriched, len(leaf_paths))
                 log.info(f"JOB {job_id[:8]} STAGE 4 DONE: {enriched}/{len(leaf_paths)} sections enriched, {time.time()-t0:.1f}s")
 
                 enrich_model = str(getattr(self.gateway, "models", {}).get("enrich", "unknown") or "unknown")
                 enrich_elapsed = time.time() - t0
                 # Estimate tokens: ~500 input tokens per section (content), ~50 output (summary+keywords)
                 est_input = sum(estimate_tokens(p.read_text()[:2000]) for p in full_paths if p.exists())
-                est_output = enriched * 60
+                est_output = (enriched - len(completed_paths)) * ENRICH_EST_OUTPUT_TOKENS_PER_SECTION
                 sconn2 = init_shared_db(self.db_dir)
                 log_enrichment(sconn2, user_id, doc_id, enrich_model,
-                               len(leaf_paths), enriched, est_input, est_output, enrich_elapsed)
+                               len(leaf_paths), enriched - len(completed_paths), est_input, est_output, enrich_elapsed)
                 sconn2.close()
             else:
                 log.info(f"JOB {job_id[:8]} STAGE 4 SKIPPED: no gateway")

@@ -16,8 +16,10 @@ from app.web.template_utils import create_templates
 
 router = APIRouter()
 _templates = create_templates(str(Path(__file__).parent.parent / "web" / "templates"))
-_db_dir = None
-_data_dir = None
+# Late-init module config: set by init_agent_routes() from create_app() before
+# any request is served. Typed as Path (not Optional) to reflect that invariant.
+_db_dir: Path = Path()
+_data_dir: Path = Path()
 _gateway = None
 
 

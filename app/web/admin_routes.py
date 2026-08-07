@@ -9,7 +9,9 @@ from app.web.template_utils import create_templates
 
 router = APIRouter()
 _templates = create_templates(str(Path(__file__).parent.parent / "web" / "templates"))
-_db_dir = None
+# Late-init module config: set by init_admin_routes() from create_app() before
+# any request is served.
+_db_dir: Path = Path()
 
 
 def init_admin_routes(db_dir: Path):

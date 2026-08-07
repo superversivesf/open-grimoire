@@ -53,7 +53,8 @@ def test_index_document_flattens_tables(tmp_dirs):
 def test_index_document_replaces_old_rows(tmp_dirs):
     from app.storage.user_db import init_user_db, insert_fts_row
     conn = init_user_db(tmp_dirs["db"], "alice")
-    insert_fts_row(conn, "data/d1/old.md", "Old", "s", "k", "old content")
+    # Use correct path format: doc_id/relative_path (no user prefix, no data prefix)
+    insert_fts_row(conn, "d1/old.md", "Old", "s", "k", "old content")
     doc_dir = tmp_dirs["data"] / "d1" / "01_chapter"
     doc_dir.mkdir(parents=True)
     leaf = doc_dir / "01_section.md"

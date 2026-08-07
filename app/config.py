@@ -2,19 +2,23 @@ from dataclasses import dataclass, field
 from pathlib import Path
 import os
 import yaml
+from app.constants import DEFAULT_NUM_CTX
 
 
 @dataclass
 class Config:
+    # Required fields (no defaults) must come first
     ollama_host: str
+    session_secret: str
+
+    # Optional fields with defaults
     models: dict[str, str] = field(default_factory=dict)
     data_dir: Path = Path("./data")
     db_dir: Path = Path("./db")
     host: str = "0.0.0.0"
     port: int = 8000
-    session_secret: str = "change-me-in-production"
     cookie_secure: bool = False
-    num_ctx: int = 32768
+    num_ctx: int = DEFAULT_NUM_CTX
 
 
 def load_config(path: str) -> Config:
@@ -26,6 +30,12 @@ def load_config(path: str) -> Config:
     server = raw.get("server", {})
     options = raw.get("options", {})
 
+    session_secret = os.environ.get("SESSION_SECRET", server.get("secret"))
+    if not session_secret or session_secret == "change-me-in-production":
+        if not os.environ.get("DEV_MODE"):
+            raise ValueError("SESSION_SECRET must be set in production (set DEV_MODE=1 to allow default)")
+        session_secret = "dev-secret-not-for-production"
+
     return Config(
         ollama_host=os.environ.get("OLLAMA_HOST", ollama.get("host", "http://localhost:11434")),
         models=dict(models),
@@ -33,7 +43,7 @@ def load_config(path: str) -> Config:
         db_dir=Path(os.environ.get("DB_DIR", paths.get("db_dir", "./db"))),
         host=os.environ.get("HOST", server.get("host", "0.0.0.0")),
         port=int(os.environ.get("PORT", server.get("port", 8000))),
-        session_secret=os.environ.get("SESSION_SECRET", server.get("secret", "change-me-in-production")),
+        session_secret=session_secret,
         cookie_secure=os.environ.get("COOKIE_SECURE", "").lower() in ("1", "true", "yes"),
-        num_ctx=int(os.environ.get("NUM_CTX", options.get("num_ctx", 32768))),
+        num_ctx=int(os.environ.get("NUM_CTX", options.get("num_ctx", DEFAULT_NUM_CTX))),
     )

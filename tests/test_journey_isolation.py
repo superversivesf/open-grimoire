@@ -22,7 +22,7 @@ from app.agent.tools import ToolBox
 
 
 @pytest.fixture
-def app_two_users(tmp_dirs):
+def app_two_users(tmp_dirs, test_config):
     conn = init_shared_db(tmp_dirs["db"])
     alice_uid = create_user(conn, "alice", hash_password("alice_pw"))
     bob_uid = create_user(conn, "bob", hash_password("bob_pw"))
@@ -50,8 +50,7 @@ def app_two_users(tmp_dirs):
     bob_doc_dir.mkdir(parents=True)
     (bob_doc_dir / "index.md").write_text("# Bob Dragon Book\n")
 
-    cfg = Config("http://localhost:11434", {"query": "m"}, tmp_dirs["data"], tmp_dirs["db"])
-    app = create_app(cfg, session_secret="s")
+    app = create_app(test_config, session_secret="s")
     return app, alice_uid, bob_uid, alice_cid, bob_cid, alice_sid
 
 

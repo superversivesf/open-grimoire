@@ -18,8 +18,10 @@ from app.web.template_utils import create_templates
 
 router = APIRouter()
 _templates = create_templates(str(Path(__file__).parent / "templates"))
-_db_dir = None
-_data_dir = None
+# Late-init module config: set by init_web_routes() from create_app() before any
+# request is served. Typed as Path (not Optional) to reflect that invariant.
+_db_dir: Path = Path()
+_data_dir: Path = Path()
 
 
 def init_web_routes(db_dir: Path, data_dir: Path):
@@ -134,8 +136,7 @@ async def upload_form(request: Request, collection_id: str):
     )
 
 
-MAX_UPLOAD_BYTES = 200 * 1024 * 1024  # 200 MB per file
-USER_STORAGE_LIMIT = 1024 * 1024 * 1024  # 1 GB per user
+from app.constants import MAX_UPLOAD_BYTES, USER_STORAGE_LIMIT
 
 
 def _user_storage_used(data_dir: Path, uid: str) -> int:

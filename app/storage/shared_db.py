@@ -2,118 +2,19 @@ import sqlite3
 import uuid
 import uuid as _uuid
 from pathlib import Path
+from typing import Any
+
+from app.storage.migrations import init_shared_db_with_migrations
+
+DbConn = sqlite3.Connection
 
 
-def init_shared_db(db_dir: Path) -> sqlite3.Connection:
-    db_dir.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(db_dir / "shared.sqlite")
-    conn.row_factory = sqlite3.Row
-    conn.execute(
-        """
-        CREATE TABLE IF NOT EXISTS users (
-            user_id TEXT PRIMARY KEY,
-            username TEXT UNIQUE NOT NULL,
-            password_hash TEXT NOT NULL,
-            is_admin INTEGER NOT NULL DEFAULT 0,
-            created_at TEXT NOT NULL DEFAULT (datetime('now'))
-        )
-        """
-    )
-    conn.execute(
-        """
-        CREATE TABLE IF NOT EXISTS app_config (
-            key TEXT PRIMARY KEY,
-            value TEXT
-        )
-        """
-    )
-    conn.execute(
-        """
-        CREATE TABLE IF NOT EXISTS queue_jobs (
-            job_id TEXT PRIMARY KEY,
-            user_id TEXT NOT NULL,
-            doc_id TEXT NOT NULL,
-            pdf_path TEXT NOT NULL,
-            status TEXT NOT NULL DEFAULT 'queued',
-            attempts INTEGER NOT NULL DEFAULT 0,
-            error TEXT,
-            payload_json TEXT NOT NULL DEFAULT '{}',
-            created_at TEXT NOT NULL DEFAULT (datetime('now')),
-            updated_at TEXT NOT NULL DEFAULT (datetime('now'))
-        )
-        """
-    )
-    conn.execute("CREATE INDEX IF NOT EXISTS idx_queue_status ON queue_jobs(status, created_at)")
-
-    conn.execute(
-        """
-        CREATE TABLE IF NOT EXISTS query_log (
-            log_id TEXT PRIMARY KEY,
-            user_id TEXT NOT NULL,
-            session_id TEXT,
-            collection_id TEXT,
-            model TEXT NOT NULL,
-            question TEXT NOT NULL,
-            answer TEXT,
-            iterations INTEGER DEFAULT 0,
-            citations INTEGER DEFAULT 0,
-            est_input_tokens INTEGER DEFAULT 0,
-            est_output_tokens INTEGER DEFAULT 0,
-            elapsed_sec REAL DEFAULT 0,
-            done_called INTEGER DEFAULT 0,
-            created_at TEXT NOT NULL DEFAULT (datetime('now'))
-        )
-        """
-    )
-    conn.execute("CREATE INDEX IF NOT EXISTS idx_query_log_user ON query_log(user_id, created_at)")
-    conn.execute("CREATE INDEX IF NOT EXISTS idx_query_log_created ON query_log(created_at)")
-
-    conn.execute(
-        """
-        CREATE TABLE IF NOT EXISTS enrich_log (
-            log_id TEXT PRIMARY KEY,
-            user_id TEXT NOT NULL,
-            doc_id TEXT NOT NULL,
-            model TEXT NOT NULL,
-            sections INTEGER NOT NULL,
-            succeeded INTEGER DEFAULT 0,
-            est_input_tokens INTEGER DEFAULT 0,
-            est_output_tokens INTEGER DEFAULT 0,
-            elapsed_sec REAL DEFAULT 0,
-            created_at TEXT NOT NULL DEFAULT (datetime('now'))
-        )
-        """
-    )
-    conn.execute("CREATE INDEX IF NOT EXISTS idx_enrich_log_user ON enrich_log(user_id, created_at)")
-
-    conn.execute(
-        """
-        CREATE TABLE IF NOT EXISTS shared_books (
-            content_hash TEXT PRIMARY KEY,
-            title TEXT,
-            page_count INTEGER,
-            created_at TEXT NOT NULL DEFAULT (datetime('now'))
-        )
-        """
-    )
-    conn.execute(
-        """
-        CREATE TABLE IF NOT EXISTS user_books (
-            user_id TEXT NOT NULL,
-            doc_id TEXT NOT NULL,
-            content_hash TEXT NOT NULL,
-            collection_id TEXT NOT NULL,
-            created_at TEXT NOT NULL DEFAULT (datetime('now')),
-            PRIMARY KEY (user_id, doc_id)
-        )
-        """
-    )
-    conn.execute("CREATE INDEX IF NOT EXISTS idx_user_books_hash ON user_books(content_hash)")
-    conn.commit()
-    return conn
+def init_shared_db(db_dir: Path) -> DbConn:
+    """Initialize shared database with versioned migrations."""
+    return init_shared_db_with_migrations(db_dir)
 
 
-def register_shared_book(conn, content_hash: str, title: str = "", page_count: int = 0) -> None:
+def register_shared_book(conn: DbConn, content_hash: str, title: str = "", page_count: int = 0) -> None:
     """Register a book in the shared registry (if not already there)."""
     conn.execute(
         "INSERT OR IGNORE INTO shared_books (content_hash, title, page_count) VALUES (?, ?, ?)",
@@ -122,7 +23,7 @@ def register_shared_book(conn, content_hash: str, title: str = "", page_count: i
     conn.commit()
 
 
-def link_user_book(conn, user_id: str, doc_id: str, content_hash: str, collection_id: str) -> None:
+def link_user_book(conn: DbConn, user_id: str, doc_id: str, content_hash: str, collection_id: str) -> None:
     """Link a user's doc to a shared book."""
     conn.execute(
         "INSERT OR REPLACE INTO user_books (user_id, doc_id, content_hash, collection_id) VALUES (?, ?, ?, ?)",
@@ -131,7 +32,7 @@ def link_user_book(conn, user_id: str, doc_id: str, content_hash: str, collectio
     conn.commit()
 
 
-def find_shared_book(conn, content_hash: str) -> dict | None:
+def find_shared_book(conn: DbConn, content_hash: str) -> dict[str, Any] | None:
     """Find a shared book by content hash."""
     row = conn.execute(
         "SELECT content_hash, title, page_count, created_at FROM shared_books WHERE content_hash = ?",
@@ -140,7 +41,7 @@ def find_shared_book(conn, content_hash: str) -> dict | None:
     return dict(row) if row else None
 
 
-def find_existing_user_for_book(conn, content_hash: str) -> dict | None:
+def find_existing_user_for_book(conn: DbConn, content_hash: str) -> dict[str, Any] | None:
     """Find an existing user who has this book, for sharing."""
     row = conn.execute(
         "SELECT user_id, doc_id FROM user_books WHERE content_hash = ? ORDER BY created_at LIMIT 1",
@@ -149,17 +50,27 @@ def find_existing_user_for_book(conn, content_hash: str) -> dict | None:
     return dict(row) if row else None
 
 
-def unlink_user_book(conn, doc_id: str) -> None:
+def unlink_user_book(conn: DbConn, doc_id: str) -> None:
     """Remove a user's book link (used when deleting a doc)."""
     conn.execute("DELETE FROM user_books WHERE doc_id = ?", (doc_id,))
     conn.commit()
 
 
-def log_query(conn, user_id: str, model: str, question: str, answer: str = "",
-              iterations: int = 0, citations: int = 0,
-              est_input_tokens: int = 0, est_output_tokens: int = 0,
-              elapsed_sec: float = 0, done_called: bool = False,
-              session_id: str = "", collection_id: str = "") -> str:
+def log_query(
+    conn: DbConn,
+    user_id: str,
+    model: str,
+    question: str,
+    answer: str = "",
+    iterations: int = 0,
+    citations: int = 0,
+    est_input_tokens: int = 0,
+    est_output_tokens: int = 0,
+    elapsed_sec: float = 0,
+    done_called: bool = False,
+    session_id: str = "",
+    collection_id: str = "",
+) -> str:
     log_id = _uuid.uuid4().hex
     conn.execute(
         """INSERT INTO query_log
@@ -174,9 +85,17 @@ def log_query(conn, user_id: str, model: str, question: str, answer: str = "",
     return log_id
 
 
-def log_enrichment(conn, user_id: str, doc_id: str, model: str, sections: int,
-                   succeeded: int = 0, est_input_tokens: int = 0,
-                   est_output_tokens: int = 0, elapsed_sec: float = 0) -> str:
+def log_enrichment(
+    conn: DbConn,
+    user_id: str,
+    doc_id: str,
+    model: str,
+    sections: int,
+    succeeded: int = 0,
+    est_input_tokens: int = 0,
+    est_output_tokens: int = 0,
+    elapsed_sec: float = 0,
+) -> str:
     log_id = _uuid.uuid4().hex
     conn.execute(
         """INSERT INTO enrich_log
@@ -190,7 +109,7 @@ def log_enrichment(conn, user_id: str, doc_id: str, model: str, sections: int,
     return log_id
 
 
-def get_usage_summary(conn, days: int = 30) -> dict:
+def get_usage_summary(conn: DbConn, days: int = 30) -> dict[str, Any]:
     """Get usage summary for the last N days."""
     since = f"datetime('now', '-{days} days')"
 
@@ -248,7 +167,7 @@ def get_usage_summary(conn, days: int = 30) -> dict:
     }
 
 
-def create_user(conn, username: str, password_hash: str, is_admin: bool = False) -> str:
+def create_user(conn: DbConn, username: str, password_hash: str, is_admin: bool = False) -> str:
     user_id = uuid.uuid4().hex
     conn.execute(
         "INSERT INTO users (user_id, username, password_hash, is_admin) VALUES (?, ?, ?, ?)",
@@ -258,7 +177,7 @@ def create_user(conn, username: str, password_hash: str, is_admin: bool = False)
     return user_id
 
 
-def get_user_by_username(conn, username: str) -> dict | None:
+def get_user_by_username(conn: DbConn, username: str) -> dict[str, Any] | None:
     row = conn.execute(
         "SELECT user_id, username, password_hash, is_admin, created_at FROM users WHERE username = ?",
         (username,),
@@ -266,7 +185,7 @@ def get_user_by_username(conn, username: str) -> dict | None:
     return dict(row) if row else None
 
 
-def get_user_by_id(conn, user_id: str) -> dict | None:
+def get_user_by_id(conn: DbConn, user_id: str) -> dict[str, Any] | None:
     row = conn.execute(
         "SELECT user_id, username, password_hash, is_admin, created_at FROM users WHERE user_id = ?",
         (user_id,),
@@ -274,14 +193,14 @@ def get_user_by_id(conn, user_id: str) -> dict | None:
     return dict(row) if row else None
 
 
-def list_users(conn) -> list[dict]:
+def list_users(conn: DbConn) -> list[dict[str, Any]]:
     rows = conn.execute(
         "SELECT user_id, username, is_admin, created_at FROM users ORDER BY created_at"
     ).fetchall()
     return [dict(r) for r in rows]
 
 
-def enqueue_job(conn, user_id: str, doc_id: str, pdf_path: str) -> str:
+def enqueue_job(conn: DbConn, user_id: str, doc_id: str, pdf_path: str) -> str:
     job_id = _uuid.uuid4().hex
     conn.execute(
         "INSERT INTO queue_jobs (job_id, user_id, doc_id, pdf_path) VALUES (?, ?, ?, ?)",
@@ -291,7 +210,7 @@ def enqueue_job(conn, user_id: str, doc_id: str, pdf_path: str) -> str:
     return job_id
 
 
-def claim_next_job(conn) -> dict | None:
+def claim_next_job(conn: DbConn) -> dict[str, Any] | None:
     row = conn.execute(
         "SELECT job_id FROM queue_jobs WHERE status = 'queued' ORDER BY created_at LIMIT 1"
     ).fetchone()
@@ -306,7 +225,7 @@ def claim_next_job(conn) -> dict | None:
     return get_job(conn, job_id)
 
 
-def complete_job(conn, job_id: str, error: str | None = None) -> None:
+def complete_job(conn: DbConn, job_id: str, error: str | None = None) -> None:
     status = "failed" if error else "done"
     conn.execute(
         "UPDATE queue_jobs SET status = ?, error = ?, updated_at = datetime('now') WHERE job_id = ?",
@@ -315,12 +234,12 @@ def complete_job(conn, job_id: str, error: str | None = None) -> None:
     conn.commit()
 
 
-def get_job(conn, job_id: str) -> dict | None:
+def get_job(conn: DbConn, job_id: str) -> dict[str, Any] | None:
     row = conn.execute("SELECT * FROM queue_jobs WHERE job_id = ?", (job_id,)).fetchone()
     return dict(row) if row else None
 
 
-def list_jobs_by_user(conn, user_id: str) -> list[dict]:
+def list_jobs_by_user(conn: DbConn, user_id: str) -> list[dict[str, Any]]:
     rows = conn.execute(
         "SELECT * FROM queue_jobs WHERE user_id = ? ORDER BY created_at", (user_id,)
     ).fetchall()

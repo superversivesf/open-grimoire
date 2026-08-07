@@ -17,7 +17,8 @@ paths:
 server:
   host: 0.0.0.0
   port: 8050
-  secret: change-me-in-production
+  # secret: must be set via SESSION_SECRET env var in production
+  # or set DEV_MODE=1 to allow development without a secret
 
 # All values above can be overridden by environment variables:
-#   OLLAMA_HOST, SESSION_SECRET, DATA_DIR, DB_DIR, HOST, PORT, COOKIE_SECURE
+#   OLLAMA_HOST, SESSION_SECRET, DATA_DIR, DB_DIR, HOST, PORT, COOKIE_SECURE, DEV_MODE

@@ -1,5 +1,4 @@
 from pathlib import Path
-import os
 
 
 def user_data_dir(data_dir: Path, user_id: str) -> Path:
@@ -18,6 +17,8 @@ def validate_user_path(data_dir: Path, user_id: str, target: str) -> Path:
     if not p.is_absolute():
         p = data_dir / user_id / p
     resolved = p.resolve()
-    if not str(resolved).startswith(str(user_root) + os.sep) and resolved != user_root:
+    try:
+        resolved.relative_to(user_root)
+    except ValueError:
         raise ValueError(f"path outside user tree: {target}")
     return resolved

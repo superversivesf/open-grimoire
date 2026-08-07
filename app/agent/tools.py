@@ -16,7 +16,9 @@ def _dice_roll(count: int, sides: int) -> int:
     return sum(random.randint(1, sides) for _ in range(count))
 
 
-def _eval_dice(expr: str) -> int:
+def _eval_dice(expr: str) -> str:
+    """Replace NdS dice rolls in expr with their rolled totals, returning the
+    substituted expression string (e.g. '2d6+3' -> '7+3') for later evaluation."""
     def replace(m):
         n, s = int(m.group(1)), int(m.group(2))
         return str(_dice_roll(n, s))
@@ -168,7 +170,7 @@ class ToolBox:
                 try:
                     for i, line in enumerate(f.read_text().splitlines(), start=1):
                         if regex.search(line):
-                            rel = str(f.relative_to(self.data_dir))
+                            rel = str(f.relative_to(self.data_dir / self.user_id))
                             hits.append({"path": rel, "line": i, "text": line.strip()[:200]})
                             if len(hits) >= 20:
                                 return hits

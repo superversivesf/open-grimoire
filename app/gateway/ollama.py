@@ -1,10 +1,11 @@
 from httpx import AsyncClient
 import json
 import typing
+from app.constants import OLLAMA_TIMEOUT, DEFAULT_NUM_CTX
 
 
 class OllamaGateway:
-    def __init__(self, host: str, models: dict[str, str], num_ctx: int = 32768):
+    def __init__(self, host: str, models: dict[str, str], num_ctx: int = DEFAULT_NUM_CTX):
         self.host = host.rstrip("/")
         self.models = models
         self.num_ctx = num_ctx
@@ -12,7 +13,7 @@ class OllamaGateway:
 
     def _get_client(self):
         if self._client is None:
-            self._client = AsyncClient(base_url=self.host, timeout=300.0)
+            self._client = AsyncClient(base_url=self.host, timeout=OLLAMA_TIMEOUT)
         return self._client
 
     async def call(self, role: str, prompt: str, tools: list | None = None, messages: list | None = None) -> dict:

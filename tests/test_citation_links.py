@@ -33,7 +33,7 @@ FILE_CONTENT = "# Security Clearances\n\nAlpha Complex enforces a strict hierarc
 
 
 @pytest.fixture
-def app_with_doc(tmp_dirs):
+def app_with_doc(tmp_dirs, test_config):
     """Set up an app with a user, collection, doc, and FTS row."""
     conn = init_shared_db(tmp_dirs["db"])
     uid = create_user(conn, "alice", hash_password("pw"))
@@ -51,8 +51,7 @@ def app_with_doc(tmp_dirs):
     doc_dir.mkdir(parents=True, exist_ok=True)
     (doc_dir / FILENAME).write_text(FILE_CONTENT)
 
-    cfg = Config("http://localhost:11434", {"query": "m"}, tmp_dirs["data"], tmp_dirs["db"])
-    app = create_app(cfg, "s")
+    app = create_app(test_config, "s")
     return app, uid, cid
 
 

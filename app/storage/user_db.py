@@ -1,78 +1,21 @@
+import json
 import sqlite3
 import uuid
 from pathlib import Path
+from typing import Any
+
 from app.storage.paths import user_db_path
+from app.storage.migrations import init_user_db_with_migrations
+
+DbConn = sqlite3.Connection
 
 
-def init_user_db(db_dir: Path, user_id: str) -> sqlite3.Connection:
-    p = user_db_path(db_dir, user_id)
-    p.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(p)
-    conn.row_factory = sqlite3.Row
-    conn.execute(
-        """
-        CREATE TABLE IF NOT EXISTS collections (
-            collection_id TEXT PRIMARY KEY,
-            name TEXT NOT NULL,
-            created_at TEXT NOT NULL DEFAULT (datetime('now'))
-        )
-        """
-    )
-    conn.execute(
-        """
-        CREATE TABLE IF NOT EXISTS docs (
-            doc_id TEXT PRIMARY KEY,
-            collection_id TEXT NOT NULL,
-            title TEXT NOT NULL,
-            sha256 TEXT NOT NULL,
-            status TEXT NOT NULL DEFAULT 'queued',
-            page_count INTEGER,
-            enrich_progress INTEGER NOT NULL DEFAULT 0,
-            enrich_total INTEGER NOT NULL DEFAULT 0,
-            created_at TEXT NOT NULL DEFAULT (datetime('now')),
-            FOREIGN KEY (collection_id) REFERENCES collections(collection_id)
-        )
-        """
-    )
-    # Migration: add enrich columns to existing docs tables
-    try:
-        conn.execute("ALTER TABLE docs ADD COLUMN enrich_progress INTEGER NOT NULL DEFAULT 0")
-    except sqlite3.OperationalError:
-        pass
-    try:
-        conn.execute("ALTER TABLE docs ADD COLUMN enrich_total INTEGER NOT NULL DEFAULT 0")
-    except sqlite3.OperationalError:
-        pass
-    conn.execute(
-        """
-        CREATE TABLE IF NOT EXISTS sessions (
-            session_id TEXT PRIMARY KEY,
-            collection_id TEXT NOT NULL,
-            name TEXT NOT NULL DEFAULT '',
-            history_json TEXT NOT NULL DEFAULT '[]',
-            created_at TEXT NOT NULL DEFAULT (datetime('now')),
-            updated_at TEXT NOT NULL DEFAULT (datetime('now')),
-            FOREIGN KEY (collection_id) REFERENCES collections(collection_id)
-        )
-        """
-    )
-    # Add name column to existing sessions tables (migration for old DBs)
-    try:
-        conn.execute("ALTER TABLE sessions ADD COLUMN name TEXT NOT NULL DEFAULT ''")
-    except sqlite3.OperationalError:
-        pass  # Column already exists
-    conn.execute(
-        """
-        CREATE VIRTUAL TABLE IF NOT EXISTS documents_fts USING fts5(
-            path, title, summary, keywords, content, tokenize='porter'
-        )
-        """
-    )
-    conn.commit()
-    return conn
+def init_user_db(db_dir: Path, user_id: str) -> DbConn:
+    """Initialize user database with versioned migrations."""
+    return init_user_db_with_migrations(db_dir, user_id)
 
 
-def create_collection(conn, name: str) -> str:
+def create_collection(conn: DbConn, name: str) -> str:
     cid = uuid.uuid4().hex
     conn.execute(
         "INSERT INTO collections (collection_id, name) VALUES (?, ?)",
@@ -82,7 +25,7 @@ def create_collection(conn, name: str) -> str:
     return cid
 
 
-def rename_collection(conn, collection_id: str, name: str) -> None:
+def rename_collection(conn: DbConn, collection_id: str, name: str) -> None:
     conn.execute(
         "UPDATE collections SET name = ? WHERE collection_id = ?",
         (name, collection_id),
@@ -90,7 +33,7 @@ def rename_collection(conn, collection_id: str, name: str) -> None:
     conn.commit()
 
 
-def delete_collection(conn, collection_id: str) -> None:
+def delete_collection(conn: DbConn, collection_id: str) -> None:
     # Delete all docs in this collection
     rows = conn.execute(
         "SELECT doc_id FROM docs WHERE collection_id = ?", (collection_id,)
@@ -108,14 +51,14 @@ def delete_collection(conn, collection_id: str) -> None:
     conn.commit()
 
 
-def list_collections(conn) -> list[dict]:
+def list_collections(conn: DbConn) -> list[dict[str, Any]]:
     rows = conn.execute(
         "SELECT collection_id, name, created_at FROM collections ORDER BY created_at"
     ).fetchall()
     return [dict(r) for r in rows]
 
 
-def create_doc(conn, doc_id: str, collection_id: str, title: str, sha256: str) -> None:
+def create_doc(conn: DbConn, doc_id: str, collection_id: str, title: str, sha256: str) -> None:
     conn.execute(
         "INSERT INTO docs (doc_id, collection_id, title, sha256) VALUES (?, ?, ?, ?)",
         (doc_id, collection_id, title, sha256),
@@ -123,7 +66,7 @@ def create_doc(conn, doc_id: str, collection_id: str, title: str, sha256: str) -
     conn.commit()
 
 
-def list_docs(conn, collection_id: str | None = None) -> list[dict]:
+def list_docs(conn: DbConn, collection_id: str | None = None) -> list[dict[str, Any]]:
     if collection_id:
         rows = conn.execute(
             "SELECT doc_id, collection_id, title, sha256, status, page_count, enrich_progress, enrich_total, created_at FROM docs WHERE collection_id = ? ORDER BY created_at",
@@ -136,7 +79,7 @@ def list_docs(conn, collection_id: str | None = None) -> list[dict]:
     return [dict(r) for r in rows]
 
 
-def create_session(conn, collection_id: str, name: str = "") -> str:
+def create_session(conn: DbConn, collection_id: str, name: str = "") -> str:
     sid = uuid.uuid4().hex
     conn.execute(
         "INSERT INTO sessions (session_id, collection_id, name) VALUES (?, ?, ?)",
@@ -146,7 +89,7 @@ def create_session(conn, collection_id: str, name: str = "") -> str:
     return sid
 
 
-def get_session(conn, session_id: str) -> dict | None:
+def get_session(conn: DbConn, session_id: str) -> dict[str, Any] | None:
     row = conn.execute(
         "SELECT session_id, collection_id, name, history_json, created_at, updated_at FROM sessions WHERE session_id = ?",
         (session_id,),
@@ -154,7 +97,7 @@ def get_session(conn, session_id: str) -> dict | None:
     return dict(row) if row else None
 
 
-def insert_fts_row(conn, path: str, title: str, summary: str, keywords: str, content: str) -> None:
+def insert_fts_row(conn: DbConn, path: str, title: str, summary: str, keywords: str, content: str) -> None:
     conn.execute(
         "INSERT INTO documents_fts (path, title, summary, keywords, content) VALUES (?, ?, ?, ?, ?)",
         (path, title, summary, keywords, content),
@@ -162,17 +105,17 @@ def insert_fts_row(conn, path: str, title: str, summary: str, keywords: str, con
     conn.commit()
 
 
-def delete_fts_rows_for_doc(conn, doc_id: str) -> None:
-    conn.execute("DELETE FROM documents_fts WHERE path LIKE ?", (f"%/{doc_id}/%",))
+def delete_fts_rows_for_doc(conn: DbConn, doc_id: str) -> None:
+    conn.execute("DELETE FROM documents_fts WHERE path LIKE ?", (f"{doc_id}/%",))
     conn.commit()
 
 
-def update_doc_status(conn, doc_id: str, status: str) -> None:
+def update_doc_status(conn: DbConn, doc_id: str, status: str) -> None:
     conn.execute("UPDATE docs SET status = ? WHERE doc_id = ?", (status, doc_id))
     conn.commit()
 
 
-def update_enrich_progress(conn, doc_id: str, progress: int, total: int) -> None:
+def update_enrich_progress(conn: DbConn, doc_id: str, progress: int, total: int) -> None:
     conn.execute(
         "UPDATE docs SET enrich_progress = ?, enrich_total = ? WHERE doc_id = ?",
         (progress, total, doc_id),
@@ -180,7 +123,34 @@ def update_enrich_progress(conn, doc_id: str, progress: int, total: int) -> None
     conn.commit()
 
 
-def get_doc(conn, doc_id: str) -> dict | None:
+def get_enrich_completed_paths(conn: DbConn, doc_id: str) -> list[str]:
+    """Get list of leaf paths that have already been enriched."""
+    row = conn.execute(
+        "SELECT enrich_completed_paths FROM docs WHERE doc_id = ?",
+        (doc_id,),
+    ).fetchone()
+    if not row or not row["enrich_completed_paths"]:
+        return []
+    try:
+        data = json.loads(row["enrich_completed_paths"])
+        return data if isinstance(data, list) else []
+    except json.JSONDecodeError:
+        return []
+
+
+def add_enrich_completed_path(conn: DbConn, doc_id: str, path: str) -> None:
+    """Add a path to the list of completed enrich paths."""
+    completed = get_enrich_completed_paths(conn, doc_id)
+    if path not in completed:
+        completed.append(path)
+    conn.execute(
+        "UPDATE docs SET enrich_completed_paths = ?, enrich_progress = ? WHERE doc_id = ?",
+        (json.dumps(completed), len(completed), doc_id),
+    )
+    conn.commit()
+
+
+def get_doc(conn: DbConn, doc_id: str) -> dict[str, Any] | None:
     row = conn.execute(
         "SELECT doc_id, collection_id, title, sha256, status, page_count, enrich_progress, enrich_total, created_at FROM docs WHERE doc_id = ?",
         (doc_id,),
@@ -188,7 +158,7 @@ def get_doc(conn, doc_id: str) -> dict | None:
     return dict(row) if row else None
 
 
-def delete_doc(conn, doc_id: str) -> None:
+def delete_doc(conn: DbConn, doc_id: str) -> None:
     delete_fts_rows_for_doc(conn, doc_id)
     conn.execute("DELETE FROM docs WHERE doc_id = ?", (doc_id,))
     conn.commit()

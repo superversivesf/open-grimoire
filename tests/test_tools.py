@@ -77,6 +77,16 @@ def test_grep(toolbox):
     assert "AC 15" in result[0]["text"]
 
 
+def test_grep_paths_are_user_relative(toolbox):
+    """grep result paths must be readable by read_file (user-relative, no user_id prefix)."""
+    result = toolbox.grep("AC 15")
+    assert len(result) >= 1
+    path = result[0]["path"]
+    assert not path.startswith("alice/"), f"grep path must not include user_id prefix: {path}"
+    content = toolbox.read_file(path)
+    assert "Goblin" in content
+
+
 def test_table_extract(toolbox):
     result = toolbox.table_extract(str(toolbox.data_dir / "alice" / "d1" / "01_chapter" / "01_goblin.md"))
     assert len(result) >= 1

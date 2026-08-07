@@ -7,17 +7,11 @@ from app.auth.passwords import hash_password
 
 
 @pytest.fixture
-def app_with_user(tmp_dirs, monkeypatch):
+def app_with_user(tmp_dirs, test_config):
     conn = init_shared_db(tmp_dirs["db"])
     create_user(conn, "alice", hash_password("pw123"))
     conn.close()
-    cfg = Config(
-        ollama_host="http://localhost:11434",
-        models={},
-        data_dir=tmp_dirs["data"],
-        db_dir=tmp_dirs["db"],
-    )
-    app = create_app(cfg, session_secret="testsecret")
+    app = create_app(test_config, session_secret="testsecret")
     return app
 
 

@@ -1,11 +1,14 @@
+import os
 from pathlib import Path
 from app.config import load_config, Config
 
 
 def test_load_config_reads_yaml(tmp_path):
-    cfg_file = tmp_path / "config.yaml"
-    cfg_file.write_text(
-        """
+    os.environ["DEV_MODE"] = "1"
+    try:
+        cfg_file = tmp_path / "config.yaml"
+        cfg_file.write_text(
+            """
 ollama:
   host: http://localhost:11434
 models:
@@ -17,18 +20,24 @@ paths:
   data_dir: ./data
   db_dir: ./db
 """
-    )
-    cfg = load_config(str(cfg_file))
-    assert isinstance(cfg, Config)
-    assert cfg.ollama_host == "http://localhost:11434"
-    assert cfg.models["query"] == "qwen2.5:7b-instruct-q4"
-    assert cfg.models["enrich"] == "gemma3:4b-it-q4"
-    assert cfg.data_dir == Path("./data")
-    assert cfg.db_dir == Path("./db")
+        )
+        cfg = load_config(str(cfg_file))
+        assert isinstance(cfg, Config)
+        assert cfg.ollama_host == "http://localhost:11434"
+        assert cfg.models["query"] == "qwen2.5:7b-instruct-q4"
+        assert cfg.models["enrich"] == "gemma3:4b-it-q4"
+        assert cfg.data_dir == Path("./data")
+        assert cfg.db_dir == Path("./db")
+    finally:
+        del os.environ["DEV_MODE"]
 
 
 def test_load_config_defaults_models_to_empty(tmp_path):
-    cfg_file = tmp_path / "config.yaml"
-    cfg_file.write_text("ollama:\n  host: http://x\npaths:\n  data_dir: ./d\n  db_dir: ./b\n")
-    cfg = load_config(str(cfg_file))
-    assert cfg.models == {}
+    os.environ["DEV_MODE"] = "1"
+    try:
+        cfg_file = tmp_path / "config.yaml"
+        cfg_file.write_text("ollama:\n  host: http://x\npaths:\n  data_dir: ./d\n  db_dir: ./b\n")
+        cfg = load_config(str(cfg_file))
+        assert cfg.models == {}
+    finally:
+        del os.environ["DEV_MODE"]

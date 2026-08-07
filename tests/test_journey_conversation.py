@@ -16,15 +16,14 @@ import re
 
 
 @pytest.fixture
-def app_with_data(tmp_dirs):
+def app_with_data(tmp_dirs, test_config):
     conn = init_shared_db(tmp_dirs["db"])
     uid = create_user(conn, "alice", hash_password("pw"))
     conn.close()
     uconn = init_user_db(tmp_dirs["db"], uid)
     cid = create_collection(uconn, "PF")
     uconn.close()
-    cfg = Config("http://localhost:11434", {"query": "m"}, tmp_dirs["data"], tmp_dirs["db"])
-    app = create_app(cfg, session_secret="s")
+    app = create_app(test_config, session_secret="s")
 
     answers = [
         {"answer": "A goblin has AC 15.", "cites": [{"path": "x.md", "page": 42, "quote": "AC 15"}], "iterations": 1},

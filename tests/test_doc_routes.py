@@ -8,7 +8,7 @@ from app.auth.passwords import hash_password
 
 
 @pytest.fixture
-def app_and_doc(tmp_dirs, monkeypatch):
+def app_and_doc(tmp_dirs, test_config):
     conn = init_shared_db(tmp_dirs["db"])
     uid = create_user(conn, "alice", hash_password("pw"))
     conn.close()
@@ -24,8 +24,7 @@ def app_and_doc(tmp_dirs, monkeypatch):
     chap.mkdir()
     (chap / "index.md").write_text("# Chapter 1\n\n- [Section](01_section.md)\n")
     (chap / "01_section.md").write_text("# Section\n\nContent here.\n")
-    cfg = Config("http://x", {}, tmp_dirs["data"], tmp_dirs["db"])
-    app = create_app(cfg, "s")
+    app = create_app(test_config, "s")
     return app, "d1"
 
 

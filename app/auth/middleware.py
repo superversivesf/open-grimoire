@@ -2,12 +2,25 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from app.auth.session import verify_session
 
 
+# Paths that don't require authentication
+SKIP_AUTH_PATHS = {"/healthz", "/readyz", "/static", "/login", "/favicon.ico"}
+
+
 def current_user_id(request) -> str | None:
     return getattr(request.state, "user_id", None)
 
 
 def is_admin(request) -> bool:
     return getattr(request.state, "is_admin", False)
+
+
+def _should_skip_auth(path: str) -> bool:
+    """Check if path should skip authentication."""
+    if path in SKIP_AUTH_PATHS:
+        return True
+    if path.startswith("/static/"):
+        return True
+    return False
 
 
 class AuthMiddleware(BaseHTTPMiddleware):
@@ -17,20 +30,25 @@ class AuthMiddleware(BaseHTTPMiddleware):
         self.db_dir = db_dir
 
     async def dispatch(self, request, call_next):
-        token = request.cookies.get("session")
-        uid = verify_session(token, self.session_secret) if token else None
-        request.state.user_id = uid
+        # Skip auth for health checks and static assets
+        if _should_skip_auth(request.url.path):
+            return await call_next(request)
 
-        # Check admin status — only for authenticated users
-        request.state.is_admin = False
-        if uid and self.db_dir:
+        token = request.cookies.get("session")
+        uid, is_admin = verify_session(token, self.session_secret) if token else (None, False)
+        request.state.user_id = uid
+        request.state.is_admin = is_admin
+
+        # Fallback: if is_admin not in token (old sessions), check DB once
+        if uid and not is_admin and self.db_dir:
             try:
-                from app.storage.shared_db import init_shared_db, list_users
+                from app.storage.shared_db import init_shared_db
                 sconn = init_shared_db(self.db_dir)
                 row = sconn.execute(
                     "SELECT is_admin FROM users WHERE user_id = ?", (uid,)
                 ).fetchone()
-                request.state.is_admin = bool(row and row["is_admin"])
+                if row and row["is_admin"]:
+                    request.state.is_admin = True
                 sconn.close()
             except Exception:
                 pass

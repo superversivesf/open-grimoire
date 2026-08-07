@@ -9,15 +9,14 @@ from app.auth.passwords import hash_password
 
 
 @pytest.fixture
-def app_with_data(tmp_dirs, monkeypatch):
+def app_with_data(tmp_dirs, test_config):
     conn = init_shared_db(tmp_dirs["db"])
     uid = create_user(conn, "alice", hash_password("pw"))
     conn.close()
     uconn = init_user_db(tmp_dirs["db"], uid)
     cid = create_collection(uconn, "PF")
     uconn.close()
-    cfg = Config("http://localhost:11434", {"query": "m"}, tmp_dirs["data"], tmp_dirs["db"])
-    app = create_app(cfg, session_secret="s")
+    app = create_app(test_config, session_secret="s")
     mock_loop = MagicMock()
     mock_loop.run = AsyncMock(return_value={"answer": "AC is 15.", "cites": [{"path": "x.md", "page": 42, "quote": "AC 15"}], "iterations": 1})
     app.state.agent_loop_factory = lambda toolbox: mock_loop

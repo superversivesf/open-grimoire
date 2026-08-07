@@ -9,7 +9,7 @@ from app.auth.passwords import hash_password
 
 
 @pytest.fixture
-def integration_app(tmp_dirs, monkeypatch):
+def integration_app(tmp_dirs, test_config):
     conn = init_shared_db(tmp_dirs["db"])
     uid = create_user(conn, "alice", hash_password("pw"))
     conn.close()
@@ -22,8 +22,7 @@ def integration_app(tmp_dirs, monkeypatch):
     doc_dir = tmp_dirs["data"] / uid / "d1" / "c1"
     doc_dir.mkdir(parents=True)
     (doc_dir / "goblin.md").write_text("# Goblin\n\nAC 15, HP 7.\n")
-    cfg = Config("http://localhost:11434", {"query": "m", "enrich": "m"}, tmp_dirs["data"], tmp_dirs["db"])
-    app = create_app(cfg, "s")
+    app = create_app(test_config, "s")
     mock_loop = MagicMock()
     mock_loop.run = AsyncMock(return_value={"answer": "A goblin has AC 15.", "cites": [{"path": "data/alice/d1/c1/goblin.md", "page": 42, "quote": "AC 15"}], "iterations": 1})
     app.state.agent_loop_factory = lambda toolbox: mock_loop

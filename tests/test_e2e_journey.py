@@ -174,41 +174,25 @@ def mock_gateway():
 
 
 @pytest.fixture
-def app_with_user(tmp_dirs, request):
+def app_with_user(tmp_dirs, test_config, request):
     """Create app with a registered user. Uses mock_gateway by default."""
     gateway = request.getfixturevalue("mock_gateway")
     conn = init_shared_db(tmp_dirs["db"])
     uid = create_user(conn, "testuser", hash_password("testpass"))
     conn.close()
-    cfg = Config(
-        host="0.0.0.0", port=8050,
-        ollama_host="http://localhost:11434",
-        models={"query": "m", "enrich": "m"},
-        data_dir=tmp_dirs["data"],
-        db_dir=tmp_dirs["db"],
-        num_ctx=8192,
-    )
-    app = create_app(cfg, session_secret="test-secret")
+    app = create_app(test_config, session_secret="test-secret")
     app.state.gateway = gateway
     app.state.agent_loop_factory = lambda toolbox: AgentLoop(gateway, toolbox, max_iterations=10)
     return app, uid, gateway
 
 
 @pytest.fixture
-def real_app_with_user(tmp_dirs, real_ollama):
+def real_app_with_user(tmp_dirs, test_config, real_ollama):
     """Create app with real Ollama gateway."""
     conn = init_shared_db(tmp_dirs["db"])
     uid = create_user(conn, "testuser", hash_password("testpass"))
     conn.close()
-    cfg = Config(
-        host="0.0.0.0", port=8050,
-        ollama_host="http://localhost:11434",
-        models={"query": "qwen2.5:7b", "enrich": "qwen2.5:7b"},
-        data_dir=tmp_dirs["data"],
-        db_dir=tmp_dirs["db"],
-        num_ctx=8192,
-    )
-    app = create_app(cfg, session_secret="test-secret")
+    app = create_app(test_config, session_secret="test-secret")
     return app, uid, real_ollama
 
 
@@ -793,21 +777,13 @@ class TestMultiUserJourney:
     """Test that users are isolated from each other."""
 
     @pytest.fixture
-    def two_user_app(self, tmp_dirs, mock_gateway):
+    def two_user_app(self, tmp_dirs, test_config, mock_gateway):
         """Create app with two users."""
         conn = init_shared_db(tmp_dirs["db"])
         alice_uid = create_user(conn, "alice", hash_password("alice"))
         bob_uid = create_user(conn, "bob", hash_password("bob"))
         conn.close()
-        cfg = Config(
-            host="0.0.0.0", port=8050,
-            ollama_host="http://localhost:11434",
-            models={"query": "m", "enrich": "m"},
-            data_dir=tmp_dirs["data"],
-            db_dir=tmp_dirs["db"],
-            num_ctx=8192,
-        )
-        app = create_app(cfg, session_secret="test-secret")
+        app = create_app(test_config, session_secret="test-secret")
         app.state.gateway = mock_gateway
         return app, alice_uid, bob_uid
 
@@ -928,12 +904,12 @@ class TestAgentLoopJourney:
 
     @pytest.mark.asyncio
     async def test_loop_forced_done_after_iter_8(self):
-        """After 8 iterations, only done tool should be offered."""
+        """After state transitions, only done tool should be offered in SYNTHESIZING state."""
         responses = [
             {"message": {"content": "", "tool_calls": [
                 {"function": {"name": "fts_search", "arguments": '{"query": "x"}'}}
             ]}}
-        ] * 10
+        ] * 15
         call_count = [0]
         seen_tools = []
         async def mock_call(role, prompt, tools=None, messages=None):
@@ -949,10 +925,13 @@ class TestAgentLoopJourney:
         toolbox.execute = MagicMock(return_value='[]')
         loop = AgentLoop(gw, toolbox, max_iterations=15)
         result = await loop.run([], "test")
-        # After iter 8, tools should only contain 'done' and 'read_file'
-        for tools_list in seen_tools[8:]:
-            assert "done" in tools_list, f"Expected 'done' tool after iter 8, got {tools_list}"
-            assert "fts_search" not in tools_list, f"Should not offer fts_search after forced_done, got {tools_list}"
+        # With new state machine: SEARCHING (5 iter) -> READING (5 iter) -> SYNTHESIZING (3 iter)
+        # Transition to SYNTHESIZING happens at end of iteration 11, so iteration 12+ uses SYNTHESIZING tools
+        synthesizing_tools = seen_tools[11:]  # After SEARCHING(5)+READING(5)+transition
+        for tools_list in synthesizing_tools:
+            assert "done" in tools_list, f"Expected 'done' tool in SYNTHESIZING, got {tools_list}"
+            assert "fts_search" not in tools_list, f"Should not offer fts_search in SYNTHESIZING, got {tools_list}"
+            assert "grep" not in tools_list, f"Should not offer grep in SYNTHESIZING, got {tools_list}"
 
     @pytest.mark.asyncio
     async def test_loop_budget_exhausted_returns_fallback(self):

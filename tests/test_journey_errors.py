@@ -25,12 +25,11 @@ from fpdf import FPDF
 
 
 @pytest.fixture
-def app_with_user(tmp_dirs):
+def app_with_user(tmp_dirs, test_config):
     conn = init_shared_db(tmp_dirs["db"])
     uid = create_user(conn, "alice", hash_password("pw"))
     conn.close()
-    cfg = Config("http://localhost:11434", {"query": "m", "enrich": "m"}, tmp_dirs["data"], tmp_dirs["db"])
-    app = create_app(cfg, session_secret="s")
+    app = create_app(test_config, session_secret="s")
     return app, uid
 
 
@@ -138,7 +137,7 @@ async def test_delete_doc_removes_files_and_fts(app_with_user, tmp_dirs):
     uconn = init_user_db(tmp_dirs["db"], uid)
     cid = create_collection(uconn, "PF")
     create_doc(uconn, "d1", cid, "Book", "h")
-    insert_fts_row(uconn, "data/alice/d1/chapter.md", "Title", "summary", "kw", "content")
+    insert_fts_row(uconn, "d1/chapter.md", "Title", "summary", "kw", "content")
     delete_doc(uconn, "d1")
     uconn.close()
 

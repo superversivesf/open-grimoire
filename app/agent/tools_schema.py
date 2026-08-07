@@ -1,4 +1,6 @@
-FORCED_DONE_TOOLS = [
+from typing import Any
+
+FORCED_DONE_TOOLS: list[dict[str, Any]] = [
     {
         "type": "function",
         "function": {
@@ -47,7 +49,7 @@ FORCED_DONE_TOOLS = [
     },
 ]
 
-TOOL_DEFINITIONS = [
+TOOL_DEFINITIONS: list[dict[str, Any]] = [
     {
         "type": "function",
         "function": {

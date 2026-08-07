@@ -18,6 +18,8 @@ dependencies = [
     "Pillow>=10.0",
     "simpleeval>=0.9.13",
     "markdown>=3.7",
+    "slowapi>=0.1.9",
+    "structlog>=24.1",
 ]
 
 [project.optional-dependencies]
@@ -25,6 +27,7 @@ dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.23",
     "fpdf2>=2.7",
+    "mypy>=1.10",
 ]
 
 [tool.pytest.ini_options]
@@ -36,3 +39,15 @@ markers = [
 
 [tool.setuptools]
 packages = ["app"]
+
+[tool.mypy]
+# Default strictness passes cleanly on app/. Running `mypy --strict app/` is an
+# incremental goal (it surfaces disallow-untyped-defs / no-implicit-optional
+# across many handlers); the current baseline is the default strictness below.
+warn_unused_ignores = true
+warn_redundant_casts = true
+
+[[tool.mypy.overrides]]
+# Third-party libs that ship no type stubs.
+module = ["yaml", "markdown", "simpleeval", "pytesseract"]
+ignore_missing_imports = true
