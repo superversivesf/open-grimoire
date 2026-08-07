@@ -18,14 +18,31 @@ def _resolve_db_dir() -> Path:
 
 @click.group()
 def cli() -> None:
-    pass
+    """User account management for Open Grimoire.
+
+    Manage login accounts stored in the shared SQLite database. The DB path
+    is read from config.yaml (or DB_DIR env var); set it with the same config
+    the running server uses so created users are visible there.
+    """
 
 
 @cli.command("create")
-@click.option("--username", required=True)
-@click.option("--password", default=None)
-@click.option("--admin", is_flag=True, default=False)
+@click.option("--username", required=True, help="Unique login username.")
+@click.option(
+    "--password",
+    default=None,
+    help="Password to set. If omitted, prompt interactively (hidden, with confirmation).",
+)
+@click.option("--admin", is_flag=True, default=False, help="Grant administrator privileges.")
 def create_cmd(username: str, password: str | None, admin: bool) -> None:
+    """Create a new user account.
+
+    Examples:
+
+      python -m app.cli.user create --username alice --password 's3cret'
+
+      python -m app.cli.user create --username admin --admin
+    """
     if not password:
         password = click.prompt("Password", hide_input=True, confirmation_prompt=True)
     conn = init_shared_db(_resolve_db_dir())
@@ -40,9 +57,20 @@ def create_cmd(username: str, password: str | None, admin: bool) -> None:
 
 
 @cli.command("passwd")
-@click.option("--username", required=True)
-@click.option("--password", default=None)
+@click.option("--username", required=True, help="Username whose password to change.")
+@click.option(
+    "--password",
+    default=None,
+    help="New password. If omitted, prompt interactively (hidden, with confirmation).",
+)
 def passwd_cmd(username: str, password: str | None) -> None:
+    """Change an existing user's password.
+
+    Useful for resetting the auto-created admin account after a fresh deploy:
+
+      docker exec open-grimoire-prod python -m app.cli.user passwd \\
+          --username admin --password 'new-password'
+    """
     if not password:
         password = click.prompt("Password", hide_input=True, confirmation_prompt=True)
     conn = init_shared_db(_resolve_db_dir())

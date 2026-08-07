@@ -90,10 +90,31 @@ server:
   secret: change-me-in-production
 ```
 
-### Create Admin User
+### CLI — User Management
+
+The `app.cli.user` command group manages login accounts in the shared SQLite
+database. It reads `config.yaml` (honouring the `DB_DIR` env var) so created
+users are visible to the running server. Run `python -m app.cli.user --help` for
+the full reference.
+
+**`create`** — create a new account. Omit `--password` to be prompted
+interactively (hidden input with confirmation).
 
 ```bash
-python -m app.cli.user create --username admin --password admin --admin
+# Admin account with an explicit password
+python -m app.cli.user create --username admin --password 's3cret' --admin
+
+# Non-admin account, prompted for password
+python -m app.cli.user create --username alice
+```
+
+**`passwd`** — change an existing user's password. This is how you reset the
+auto-created `admin/admin` account after a first deploy (run inside the
+container in production):
+
+```bash
+docker exec open-grimoire-prod python -m app.cli.user passwd \
+    --username admin --password 'new-password'
 ```
 
 ### Run

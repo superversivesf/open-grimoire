@@ -37,13 +37,18 @@ markers = [
     "e2e: requires real Ollama instance running on localhost:11434",
 ]
 
-[tool.setuptools]
-packages = ["app"]
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app*"]
+
+[tool.setuptools.package-data]
+# Bundle Jinja templates and static assets so a non-editable install (e.g.
+# the Docker runtime image) ships them inside site-packages/app/.
+app = ["web/templates/*.html", "web/static/*"]
 
 [tool.mypy]
-# Default strictness passes cleanly on app/. Running `mypy --strict app/` is an
-# incremental goal (it surfaces disallow-untyped-defs / no-implicit-optional
-# across many handlers); the current baseline is the default strictness below.
+# `mypy --strict app/` passes cleanly across all 45 source files. The flags
+# below are kept for the default (non-strict) invocation and as a safety net.
 warn_unused_ignores = true
 warn_redundant_casts = true
 

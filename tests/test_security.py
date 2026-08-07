@@ -179,22 +179,35 @@ def test_login_returns_429_when_rate_limit_exceeded(tmp_dirs, test_config):
 
     async def run():
         codes = []
+        body6 = None
+        code_correct = None
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            for _ in range(6):
+            for i in range(6):
                 r = await client.post("/login", data={"username": "alice", "password": "wrong"})
                 codes.append(r.status_code)
-        return codes
+                if i == 5:
+                    body6 = r.json()
+            # While rate-limited, even a correct password must be blocked — the
+            # limiter gates the request before credential checking, so a
+            # brute-forcer can't keep probing valid passwords past the limit.
+            r = await client.post("/login", data={"username": "alice", "password": "pw123"})
+            code_correct = r.status_code
+        return codes, body6, code_correct
 
     try:
-        codes = asyncio.run(run())
+        codes, body6, code_correct = asyncio.run(run())
     finally:
         limiter.enabled = False
         limiter._storage.reset()
 
     # First 5 within the limit: auth failure (401) but NOT rate-limited.
     assert codes[:5] == [401] * 5
-    # 6th exceeds 5/minute → 429 from the RateLimitExceeded handler.
+    # 6th exceeds 5/minute → 429 from the RateLimitExceeded handler, with the
+    # structured JSON body registered in create_app's exception handler.
     assert codes[5] == 429
+    assert body6 == {"detail": "Rate limit exceeded. Try again later."}
+    # Correct credentials while rate-limited are also blocked (429, not 303).
+    assert code_correct == 429
 
 
 # ─── 1.1 Path traversal: symlink escape (consolidated) ────────────
