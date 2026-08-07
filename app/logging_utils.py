@@ -109,10 +109,3 @@ def _ensure_configured() -> None:
     if not _configured:
         configure_logging()
         _configured = True
-
-
-# Legacy function for backward compatibility
-def get_logger_legacy(name: str, log_dir: str = "logs") -> logging.Logger:
-    """Legacy logger for code not yet migrated to structlog."""
-    _ensure_configured()
-    return cast(logging.Logger, structlog.get_logger(name))

@@ -32,14 +32,6 @@ class Enricher:
         self._write_frontmatter(path, content, result, page)
         return result
 
-    async def enrich_all(self, leaf_paths: list[Path], page_map: dict[str, Any]) -> list[dict[str, Any]]:
-        results: list[dict[str, Any]] = []
-        for p in leaf_paths:
-            page = page_map.get(str(p))
-            r = await self.enrich_leaf(p, page)
-            results.append(r)
-        return results
-
     @staticmethod
     def _parse_json(raw: str) -> dict[str, Any]:
         try:

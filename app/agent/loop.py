@@ -8,8 +8,7 @@ from app.agent.tools_schema import TOOL_DEFINITIONS, FORCED_DONE_TOOLS
 from app.agent.history import build_messages, trim_history
 from app.usage.tokens import estimate_messages_tokens, estimate_response_tokens
 from app.logging_utils import get_logger
-from app.constants import DEFAULT_MAX_ITERATIONS, STATE_MAX_ITERATIONS as CONST_STATE_MAX_ITERATIONS
-
+from app.constants import DEFAULT_MAX_ITERATIONS
 log = get_logger("agent")
 
 SYSTEM_PROMPT = """You are an RPG rules assistant. You search the user's RPG manual collection (one or more books) to answer questions.
@@ -158,7 +157,7 @@ def _synthesize_answer(messages: list[dict[str, Any]], question: str) -> str:
 
 
 class AgentLoop:
-    def __init__(self, gateway: Any, toolbox: Any, max_iterations: int = 15) -> None:
+    def __init__(self, gateway: Any, toolbox: Any, max_iterations: int = DEFAULT_MAX_ITERATIONS) -> None:
         self.gateway = gateway
         self.toolbox = toolbox
         self.max_iterations = max_iterations
