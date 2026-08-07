@@ -109,6 +109,35 @@ class TestCitationLinkFormats:
             assert r.status_code == 303
             assert DOC_ID_A in r.headers["location"]
 
+    @pytest.mark.asyncio
+    async def test_search_encodes_special_chars_in_location(self, app_with_docs, tmp_dirs):
+        """A filename with ?, #, or space must be URL-encoded in the Location header."""
+        app, uid, cid = app_with_docs
+        # Create a file with special characters in its name
+        doc_dir = tmp_dirs["data"] / uid / DOC_ID_A
+        (doc_dir / "weird name?.md").write_text("# Weird\n\nContent.")
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            await client.post("/login", data={"username": "alice", "password": "pw"})
+            r = await client.get("/docs/search?path=weird%20name%3F.md", follow_redirects=False)
+            assert r.status_code == 303
+            loc = r.headers["location"]
+            # No raw ? or # from the filename may appear in the query string
+            assert "?path=weird name" not in loc
+            assert "weird%20name%3F.md" in loc
+
+    @pytest.mark.asyncio
+    async def test_search_rejects_crlf_injection(self, app_with_docs):
+        """CR/LF in the path must not reach the Location header."""
+        app, uid, cid = app_with_docs
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            await client.post("/login", data={"username": "alice", "password": "pw"})
+            r = await client.get("/docs/search?path=evil%0d%0aX-Injected:%20yes.md", follow_redirects=False)
+            assert r.status_code == 303
+            loc = r.headers["location"]
+            assert "\r" not in loc
+            assert "\n" not in loc
+            assert "X-Injected" not in loc
+
 
 class TestSessionNames:
     """Test that sessions have useful names instead of just IDs."""

@@ -3,6 +3,7 @@ from fastapi.responses import RedirectResponse, FileResponse, Response
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote
 import hashlib
 import uuid
 import shutil
@@ -263,7 +264,7 @@ async def doc_search_path(request: Request, path: str) -> Response:
         direct_file = "/".join(parts[1:])
         direct_path = user_root / direct_doc_id / direct_file
         if direct_path.exists() and direct_path.is_file():
-            return RedirectResponse(f"/docs/{direct_doc_id}/view?path={direct_file}", status_code=303)
+            return RedirectResponse(f"/docs/{direct_doc_id}/view?path={quote(direct_file, safe='/')}", status_code=303)
 
     # 2. Strip /index.md suffix — LLM often hallucinates "section_name/index.md"
     #    when the actual file is "section_name.md" or "NN_section_name.md"
@@ -278,26 +279,26 @@ async def doc_search_path(request: Request, path: str) -> Response:
         # Try exact filename match
         candidate = doc_dir / filename
         if candidate.exists() and candidate.is_file():
-            return RedirectResponse(f"/docs/{doc_dir.name}/view?path={filename}", status_code=303)
+            return RedirectResponse(f"/docs/{doc_dir.name}/view?path={quote(filename, safe='/')}", status_code=303)
         # Try the search_name (after stripping /index.md)
         if search_name != filename:
             candidate = doc_dir / search_name
             if candidate.exists() and candidate.is_file():
-                return RedirectResponse(f"/docs/{doc_dir.name}/view?path={search_name}", status_code=303)
+                return RedirectResponse(f"/docs/{doc_dir.name}/view?path={quote(search_name, safe='/')}", status_code=303)
             candidate = doc_dir / (search_name + ".md")
             if candidate.exists() and candidate.is_file():
-                return RedirectResponse(f"/docs/{doc_dir.name}/view?path={search_name}.md", status_code=303)
+                return RedirectResponse(f"/docs/{doc_dir.name}/view?path={quote(search_name + '.md', safe='/')}", status_code=303)
         # Recursive search for exact filename
         for f in doc_dir.rglob(filename):
             if f.is_file():
                 rel = str(f.relative_to(doc_dir))
-                return RedirectResponse(f"/docs/{doc_dir.name}/view?path={rel}", status_code=303)
+                return RedirectResponse(f"/docs/{doc_dir.name}/view?path={quote(rel, safe='/')}", status_code=303)
         # Fuzzy: find files containing the search_name stem
         stem = search_name.replace(".md", "").replace("_", " ")
         for f in doc_dir.glob("*.md"):
             if stem in f.stem.replace("_", " "):
                 rel = str(f.relative_to(doc_dir))
-                return RedirectResponse(f"/docs/{doc_dir.name}/view?path={rel}", status_code=303)
+                return RedirectResponse(f"/docs/{doc_dir.name}/view?path={quote(rel, safe='/')}", status_code=303)
 
     return RedirectResponse("/", status_code=303)
 
