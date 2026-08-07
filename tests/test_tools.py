@@ -108,6 +108,26 @@ def test_calc_dice_roll(toolbox):
     assert 6 <= val <= 25
 
 
+def test_calc_rejects_huge_dice_count(toolbox):
+    result = toolbox.calc("999999999d6")
+    assert result.startswith("error"), f"expected error for huge dice count, got: {result}"
+
+
+def test_calc_rejects_huge_dice_sides(toolbox):
+    result = toolbox.calc("2d999999999")
+    assert result.startswith("error"), f"expected error for huge dice sides, got: {result}"
+
+
+def test_calc_rejects_oversized_expression(toolbox):
+    result = toolbox.calc("1+1" * 500)
+    assert result.startswith("error"), f"expected error for oversized expression, got: {result}"
+
+
+def test_calc_rejects_compound_types(toolbox):
+    result = toolbox.calc("[1,2,3]")
+    assert result.startswith("error"), f"expected error for compound types, got: {result}"
+
+
 def test_ls(toolbox):
     result = toolbox.ls(str(toolbox.data_dir / "alice" / "d1"))
     assert "index.md" in result

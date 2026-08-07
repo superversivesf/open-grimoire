@@ -21,8 +21,13 @@ def _dice_roll(count: int, sides: int) -> int:
 def _eval_dice(expr: str) -> str:
     """Replace NdS dice rolls in expr with their rolled totals, returning the
     substituted expression string (e.g. '2d6+3' -> '7+3') for later evaluation."""
+    MAX_DICE = 100
+    MAX_SIDES = 1000
+
     def replace(m: re.Match[str]) -> str:
         n, s = int(m.group(1)), int(m.group(2))
+        if n > MAX_DICE or s > MAX_SIDES:
+            raise ValueError(f"dice rolls capped at {MAX_DICE}d{MAX_SIDES}")
         return str(_dice_roll(n, s))
     return re.sub(r"(\d+)d(\d+)", replace, expr)
 
@@ -197,11 +202,14 @@ class ToolBox:
         return rows
 
     def calc(self, expr: str) -> str:
-        from simpleeval import simple_eval, EvalWithCompoundTypes
+        from simpleeval import simple_eval
+        if len(expr) > 200:
+            return "error: expression too long"
         try:
             dice_expr = _eval_dice(expr)
-            evaluator = EvalWithCompoundTypes()
-            result = evaluator.eval(dice_expr)
+            result = simple_eval(dice_expr)
+            if not isinstance(result, (int, float)):
+                return "error: only numeric expressions are supported"
             return str(result)
         except Exception as e:
             return f"error: {e}"
