@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Request, Form, UploadFile, File
-from fastapi.responses import RedirectResponse, FileResponse
+from fastapi.responses import RedirectResponse, FileResponse, Response
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
+from typing import Any
 import hashlib
 import uuid
 import shutil
@@ -24,14 +25,14 @@ _db_dir: Path = Path()
 _data_dir: Path = Path()
 
 
-def init_web_routes(db_dir: Path, data_dir: Path):
+def init_web_routes(db_dir: Path, data_dir: Path) -> None:
     global _db_dir, _data_dir
     _db_dir = db_dir
     _data_dir = data_dir
 
 
 @router.get("/")
-async def library(request: Request):
+async def library(request: Request) -> Response:
     uid = current_user_id(request)
     if not uid:
         return RedirectResponse("/login", status_code=303)
@@ -46,7 +47,7 @@ async def library(request: Request):
 
 
 @router.post("/collections")
-async def create_collection_route(request: Request, name: str = Form(...)):
+async def create_collection_route(request: Request, name: str = Form(...)) -> Response:
     uid = current_user_id(request)
     if not uid:
         return RedirectResponse("/login", status_code=303)
@@ -57,7 +58,7 @@ async def create_collection_route(request: Request, name: str = Form(...)):
 
 
 @router.post("/collections/{collection_id}/rename")
-async def rename_collection_route(request: Request, collection_id: str, name: str = Form(...)):
+async def rename_collection_route(request: Request, collection_id: str, name: str = Form(...)) -> Response:
     uid = current_user_id(request)
     if not uid:
         return RedirectResponse("/login", status_code=303)
@@ -68,7 +69,7 @@ async def rename_collection_route(request: Request, collection_id: str, name: st
 
 
 @router.post("/collections/{collection_id}/delete")
-async def delete_collection_route(request: Request, collection_id: str):
+async def delete_collection_route(request: Request, collection_id: str) -> Response:
     uid = current_user_id(request)
     if not uid:
         return RedirectResponse("/login", status_code=303)
@@ -85,7 +86,7 @@ async def delete_collection_route(request: Request, collection_id: str):
 
 
 @router.get("/collections/{collection_id}")
-async def collection_view(request: Request, collection_id: str):
+async def collection_view(request: Request, collection_id: str) -> Response:
     uid = current_user_id(request)
     if not uid:
         return RedirectResponse("/login", status_code=303)
@@ -104,7 +105,7 @@ async def collection_view(request: Request, collection_id: str):
 
 
 @router.get("/collections/{collection_id}/table")
-async def collection_table(request: Request, collection_id: str):
+async def collection_table(request: Request, collection_id: str) -> Response:
     uid = current_user_id(request)
     if not uid:
         return RedirectResponse("/login", status_code=303)
@@ -119,7 +120,7 @@ async def collection_table(request: Request, collection_id: str):
 
 
 @router.get("/collections/{collection_id}/upload")
-async def upload_form(request: Request, collection_id: str):
+async def upload_form(request: Request, collection_id: str) -> Response:
     uid = current_user_id(request)
     if not uid:
         return RedirectResponse("/login", status_code=303)
@@ -150,7 +151,7 @@ def _user_storage_used(data_dir: Path, uid: str) -> int:
     return total
 
 
-def _storage_info(data_dir: Path, uid: str) -> dict:
+def _storage_info(data_dir: Path, uid: str) -> dict[str, Any]:
     used = _user_storage_used(data_dir, uid)
     return {
         "used_bytes": used,
@@ -163,7 +164,7 @@ def _storage_info(data_dir: Path, uid: str) -> dict:
 
 
 @router.post("/upload")
-async def upload(request: Request, collection_id: str = Form(...), files: list[UploadFile] = File(...)):
+async def upload(request: Request, collection_id: str = Form(...), files: list[UploadFile] = File(...)) -> Response:
     uid = current_user_id(request)
     if not uid:
         return RedirectResponse("/login", status_code=303)
@@ -194,7 +195,7 @@ async def upload(request: Request, collection_id: str = Form(...), files: list[U
 
 
 @router.post("/docs/{doc_id}/reprocess")
-async def reprocess_doc(request: Request, doc_id: str):
+async def reprocess_doc(request: Request, doc_id: str) -> Response:
     uid = current_user_id(request)
     if not uid:
         return RedirectResponse("/login", status_code=303)
@@ -215,7 +216,7 @@ async def reprocess_doc(request: Request, doc_id: str):
 
 
 @router.post("/docs/{doc_id}/delete")
-async def delete_doc_route(request: Request, doc_id: str):
+async def delete_doc_route(request: Request, doc_id: str) -> Response:
     uid = current_user_id(request)
     if not uid:
         return RedirectResponse("/login", status_code=303)
@@ -236,7 +237,7 @@ async def delete_doc_route(request: Request, doc_id: str):
 
 
 @router.get("/docs/search")
-async def doc_search_path(request: Request, path: str):
+async def doc_search_path(request: Request, path: str) -> Response:
     """Find which doc contains a given file path and redirect to it.
     Must be registered BEFORE /docs/{doc_id} to avoid matching 'search' as doc_id.
     Handles various path formats the LLM might return:
@@ -301,7 +302,7 @@ async def doc_search_path(request: Request, path: str):
 
 
 @router.get("/docs/{doc_id}/cover")
-async def doc_cover(request: Request, doc_id: str):
+async def doc_cover(request: Request, doc_id: str) -> Response:
     """Serve the cover image (first page as JPG)."""
     uid = current_user_id(request)
     if not uid:
@@ -314,7 +315,7 @@ async def doc_cover(request: Request, doc_id: str):
 
 
 @router.get("/docs/{doc_id}/pdf")
-async def doc_pdf(request: Request, doc_id: str, page: int = 0):
+async def doc_pdf(request: Request, doc_id: str, page: int = 0) -> Response:
     """Serve the original PDF with optional page jump.
 
     Uses an HTML wrapper with <embed> + JS for reliable page jumping
@@ -338,7 +339,7 @@ async def doc_pdf(request: Request, doc_id: str, page: int = 0):
 
 
 @router.get("/docs/{doc_id}")
-async def doc_view(request: Request, doc_id: str):
+async def doc_view(request: Request, doc_id: str) -> Response:
     uid = current_user_id(request)
     if not uid:
         return RedirectResponse("/login", status_code=303)
@@ -356,7 +357,7 @@ async def doc_view(request: Request, doc_id: str):
 
 
 @router.get("/docs/{doc_id}/view")
-async def doc_view_leaf(request: Request, doc_id: str, path: str):
+async def doc_view_leaf(request: Request, doc_id: str, path: str) -> Response:
     uid = current_user_id(request)
     if not uid:
         return RedirectResponse("/login", status_code=303)
@@ -387,7 +388,7 @@ async def doc_view_leaf(request: Request, doc_id: str, path: str):
     )
 
 
-def _build_doc_tree(data_dir: Path, uid: str, doc_id: str) -> list[dict]:
+def _build_doc_tree(data_dir: Path, uid: str, doc_id: str) -> list[dict[str, Any]]:
     doc_root = data_dir / uid / doc_id
     if not doc_root.exists():
         return []

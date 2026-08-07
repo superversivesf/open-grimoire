@@ -33,7 +33,7 @@ def tokenize_terms(query: str) -> list[str]:
     return [w for w in words if w not in STOP_WORDS]
 
 
-def _group_for(term: str) -> set | None:
+def _group_for(term: str) -> set[str] | None:
     for group in SYNONYM_GROUPS.values():
         if term in group:
             return group

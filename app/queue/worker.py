@@ -2,6 +2,7 @@
 import asyncio
 import signal
 from pathlib import Path
+from typing import Any
 from app.storage.shared_db import init_shared_db, claim_next_job
 from app.logging_utils import get_logger, set_job_id
 from app.constants import WORKER_POLL_INTERVAL
@@ -10,7 +11,7 @@ log = get_logger("worker")
 
 
 class QueueWorker:
-    def __init__(self, runner, db_dir: Path, poll_interval: float = WORKER_POLL_INTERVAL):
+    def __init__(self, runner: Any, db_dir: Path, poll_interval: float = WORKER_POLL_INTERVAL) -> None:
         self.runner = runner
         self.db_dir = db_dir
         self.poll_interval = poll_interval
@@ -38,7 +39,7 @@ class QueueWorker:
         """Run the worker until stopped by signal."""
         loop = asyncio.get_event_loop()
 
-        def _signal_handler(sig):
+        def _signal_handler(sig: signal.Signals) -> None:
             log.info("shutdown_signal_received", signal=sig.name)
             self._stop_event.set()
 

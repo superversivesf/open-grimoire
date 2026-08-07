@@ -3,6 +3,7 @@
 Rough estimate: ~4 characters per token for English text.
 Not exact, but sufficient for cost tracking.
 """
+from typing import Any
 
 
 def estimate_tokens(text: str) -> int:
@@ -11,7 +12,7 @@ def estimate_tokens(text: str) -> int:
     return max(1, len(text) // 4)
 
 
-def estimate_messages_tokens(messages: list[dict]) -> int:
+def estimate_messages_tokens(messages: list[dict[str, Any]]) -> int:
     """Estimate input tokens for a chat request — includes all messages + tool defs."""
     total = 0
     for msg in messages:

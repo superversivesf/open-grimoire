@@ -1,4 +1,5 @@
 import re
+from typing import Any
 
 
 class Structurer:
@@ -9,17 +10,17 @@ class Structurer:
         re.compile(r"^([A-Z][A-Z\s]{4,})$"),
     ]
 
-    def __init__(self, gateway=None):
+    def __init__(self, gateway: Any = None):
         self.gateway = gateway
 
-    def detect(self, blocks: list[dict]) -> list[dict]:
+    def detect(self, blocks: list[dict[str, Any]]) -> list[dict[str, Any]]:
         flat = self._scan_headings(blocks)
         if not flat:
             return [self._fallback_chapter(blocks)]
         return self._build_tree(flat, blocks)
 
-    def _scan_headings(self, blocks: list[dict]) -> list[dict]:
-        headings = []
+    def _scan_headings(self, blocks: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        headings: list[dict[str, Any]] = []
         for b in blocks:
             for line in b["text"].splitlines():
                 stripped = line.strip()
@@ -41,9 +42,9 @@ class Structurer:
             return 1
         return None
 
-    def _build_tree(self, headings: list[dict], blocks: list[dict]) -> list[dict]:
-        root = []
-        stack: list[dict] = []
+    def _build_tree(self, headings: list[dict[str, Any]], blocks: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        root: list[dict[str, Any]] = []
+        stack: list[dict[str, Any]] = []
         for i, h in enumerate(headings):
             node = {"title": h["title"], "level": h["level"], "page_start": h["page"], "page_end": h["page"], "text": "", "children": []}
             next_page = headings[i + 1]["page"] if i + 1 < len(headings) else blocks[-1]["page"]
@@ -58,14 +59,14 @@ class Structurer:
             stack.append(node)
         return root
 
-    def _collect_text(self, blocks: list[dict], start_page: int, end_page: int, heading: str) -> str:
+    def _collect_text(self, blocks: list[dict[str, Any]], start_page: int, end_page: int, heading: str) -> str:
         chunks = []
         for b in blocks:
             if start_page <= b["page"] <= end_page:
                 chunks.append(b["text"])
         return "\n".join(chunks)
 
-    def _fallback_chapter(self, blocks: list[dict]) -> dict:
+    def _fallback_chapter(self, blocks: list[dict[str, Any]]) -> dict[str, Any]:
         return {
             "title": "Full Document",
             "level": 1,

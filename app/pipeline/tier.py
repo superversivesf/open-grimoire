@@ -1,5 +1,6 @@
 from pathlib import Path
 import re
+from typing import Any
 
 
 def slugify(title: str, order: int = 0) -> str:
@@ -9,12 +10,12 @@ def slugify(title: str, order: int = 0) -> str:
     return prefix + s if order else s
 
 
-def tier_document(tree: list[dict], data_dir: Path, doc_id: str, doc_title: str) -> list[str]:
+def tier_document(tree: list[dict[str, Any]], data_dir: Path, doc_id: str, doc_title: str) -> list[str]:
     doc_dir = data_dir / doc_id
     doc_dir.mkdir(parents=True, exist_ok=True)
     leaves = []
 
-    def write_node(node, parent_dir: Path, order: int) -> None:
+    def write_node(node: dict[str, Any], parent_dir: Path, order: int) -> None:
         slug = slugify(node["title"], order)
         if node["children"]:
             chap_dir = parent_dir / slug

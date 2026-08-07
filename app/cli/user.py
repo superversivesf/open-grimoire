@@ -17,7 +17,7 @@ def _resolve_db_dir() -> Path:
 
 
 @click.group()
-def cli():
+def cli() -> None:
     pass
 
 
@@ -25,7 +25,7 @@ def cli():
 @click.option("--username", required=True)
 @click.option("--password", default=None)
 @click.option("--admin", is_flag=True, default=False)
-def create_cmd(username, password, admin):
+def create_cmd(username: str, password: str | None, admin: bool) -> None:
     if not password:
         password = click.prompt("Password", hide_input=True, confirmation_prompt=True)
     conn = init_shared_db(_resolve_db_dir())
@@ -42,7 +42,7 @@ def create_cmd(username, password, admin):
 @cli.command("passwd")
 @click.option("--username", required=True)
 @click.option("--password", default=None)
-def passwd_cmd(username, password):
+def passwd_cmd(username: str, password: str | None) -> None:
     if not password:
         password = click.prompt("Password", hide_input=True, confirmation_prompt=True)
     conn = init_shared_db(_resolve_db_dir())

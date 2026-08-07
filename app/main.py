@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, Response
+from starlette.middleware.base import RequestResponseEndpoint
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 import asyncio
@@ -39,7 +40,7 @@ def create_app(cfg: Config, session_secret: str) -> FastAPI:
 
     # Request ID middleware for correlation
     @app.middleware("http")
-    async def request_id_middleware(request: Request, call_next) -> Response:
+    async def request_id_middleware(request: Request, call_next: RequestResponseEndpoint) -> Response:
         # Skip request ID and logging for health checks
         if request.url.path in SKIP_LOG_PATHS:
             return await call_next(request)

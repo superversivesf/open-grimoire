@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Request, Form
-from fastapi.responses import RedirectResponse, StreamingResponse
+from fastapi.responses import RedirectResponse, StreamingResponse, Response
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
+from typing import Any, AsyncGenerator, cast
 import time
 import json
 from app.auth.middleware import current_user_id
@@ -23,23 +24,23 @@ _data_dir: Path = Path()
 _gateway = None
 
 
-def init_agent_routes(db_dir: Path, data_dir: Path, gateway):
+def init_agent_routes(db_dir: Path, data_dir: Path, gateway: Any) -> None:
     global _db_dir, _data_dir, _gateway
     _db_dir = db_dir
     _data_dir = data_dir
     _gateway = gateway
 
 
-def _make_loop(request: Request, uid: str, collection_id: str):
+def _make_loop(request: Request, uid: str, collection_id: str) -> AgentLoop:
     toolbox = ToolBox(_data_dir, uid, _db_dir, collection_id)
     factory = getattr(request.app.state, "agent_loop_factory", None) or getattr(_gateway, "agent_loop_factory", None)
     if factory:
-        return factory(toolbox)
+        return cast(AgentLoop, factory(toolbox))
     return AgentLoop(_gateway, toolbox)
 
 
 @router.post("/sessions")
-async def start_session(request: Request, collection_id: str = Form(...), question: str = Form(...)):
+async def start_session(request: Request, collection_id: str = Form(...), question: str = Form(...)) -> Response:
     uid = current_user_id(request)
     if not uid:
         return RedirectResponse("/login", status_code=303)
@@ -74,7 +75,7 @@ async def start_session(request: Request, collection_id: str = Form(...), questi
 
 
 @router.post("/sessions/{session_id}")
-async def continue_session(request: Request, session_id: str, question: str = Form(...)):
+async def continue_session(request: Request, session_id: str, question: str = Form(...)) -> Response:
     uid = current_user_id(request)
     if not uid:
         return RedirectResponse("/login", status_code=303)
@@ -110,18 +111,18 @@ async def continue_session(request: Request, session_id: str, question: str = Fo
         conn.close()
 
 
-def _sse_format(event_type: str, data: dict) -> str:
+def _sse_format(event_type: str, data: dict[str, Any]) -> str:
     return f"data: {json.dumps({'type': event_type, **data})}\n\n"
 
 
 @router.post("/sessions/{session_id}/stream")
-async def continue_session_stream(request: Request, session_id: str, question: str = Form(...)):
+async def continue_session_stream(request: Request, session_id: str, question: str = Form(...)) -> Response:
     """SSE streaming endpoint for follow-up questions."""
     uid = current_user_id(request)
     if not uid:
         return RedirectResponse("/login", status_code=303)
 
-    async def event_stream():
+    async def event_stream() -> AsyncGenerator[str, None]:
         conn = init_user_db(_db_dir, uid)
         try:
             session = get_session(conn, session_id)
@@ -151,7 +152,7 @@ async def continue_session_stream(request: Request, session_id: str, question: s
 
 
 @router.get("/sessions")
-async def list_sessions(request: Request):
+async def list_sessions(request: Request) -> Response:
     uid = current_user_id(request)
     if not uid:
         return RedirectResponse("/login", status_code=303)
@@ -169,7 +170,7 @@ async def list_sessions(request: Request):
 
 
 @router.get("/sessions/{session_id}")
-async def view_session(request: Request, session_id: str):
+async def view_session(request: Request, session_id: str) -> Response:
     uid = current_user_id(request)
     if not uid:
         return RedirectResponse("/login", status_code=303)
@@ -188,7 +189,7 @@ async def view_session(request: Request, session_id: str):
 
 
 @router.delete("/sessions/{session_id}")
-async def delete_session(request: Request, session_id: str):
+async def delete_session(request: Request, session_id: str) -> Response:
     uid = current_user_id(request)
     if not uid:
         return RedirectResponse("/login", status_code=303)

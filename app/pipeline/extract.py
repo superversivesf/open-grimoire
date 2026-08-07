@@ -1,13 +1,14 @@
 # app/pipeline/extract.py
 from pathlib import Path
 import re
+from typing import Any
 
 
 class Extractor:
-    def __init__(self, gateway=None):
+    def __init__(self, gateway: Any = None):
         self.gateway = gateway
 
-    def extract(self, pdf_path: Path) -> list[dict]:
+    def extract(self, pdf_path: Path) -> list[dict[str, Any]]:
         pages = self._extract_with_pdfplumber(pdf_path)
         if pages is None:
             pages = self._extract_with_pypdf(pdf_path)

@@ -1,22 +1,23 @@
 from httpx import AsyncClient
 import json
 import typing
+from typing import Any, cast
 from app.constants import OLLAMA_TIMEOUT, DEFAULT_NUM_CTX
 
 
 class OllamaGateway:
-    def __init__(self, host: str, models: dict[str, str], num_ctx: int = DEFAULT_NUM_CTX):
+    def __init__(self, host: str, models: dict[str, str], num_ctx: int = DEFAULT_NUM_CTX) -> None:
         self.host = host.rstrip("/")
         self.models = models
         self.num_ctx = num_ctx
-        self._client = None
+        self._client: AsyncClient | None = None
 
-    def _get_client(self):
+    def _get_client(self) -> AsyncClient:
         if self._client is None:
             self._client = AsyncClient(base_url=self.host, timeout=OLLAMA_TIMEOUT)
         return self._client
 
-    async def call(self, role: str, prompt: str, tools: list | None = None, messages: list | None = None) -> dict:
+    async def call(self, role: str, prompt: str, tools: list[dict[str, Any]] | None = None, messages: list[dict[str, Any]] | None = None) -> dict[str, Any]:
         model = self.models.get(role)
         if not model:
             raise ValueError(f"unknown role: {role}")
@@ -35,9 +36,9 @@ class OllamaGateway:
             body["tools"] = tools
         resp = await self._get_client().post("/api/chat", json=body)
         resp.raise_for_status()
-        return resp.json()
+        return cast(dict[str, Any], resp.json())
 
-    async def call_stream(self, role: str, messages: list, tools: list | None = None) -> typing.AsyncGenerator[str, None]:
+    async def call_stream(self, role: str, messages: list[dict[str, Any]], tools: list[dict[str, Any]] | None = None) -> typing.AsyncGenerator[str, None]:
         """Stream tokens from the LLM. Yields content chunks as they arrive.
 
         If the model makes tool calls, they arrive in the final chunk — this
@@ -79,6 +80,6 @@ class OllamaGateway:
         resp = await self._get_client().post("/api/pull", json={"name": model}, timeout=None)
         resp.raise_for_status()
 
-    async def close(self):
+    async def close(self) -> None:
         if self._client is not None:
             await self._client.aclose()

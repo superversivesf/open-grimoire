@@ -1,4 +1,8 @@
-from starlette.middleware.base import BaseHTTPMiddleware
+from pathlib import Path
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
+from starlette.requests import Request
+from starlette.responses import Response
+from starlette.types import ASGIApp
 from app.auth.session import verify_session
 
 
@@ -6,11 +10,11 @@ from app.auth.session import verify_session
 SKIP_AUTH_PATHS = {"/healthz", "/readyz", "/static", "/login", "/favicon.ico"}
 
 
-def current_user_id(request) -> str | None:
+def current_user_id(request: Request) -> str | None:
     return getattr(request.state, "user_id", None)
 
 
-def is_admin(request) -> bool:
+def is_admin(request: Request) -> bool:
     return getattr(request.state, "is_admin", False)
 
 
@@ -24,12 +28,12 @@ def _should_skip_auth(path: str) -> bool:
 
 
 class AuthMiddleware(BaseHTTPMiddleware):
-    def __init__(self, app, session_secret: str, db_dir=None):
+    def __init__(self, app: ASGIApp, session_secret: str, db_dir: Path | None = None) -> None:
         super().__init__(app)
         self.session_secret = session_secret
         self.db_dir = db_dir
 
-    async def dispatch(self, request, call_next):
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         # Skip auth for health checks and static assets
         if _should_skip_auth(request.url.path):
             return await call_next(request)

@@ -7,7 +7,7 @@ import sys
 import logging
 import contextvars
 from pathlib import Path
-from typing import Any, Callable, MutableMapping
+from typing import Any, Callable, MutableMapping, cast
 import structlog
 
 # A structlog processor: (logger, method_name, event_dict) -> event_dict
@@ -38,7 +38,7 @@ def set_job_id(job_id: str | None) -> None:
     job_id_var.set(job_id)
 
 
-def _add_request_id(logger, method_name, event_dict):
+def _add_request_id(logger: Any, method_name: str, event_dict: MutableMapping[str, Any]) -> MutableMapping[str, Any]:
     """Add request_id and job_id to all log entries."""
     req_id = request_id_var.get()
     if req_id:
@@ -97,14 +97,14 @@ def configure_logging(log_dir: str = "logs", json_output: bool = True) -> None:
 
 def get_logger(name: str) -> structlog.stdlib.BoundLogger:
     """Get a structlog logger instance."""
-    return structlog.get_logger(name)
+    return cast(structlog.stdlib.BoundLogger, structlog.get_logger(name))
 
 
 # Backward compatibility: configure on first use
 _configured = False
 
 
-def _ensure_configured():
+def _ensure_configured() -> None:
     global _configured
     if not _configured:
         configure_logging()
@@ -115,4 +115,4 @@ def _ensure_configured():
 def get_logger_legacy(name: str, log_dir: str = "logs") -> logging.Logger:
     """Legacy logger for code not yet migrated to structlog."""
     _ensure_configured()
-    return structlog.get_logger(name)
+    return cast(logging.Logger, structlog.get_logger(name))

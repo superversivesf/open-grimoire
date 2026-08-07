@@ -3,6 +3,7 @@ import re
 import time
 import typing
 from enum import Enum
+from typing import Any
 from app.agent.tools_schema import TOOL_DEFINITIONS, FORCED_DONE_TOOLS
 from app.agent.history import build_messages, trim_history
 from app.usage.tokens import estimate_messages_tokens, estimate_response_tokens
@@ -65,7 +66,7 @@ def clean_answer(text: str) -> str:
     return text.strip()
 
 
-def _parse_text_tool_call(content: str) -> dict | None:
+def _parse_text_tool_call(content: str) -> dict[str, Any] | None:
     content = content.strip()
     tool_names = {"fts_search", "read_file", "list_index", "grep", "table_extract", "calc", "ls", "done"}
     for name in tool_names:
@@ -79,7 +80,7 @@ def _parse_text_tool_call(content: str) -> dict | None:
     return None
 
 
-def _extract_cites_from_history(messages: list[dict]) -> list[dict]:
+def _extract_cites_from_history(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Scan tool results in message history for file paths that could serve as citations."""
     cites = []
     seen_paths = set()
@@ -97,7 +98,7 @@ def _extract_cites_from_history(messages: list[dict]) -> list[dict]:
     return cites[:5]
 
 
-def _synthesize_answer(messages: list[dict], question: str) -> str:
+def _synthesize_answer(messages: list[dict[str, Any]], question: str) -> str:
     """Build a fallback answer from tool results when the model didn't call done."""
     # Collect FTS search results
     fts_results = []
@@ -157,12 +158,12 @@ def _synthesize_answer(messages: list[dict], question: str) -> str:
 
 
 class AgentLoop:
-    def __init__(self, gateway, toolbox, max_iterations: int = 15):
+    def __init__(self, gateway: Any, toolbox: Any, max_iterations: int = 15) -> None:
         self.gateway = gateway
         self.toolbox = toolbox
         self.max_iterations = max_iterations
 
-    async def run(self, history: list[dict], new_question: str) -> dict:
+    async def run(self, history: list[dict[str, Any]], new_question: str) -> dict[str, Any]:
         """Non-streaming run — returns the full result at once."""
         result = None
         async for event in self.run_stream(history, new_question):
@@ -183,7 +184,7 @@ class AgentLoop:
             "est_output_tokens": result.get("est_output_tokens", 0),
         }
 
-    async def run_stream(self, history: list[dict], new_question: str) -> typing.AsyncGenerator[dict, None]:
+    async def run_stream(self, history: list[dict[str, Any]], new_question: str) -> typing.AsyncGenerator[dict[str, Any], None]:
         """Streaming run — yields events as they happen.
 
         Event types:

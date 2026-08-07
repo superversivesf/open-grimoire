@@ -1,10 +1,12 @@
 import re
+import sqlite3
 import yaml
 from pathlib import Path
+from typing import Any, cast
 from app.storage.user_db import insert_fts_row, delete_fts_rows_for_doc
 
 
-def parse_frontmatter(path: Path) -> tuple[dict, str]:
+def parse_frontmatter(path: Path) -> tuple[dict[str, Any], str]:
     text = path.read_text()
     if not text.startswith("---\n"):
         return {}, text
@@ -13,7 +15,7 @@ def parse_frontmatter(path: Path) -> tuple[dict, str]:
         return {}, text
     fm_text = text[4:end]
     body = text[end + 5:]
-    fm = yaml.safe_load(fm_text) or {}
+    fm = cast(dict[str, Any], yaml.safe_load(fm_text) or {})
     return fm, body
 
 
@@ -30,7 +32,7 @@ def _clean_content(body: str) -> str:
     return "\n".join(out)
 
 
-def index_document(conn, leaf_paths: list[str], data_dir: Path, doc_id: str) -> None:
+def index_document(conn: sqlite3.Connection, leaf_paths: list[str], data_dir: Path, doc_id: str) -> None:
     delete_fts_rows_for_doc(conn, doc_id)
     for rel in leaf_paths:
         full = data_dir / rel

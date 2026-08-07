@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, Response
 from pathlib import Path
+from typing import Any
 from app.auth.middleware import current_user_id
 from app.storage.shared_db import init_shared_db, get_usage_summary, list_users
 from app.storage.user_db import init_user_db, list_collections
@@ -14,12 +15,12 @@ _templates = create_templates(str(Path(__file__).parent.parent / "web" / "templa
 _db_dir: Path = Path()
 
 
-def init_admin_routes(db_dir: Path):
+def init_admin_routes(db_dir: Path) -> None:
     global _db_dir
     _db_dir = db_dir
 
 
-def _project_cost_per_1000(summary: dict, total_query_cost: float) -> float:
+def _project_cost_per_1000(summary: dict[str, Any], total_query_cost: float) -> float:
     """Estimate cost per 1000 queries based on current usage."""
     query_count = summary["queries"].get("count", 0) or 0
     if query_count == 0:
@@ -28,7 +29,7 @@ def _project_cost_per_1000(summary: dict, total_query_cost: float) -> float:
 
 
 @router.get("/admin")
-async def admin_dashboard(request: Request):
+async def admin_dashboard(request: Request) -> Response:
     uid = current_user_id(request)
     if not uid:
         return RedirectResponse("/login", status_code=303)

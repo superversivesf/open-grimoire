@@ -1,6 +1,8 @@
 import asyncio
+import sqlite3
 import time
 from pathlib import Path
+from typing import Any
 from app.pipeline.extract import Extractor
 from app.pipeline.structure import Structurer
 from app.pipeline.tier import tier_document
@@ -18,12 +20,12 @@ log = get_logger("pipeline")
 
 
 class PipelineRunner:
-    def __init__(self, gateway, data_dir: Path, db_dir: Path):
+    def __init__(self, gateway: Any, data_dir: Path, db_dir: Path) -> None:
         self.gateway = gateway
         self.data_dir = data_dir
         self.db_dir = db_dir
 
-    async def run_job(self, job: dict) -> None:
+    async def run_job(self, job: dict[str, Any]) -> None:
         job_id = job["job_id"]
         user_id = job["user_id"]
         doc_id = job["doc_id"]
@@ -101,14 +103,14 @@ class PipelineRunner:
             log.info(f"JOB {job_id[:8]} STAGE 2: detecting structure")
             structurer = Structurer(self.gateway)
             tree = structurer.detect(blocks)
-            def count_nodes(nodes):
+            def count_nodes(nodes: list[dict[str, Any]]) -> int:
                 total = 0
                 for n in nodes:
                     total += 1
                     if n.get("children"):
                         total += count_nodes(n["children"])
                 return total
-            def count_leaves(nodes):
+            def count_leaves(nodes: list[dict[str, Any]]) -> int:
                 total = 0
                 for n in nodes:
                     if n.get("children"):
@@ -194,9 +196,9 @@ class PipelineRunner:
             uconn.close()
             conn.close()
 
-    def _build_page_map(self, tree: list[dict], udata, leaf_paths: list[str]) -> dict:
-        pages = []
-        def walk(nodes):
+    def _build_page_map(self, tree: list[dict[str, Any]], udata: Path, leaf_paths: list[str]) -> dict[str, int | None]:
+        pages: list[int | None] = []
+        def walk(nodes: list[dict[str, Any]]) -> None:
             for node in nodes:
                 if node["children"]:
                     walk(node["children"])
@@ -205,7 +207,7 @@ class PipelineRunner:
         walk(tree)
         return {str(udata / p): page for p, page in zip(leaf_paths, pages)}
 
-    def _doc_title(self, uconn, doc_id: str) -> str:
+    def _doc_title(self, uconn: sqlite3.Connection, doc_id: str) -> str:
         from app.storage.user_db import get_doc
         d = get_doc(uconn, doc_id)
         return d["title"] if d else doc_id

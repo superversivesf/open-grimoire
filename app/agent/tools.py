@@ -1,8 +1,10 @@
 import json
 import re
 import random
+import sqlite3
 import traceback
 from pathlib import Path
+from typing import Any
 from app.agent.sandbox import safe_read_file, safe_ls, truncate_result
 from app.agent.query_builder import build_query_cascade, tokenize_terms
 from app.storage.user_db import init_user_db
@@ -19,7 +21,7 @@ def _dice_roll(count: int, sides: int) -> int:
 def _eval_dice(expr: str) -> str:
     """Replace NdS dice rolls in expr with their rolled totals, returning the
     substituted expression string (e.g. '2d6+3' -> '7+3') for later evaluation."""
-    def replace(m):
+    def replace(m: re.Match[str]) -> str:
         n, s = int(m.group(1)), int(m.group(2))
         return str(_dice_roll(n, s))
     return re.sub(r"(\d+)d(\d+)", replace, expr)
@@ -32,7 +34,7 @@ class ToolBox:
         self.db_dir = db_dir
         self.collection_id = collection_id
 
-    def fts_search(self, query: str) -> list[dict]:
+    def fts_search(self, query: str) -> list[dict[str, Any]]:
         conn = init_user_db(self.db_dir, self.user_id)
         try:
             doc_rows = conn.execute(
@@ -92,7 +94,7 @@ class ToolBox:
             pass
         return None
 
-    def _keyword_synonyms(self, conn, doc_ids: list[str], terms: list[str]) -> dict[str, list[str]]:
+    def _keyword_synonyms(self, conn: sqlite3.Connection, doc_ids: list[str], terms: list[str]) -> dict[str, list[str]]:
         """Per-collection keyword expansion: term -> keyword tokens containing it."""
         if not terms:
             return {}
@@ -119,7 +121,7 @@ class ToolBox:
     def read_file(self, path: str, lines: str | None = None) -> str:
         return safe_read_file(self.data_dir, self.user_id, path, lines)
 
-    def list_index(self, path: str) -> list[dict]:
+    def list_index(self, path: str) -> list[dict[str, Any]]:
         try:
             full = validate_user_path(self.data_dir, self.user_id, path)
         except ValueError:
@@ -141,7 +143,7 @@ class ToolBox:
                 entries.append({"title": m.group(1), "summary": "", "path": m.group(2)})
         return entries
 
-    def grep(self, pattern: str, path: str | None = None) -> list[dict]:
+    def grep(self, pattern: str, path: str | None = None) -> list[dict[str, Any]]:
         try:
             regex = re.compile(pattern)
         except re.error:
@@ -178,7 +180,7 @@ class ToolBox:
                     continue
         return hits
 
-    def table_extract(self, path: str) -> list[dict]:
+    def table_extract(self, path: str) -> list[dict[str, Any]]:
         text = self.read_file(path)
         rows = []
         lines = text.splitlines()
@@ -210,7 +212,7 @@ class ToolBox:
         except ValueError:
             return []
 
-    def execute(self, name: str, args: dict) -> str:
+    def execute(self, name: str, args: dict[str, Any]) -> str:
         dispatch = {
             "fts_search": lambda: json.dumps(self.fts_search(args.get("query", ""))),
             "read_file": lambda: self.read_file(args.get("path", ""), args.get("lines")),
