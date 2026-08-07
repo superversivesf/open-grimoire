@@ -34,20 +34,23 @@ ensure_admin_user() {
     if [ ! -f "${DB_DIR}/shared.sqlite" ]; then
         echo "  Creating shared DB and admin user..."
         mkdir -p "${DB_DIR}"
-        python -c "
+        ADMIN_PASSWORD="${ADMIN_PASSWORD:-}"
+        local RESULT
+        RESULT=$(python -c "
 import sys
 sys.path.insert(0, '${SOURCE_DIR}')
-from app.storage.shared_db import init_shared_db, create_user, get_user_by_username
-from app.auth.passwords import hash_password
+from app.cli.bootstrap import ensure_admin_user
 from pathlib import Path
-conn = init_shared_db(Path('${DB_DIR}'))
-if not get_user_by_username(conn, 'admin'):
-    create_user(conn, 'admin', hash_password('admin'), is_admin=True)
-    print('  Created admin/admin')
-else:
-    print('  Admin user exists')
-conn.close()
-" 2>/dev/null
+password = ensure_admin_user(Path('${DB_DIR}'), admin_password='${ADMIN_PASSWORD}' or None)
+print(password or '')
+" 2>/dev/null)
+        if [ -n "${RESULT}" ]; then
+            echo "  Created admin user"
+            echo "  Admin password: ${RESULT}"
+            echo "  (Save this now — it will not be shown again. Change it after first login.)"
+        else
+            echo "  Admin user exists"
+        fi
     else
         echo "  DB exists, skipping user creation"
     fi
@@ -64,7 +67,6 @@ case "$ACTION" in
         echo ""
         echo "=== Production Deployed ==="
         echo "  URL: http://localhost:8050"
-        echo "  Login: admin/admin (change immediately!)"
         echo "  Logs: docker compose logs -f prod"
         ;;
 
@@ -78,7 +80,6 @@ case "$ACTION" in
         echo ""
         echo "=== Test/Staging Deployed ==="
         echo "  URL: http://localhost:8051"
-        echo "  Login: admin/admin (change immediately!)"
         echo "  Logs: docker compose logs -f test"
         ;;
 
