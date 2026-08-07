@@ -5,12 +5,13 @@ from pathlib import Path
 from slowapi import Limiter
 from app.auth.passwords import verify_password
 from app.auth.session import sign_session
-from app.auth.csrf import require_csrf
+from app.auth.csrf import require_csrf, require_login_csrf
 from app.storage.shared_db import init_shared_db, get_user_by_username
 from app.web.template_utils import create_templates
 from app.config import Config
 from app.constants import SESSION_COOKIE_MAX_AGE, LOGIN_RATE_LIMIT
 import os
+import secrets
 
 router = APIRouter()
 _templates = create_templates(str(Path(__file__).parent.parent / "web" / "templates"))
@@ -56,12 +57,17 @@ def _is_rate_limited() -> bool:
 
 @router.get("/login")
 async def login_page(request: Request) -> Response:
-    return _templates.TemplateResponse(request, "login.html", {"user_id": None})
+    token = secrets.token_urlsafe(16)
+    resp = _templates.TemplateResponse(request, "login.html", {"user_id": None, "csrf_token": token})
+    secure = getattr(request.app.state.config, "cookie_secure", False)
+    resp.set_cookie("login_csrf", token, httponly=True, max_age=SESSION_COOKIE_MAX_AGE, samesite="lax", secure=secure)
+    return resp
 
 
 @router.post("/login")
 @_get_limiter().limit(LOGIN_RATE_LIMIT)
-async def login_submit(request: Request, username: str = Form(...), password: str = Form(...)) -> Response:
+async def login_submit(request: Request, username: str = Form(...), password: str = Form(...), csrf: str = Form("", alias="_csrf")) -> Response:
+    require_login_csrf(request, csrf)
     # Rate limiting is enforced by the @limiter.limit decorator above, gated by
     # `limiter.enabled` (set in create_app from _is_rate_limited()). When the
     # limit is exceeded slowapi raises RateLimitExceeded → handled as 429.

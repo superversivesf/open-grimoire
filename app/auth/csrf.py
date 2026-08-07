@@ -9,6 +9,8 @@ token.
 """
 
 from fastapi import Request, HTTPException
+import hmac
+import secrets
 from app.auth.session import get_csrf_token
 
 # Test seam, same pattern as the rate limiter's `.enabled` flag: the
@@ -30,4 +32,19 @@ async def require_csrf(request: Request) -> None:
         form = await request.form()
         supplied = form.get("_csrf")
     if not supplied or supplied != expected:
+        raise HTTPException(status_code=403, detail="CSRF check failed")
+
+
+def require_login_csrf(request: Request, supplied: str) -> None:
+    """Double-submit check for /login, where no session exists yet.
+
+    GET /login mints a random token, sets it as a cookie, and embeds the
+    same value in the form; POST /login must echo it back. The origin
+    middleware remains the primary defense; this survives a SameSite=None
+    flip or a stripped-Origin client.
+    """
+    if not CSRF_ENABLED:
+        return
+    expected = request.cookies.get("login_csrf")
+    if not expected or not supplied or not hmac.compare_digest(expected, supplied):
         raise HTTPException(status_code=403, detail="CSRF check failed")

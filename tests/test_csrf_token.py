@@ -24,7 +24,9 @@ def app_with_user(tmp_dirs, test_config):
 
 
 async def _login(client):
-    r = await client.post("/login", data={"username": "alice", "password": "pw123"})
+    await client.get("/login")
+    token = client.cookies.get("login_csrf")
+    r = await client.post("/login", data={"username": "alice", "password": "pw123", "_csrf": token})
     assert r.status_code in (200, 303)
     assert "session" in r.cookies
 
@@ -83,3 +85,45 @@ async def test_csrf_token_bound_to_session(app_with_user):
             data={"question": "hi", "collection_id": "x", "_csrf": "other-session-token"},
         )
         assert r.status_code == 403
+
+
+# ─── Login double-submit CSRF (no session exists yet) ──────────────────
+@pytest.mark.asyncio
+async def test_login_page_sets_csrf_cookie(app_with_user):
+    async with AsyncClient(transport=ASGITransport(app=app_with_user), base_url="http://test") as client:
+        r = await client.get("/login")
+        assert r.status_code == 200
+        assert "login_csrf" in r.cookies
+        assert r.cookies.get("login_csrf") in r.text
+
+
+@pytest.mark.asyncio
+async def test_login_without_csrf_token_rejected(app_with_user):
+    async with AsyncClient(transport=ASGITransport(app=app_with_user), base_url="http://test") as client:
+        await client.get("/login")
+        r = await client.post("/login", data={"username": "alice", "password": "pw123"})
+        assert r.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_login_with_wrong_csrf_token_rejected(app_with_user):
+    async with AsyncClient(transport=ASGITransport(app=app_with_user), base_url="http://test") as client:
+        await client.get("/login")
+        r = await client.post(
+            "/login",
+            data={"username": "alice", "password": "pw123", "_csrf": "forged"},
+        )
+        assert r.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_login_with_valid_csrf_token_allowed(app_with_user):
+    async with AsyncClient(transport=ASGITransport(app=app_with_user), base_url="http://test") as client:
+        await client.get("/login")
+        token = client.cookies.get("login_csrf")
+        r = await client.post(
+            "/login",
+            data={"username": "alice", "password": "pw123", "_csrf": token},
+        )
+        assert r.status_code in (200, 303)
+        assert "session" in r.cookies
