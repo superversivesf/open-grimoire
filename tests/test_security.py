@@ -45,9 +45,36 @@ def test_load_config_dev_mode_allows_missing_secret(tmp_path, monkeypatch):
 def test_load_config_env_secret_overrides(tmp_path, monkeypatch):
     cfg = tmp_path / "c.yaml"
     cfg.write_text("ollama:\n  host: http://x\nmodels: {}\nserver:\n  host: 0.0.0.0\n")
-    monkeypatch.setenv("SESSION_SECRET", "real-production-secret")
+    monkeypatch.setenv("SESSION_SECRET", "real-production-secret-with-more-entropy-32")
     monkeypatch.delenv("DEV_MODE", raising=False)
-    assert load_config(str(cfg)).session_secret == "real-production-secret"
+    assert load_config(str(cfg)).session_secret == "real-production-secret-with-more-entropy-32"
+
+
+def test_load_config_rejects_prod_config_placeholder(tmp_path, monkeypatch):
+    cfg = tmp_path / "c.yaml"
+    cfg.write_text("server:\n  secret: change-me-via-SESSION_SECRET-env\nollama:\n  host: http://x\nmodels: {}\n")
+    monkeypatch.delenv("SESSION_SECRET", raising=False)
+    monkeypatch.delenv("DEV_MODE", raising=False)
+    with pytest.raises(ValueError, match="SESSION_SECRET"):
+        load_config(str(cfg))
+
+
+def test_load_config_rejects_short_secret(tmp_path, monkeypatch):
+    cfg = tmp_path / "c.yaml"
+    cfg.write_text("ollama:\n  host: http://x\nmodels: {}\n")
+    monkeypatch.setenv("SESSION_SECRET", "too-short")
+    monkeypatch.delenv("DEV_MODE", raising=False)
+    with pytest.raises(ValueError, match="SESSION_SECRET"):
+        load_config(str(cfg))
+
+
+def test_load_config_rejects_dev_secret_in_production(tmp_path, monkeypatch):
+    cfg = tmp_path / "c.yaml"
+    cfg.write_text("ollama:\n  host: http://x\nmodels: {}\n")
+    monkeypatch.setenv("SESSION_SECRET", "dev-secret-not-for-production")
+    monkeypatch.delenv("DEV_MODE", raising=False)
+    with pytest.raises(ValueError, match="SESSION_SECRET"):
+        load_config(str(cfg))
 
 
 # ─── 1.2 SQL injection: fts_search parameterizes doc_ids ──────────

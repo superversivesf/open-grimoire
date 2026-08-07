@@ -31,9 +31,21 @@ def load_config(path: str) -> Config:
     options = raw.get("options", {})
 
     session_secret = os.environ.get("SESSION_SECRET", server.get("secret"))
-    if not session_secret or session_secret == "change-me-in-production":
+    placeholders = {
+        "change-me-in-production",
+        "change-me-via-SESSION_SECRET-env",
+        "dev-secret-not-for-production",
+    }
+    if (
+        not session_secret
+        or session_secret in placeholders
+        or len(session_secret) < 32
+    ):
         if not os.environ.get("DEV_MODE"):
-            raise ValueError("SESSION_SECRET must be set in production (set DEV_MODE=1 to allow default)")
+            raise ValueError(
+                "SESSION_SECRET must be set to a random value of at least 32 "
+                "characters in production (set DEV_MODE=1 to allow a default)"
+            )
         session_secret = "dev-secret-not-for-production"
 
     return Config(
