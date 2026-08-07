@@ -52,3 +52,37 @@ def test_no_structure_fallback_single_chapter():
     assert tree[0]["level"] == 1
     assert tree[0]["page_start"] == 1
     assert tree[0]["page_end"] == 2
+
+
+def test_heading_page_not_duplicated_across_chapters():
+    """The page on which the next chapter's heading appears must belong to the
+    new chapter only — not to both the previous and next chapter."""
+    blocks = [
+        {"page": 1, "text": "Chapter 1: Combat\nThe rules of combat."},
+        {"page": 2, "text": "Chapter 2: Magic\nSpells and magic items."},
+        {"page": 3, "text": "Chapter 3: Monsters\nBestiary entries."},
+    ]
+    s = Structurer(gateway=None)
+    tree = s.detect(blocks)
+    assert len(tree) == 3
+    # Chapter 1 must not contain Chapter 2's heading or text
+    assert "Chapter 2" not in tree[0]["text"]
+    assert "Spells" not in tree[0]["text"]
+    # Chapter 2 must not contain Chapter 3's heading or text
+    assert "Chapter 3" not in tree[1]["text"]
+    assert "Bestiary" not in tree[1]["text"]
+    # Chapter 2 keeps its own content
+    assert "Spells" in tree[1]["text"]
+    # Last chapter keeps its final page
+    assert "Bestiary" in tree[2]["text"]
+
+
+def test_heading_line_itself_not_in_chapter_text():
+    """The heading line is the node title; it should not be duplicated in the text."""
+    blocks = [
+        {"page": 1, "text": "Chapter 1: Combat\nThe rules of combat."},
+    ]
+    s = Structurer(gateway=None)
+    tree = s.detect(blocks)
+    assert tree[0]["title"] == "Chapter 1: Combat"
+    assert "Chapter 1: Combat" not in tree[0]["text"]

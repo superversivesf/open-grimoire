@@ -47,8 +47,8 @@ class Structurer:
         stack: list[dict[str, Any]] = []
         for i, h in enumerate(headings):
             node = {"title": h["title"], "level": h["level"], "page_start": h["page"], "page_end": h["page"], "text": "", "children": []}
-            next_page = headings[i + 1]["page"] if i + 1 < len(headings) else blocks[-1]["page"]
-            node["page_end"] = next_page
+            next_page = headings[i + 1]["page"] if i + 1 < len(headings) else blocks[-1]["page"] + 1
+            node["page_end"] = next_page - 1
             node["text"] = self._collect_text(blocks, h["page"], next_page, h["title"])
             while stack and stack[-1]["level"] >= node["level"]:
                 stack.pop()
@@ -62,8 +62,13 @@ class Structurer:
     def _collect_text(self, blocks: list[dict[str, Any]], start_page: int, end_page: int, heading: str) -> str:
         chunks = []
         for b in blocks:
-            if start_page <= b["page"] <= end_page:
-                chunks.append(b["text"])
+            if start_page <= b["page"] < end_page:
+                text = "\n".join(
+                    ln for ln in b["text"].splitlines()
+                    if ln.strip() != heading.strip()
+                )
+                if text:
+                    chunks.append(text)
         return "\n".join(chunks)
 
     def _fallback_chapter(self, blocks: list[dict[str, Any]]) -> dict[str, Any]:
