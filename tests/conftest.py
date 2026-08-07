@@ -24,6 +24,7 @@ def test_config(tmp_dirs):
         data_dir=tmp_dirs["data"],
         db_dir=tmp_dirs["db"],
         models={},
+        cookie_secure=False,
     )
 
 

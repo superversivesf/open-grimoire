@@ -17,7 +17,7 @@ class Config:
     db_dir: Path = Path("./db")
     host: str = "0.0.0.0"
     port: int = 8000
-    cookie_secure: bool = False
+    cookie_secure: bool = True
     num_ctx: int = DEFAULT_NUM_CTX
 
 
@@ -48,6 +48,13 @@ def load_config(path: str) -> Config:
             )
         session_secret = "dev-secret-not-for-production"
 
+    # Default to secure cookies outside dev/test; explicit env always wins.
+    cookie_secure = os.environ.get("COOKIE_SECURE")
+    if cookie_secure is None:
+        cookie_secure = not (os.environ.get("DEV_MODE") == "1" or os.environ.get("TEST_MODE") == "1")
+    else:
+        cookie_secure = cookie_secure.lower() in ("1", "true", "yes")
+
     return Config(
         ollama_host=os.environ.get("OLLAMA_HOST", ollama.get("host", "http://localhost:11434")),
         models=dict(models),
@@ -56,6 +63,6 @@ def load_config(path: str) -> Config:
         host=os.environ.get("HOST", server.get("host", "0.0.0.0")),
         port=int(os.environ.get("PORT", server.get("port", 8000))),
         session_secret=session_secret,
-        cookie_secure=os.environ.get("COOKIE_SECURE", "").lower() in ("1", "true", "yes"),
+        cookie_secure=cookie_secure,
         num_ctx=int(os.environ.get("NUM_CTX", options.get("num_ctx", DEFAULT_NUM_CTX))),
     )

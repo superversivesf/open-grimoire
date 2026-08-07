@@ -52,6 +52,21 @@ def create_app(cfg: Config, session_secret: str) -> FastAPI:
         response.headers["x-request-id"] = req_id
         return response
 
+    # Security headers — defense-in-depth for cookie_secure deployments.
+    @app.middleware("http")
+    async def security_headers_middleware(request: Request, call_next: RequestResponseEndpoint) -> Response:
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; img-src 'self' data:; "
+            "style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'"
+        )
+        if getattr(request.app.state.config, "cookie_secure", False):
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        return response
+
     # CSRF protection: reject cross-origin state-changing requests.
     # SameSite=Lax blocks most browser cross-site POSTs; this covers the rest
     # (top-level navigation POSTs, older clients, same-site subdomains).
