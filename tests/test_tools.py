@@ -87,6 +87,31 @@ def test_grep_paths_are_user_relative(toolbox):
     assert "Goblin" in content
 
 
+def test_grep_rejects_pathological_regex(toolbox):
+    """Catastrophic-backtracking patterns must be rejected, not hang."""
+    result = toolbox.grep("(a+)+$")
+    assert result == [] or result == "error: pattern rejected"
+
+
+def test_grep_rejects_oversized_pattern(toolbox):
+    result = toolbox.grep("a" * 600)
+    assert result == [] or result == "error: pattern rejected"
+
+
+def test_grep_times_out_on_catastrophic_backtracking(toolbox):
+    """A pattern that backtracks catastrophically must time out, not hang."""
+    # Long line of 'a's with no 'b' — (a+)+b backtracks exponentially
+    (toolbox.data_dir / "alice" / "d1" / "01_chapter" / "03_bomb.md").write_text(
+        "a" * 60 + "\n"
+    )
+    import time
+    t0 = time.monotonic()
+    result = toolbox.grep("(a+)+b")
+    elapsed = time.monotonic() - t0
+    assert elapsed < 5, f"grep took {elapsed:.1f}s — ReDoS not mitigated"
+    assert result == [] or isinstance(result, str)
+
+
 def test_table_extract(toolbox):
     result = toolbox.table_extract(str(toolbox.data_dir / "alice" / "d1" / "01_chapter" / "01_goblin.md"))
     assert len(result) >= 1

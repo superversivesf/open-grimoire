@@ -5,6 +5,7 @@ import sqlite3
 import traceback
 from pathlib import Path
 from typing import Any
+import regex as rex
 from app.agent.sandbox import safe_read_file, safe_ls, truncate_result
 from app.agent.query_builder import build_query_cascade, tokenize_terms
 from app.storage.user_db import init_user_db
@@ -12,6 +13,12 @@ from app.storage.paths import validate_user_path
 from app.logging_utils import get_logger
 
 log = get_logger("agent")
+
+_GREP_MAX_PATTERN_LEN = 200
+_GREP_TIMEOUT = 0.25
+# Pathological shapes that trigger catastrophic backtracking: a quantifier
+# applied to a group/class that itself ends in a quantifier, e.g. (a+)+.
+_PATHOLOGICAL = re.compile(r"\([^)]*[+*][^)]*\)[+*]")
 
 
 def _dice_roll(count: int, sides: int) -> int:
@@ -149,9 +156,11 @@ class ToolBox:
         return entries
 
     def grep(self, pattern: str, path: str | None = None) -> list[dict[str, Any]]:
+        if len(pattern) > _GREP_MAX_PATTERN_LEN or _PATHOLOGICAL.search(pattern):
+            return []
         try:
-            regex = re.compile(pattern)
-        except re.error:
+            compiled = rex.compile(pattern)
+        except rex.error:
             return []
         # Restrict search to docs in this collection only
         conn = init_user_db(self.db_dir, self.user_id)
@@ -176,11 +185,14 @@ class ToolBox:
             for f in root.rglob("*.md"):
                 try:
                     for i, line in enumerate(f.read_text().splitlines(), start=1):
-                        if regex.search(line):
-                            rel = str(f.relative_to(self.data_dir / self.user_id))
-                            hits.append({"path": rel, "line": i, "text": line.strip()[:200]})
-                            if len(hits) >= 20:
-                                return hits
+                        try:
+                            if compiled.search(line, timeout=_GREP_TIMEOUT):
+                                rel = str(f.relative_to(self.data_dir / self.user_id))
+                                hits.append({"path": rel, "line": i, "text": line.strip()[:200]})
+                                if len(hits) >= 20:
+                                    return hits
+                        except rex.TimeoutError:
+                            return []
                 except Exception:
                     continue
         return hits
