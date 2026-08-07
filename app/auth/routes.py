@@ -68,7 +68,12 @@ async def login_submit(request: Request, username: str = Form(...), password: st
     conn = init_shared_db(_db_dir)
     user = get_user_by_username(conn, username)
     conn.close()
-    if not user or not verify_password(password, user["password_hash"]):
+    # Always burn an Argon2 verify — even for unknown users — so login
+    # latency does not reveal whether a username exists.
+    from app.auth.passwords import _DUMMY_HASH
+    hash_to_check = user["password_hash"] if user else _DUMMY_HASH
+    valid = verify_password(password, hash_to_check)
+    if not user or not valid:
         return _templates.TemplateResponse(
             request,
             "login.html",

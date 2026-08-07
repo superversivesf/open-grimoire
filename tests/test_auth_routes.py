@@ -40,6 +40,23 @@ async def test_login_wrong_password(app_with_user):
 
 
 @pytest.mark.asyncio
+async def test_login_unknown_user_still_verifies_password(app_with_user, monkeypatch):
+    """Unknown usernames must burn an Argon2 verify to equalize timing."""
+    import app.auth.routes as routes
+    from app.auth.passwords import verify_password
+    calls = []
+    def spy(plain, hashed):
+        calls.append((plain, hashed))
+        return verify_password(plain, hashed)
+    monkeypatch.setattr(routes, "verify_password", spy)
+    async with AsyncClient(transport=ASGITransport(app=app_with_user), base_url="http://test") as client:
+        r = await client.post("/login", data={"username": "nobody", "password": "whatever"})
+        assert r.status_code in (200, 401)
+        assert len(calls) == 1, "verify_password must run even for unknown users"
+        assert calls[0][0] == "whatever"
+
+
+@pytest.mark.asyncio
 async def test_rate_limit_uses_xff_when_trusted(app_with_user, monkeypatch):
     """With trust_proxy_headers on, X-Forwarded-For must key the limiter."""
     monkeypatch.setenv("TRUST_PROXY_HEADERS", "1")
