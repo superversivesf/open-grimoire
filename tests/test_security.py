@@ -175,10 +175,18 @@ def test_is_rate_limited_true_in_production(monkeypatch):
     assert routes._is_rate_limited() is True
 
 
-def test_is_rate_limited_false_in_dev(monkeypatch):
+def test_is_rate_limited_true_in_dev(monkeypatch):
+    """DEV_MODE must NOT disable rate limiting — that was a production footgun."""
     from app.auth import routes
     monkeypatch.setenv("DEV_MODE", "1")
     monkeypatch.delenv("TEST_MODE", raising=False)
+    monkeypatch.delenv("RATE_LIMIT_ENABLED", raising=False)
+    assert routes._is_rate_limited() is True
+
+
+def test_is_rate_limited_false_only_with_explicit_opt_out(monkeypatch):
+    from app.auth import routes
+    monkeypatch.setenv("RATE_LIMIT_ENABLED", "0")
     assert routes._is_rate_limited() is False
 
 

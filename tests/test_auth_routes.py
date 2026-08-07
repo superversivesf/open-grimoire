@@ -40,6 +40,57 @@ async def test_login_wrong_password(app_with_user):
 
 
 @pytest.mark.asyncio
+async def test_rate_limit_uses_xff_when_trusted(app_with_user, monkeypatch):
+    """With trust_proxy_headers on, X-Forwarded-For must key the limiter."""
+    monkeypatch.setenv("TRUST_PROXY_HEADERS", "1")
+    monkeypatch.setenv("RATE_LIMIT_ENABLED", "1")
+    from app.auth.routes import _rate_key
+    from fastapi import Request
+    scope = {
+        "type": "http",
+        "headers": [(b"x-forwarded-for", b"203.0.113.7, 10.0.0.1")],
+        "client": ("10.0.0.1", 1234),
+    }
+    req = Request(scope)
+    assert _rate_key(req) == "203.0.113.7"
+
+
+@pytest.mark.asyncio
+async def test_rate_limit_ignores_xff_when_untrusted(app_with_user, monkeypatch):
+    """Without trust_proxy_headers, X-Forwarded-For must be ignored."""
+    monkeypatch.delenv("TRUST_PROXY_HEADERS", raising=False)
+    from app.auth.routes import _rate_key
+    from fastapi import Request
+    scope = {
+        "type": "http",
+        "headers": [(b"x-forwarded-for", b"203.0.113.7, 10.0.0.1")],
+        "client": ("10.0.0.1", 1234),
+    }
+    req = Request(scope)
+    assert _rate_key(req) == "10.0.0.1"
+
+
+@pytest.mark.asyncio
+async def test_rate_limit_defaults_on(app_with_user, monkeypatch):
+    """The limiter must be enabled by default, even in DEV_MODE."""
+    monkeypatch.setenv("DEV_MODE", "1")
+    monkeypatch.delenv("RATE_LIMIT_ENABLED", raising=False)
+    from app.main import create_app
+    from app.config import Config
+    app = create_app(app_with_user.state.config, "testsecret")
+    assert app.state.limiter.enabled is True
+
+
+@pytest.mark.asyncio
+async def test_rate_limit_explicit_opt_out(app_with_user, monkeypatch):
+    """RATE_LIMIT_ENABLED=0 must be the only way to disable."""
+    monkeypatch.setenv("RATE_LIMIT_ENABLED", "0")
+    from app.main import create_app
+    app = create_app(app_with_user.state.config, "testsecret")
+    assert app.state.limiter.enabled is False
+
+
+@pytest.mark.asyncio
 async def test_login_unknown_user(app_with_user):
     async with AsyncClient(transport=ASGITransport(app=app_with_user), base_url="http://test") as client:
         r = await client.post("/login", data={"username": "nobody", "password": "x"})

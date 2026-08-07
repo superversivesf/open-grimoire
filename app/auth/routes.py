@@ -3,7 +3,6 @@ from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
 from slowapi import Limiter
-from slowapi.util import get_remote_address
 from app.auth.passwords import verify_password
 from app.auth.session import sign_session
 from app.auth.csrf import require_csrf
@@ -24,8 +23,23 @@ _limiter: Limiter | None = None
 def _get_limiter() -> Limiter:
     global _limiter
     if _limiter is None:
-        _limiter = Limiter(key_func=get_remote_address)
+        _limiter = Limiter(key_func=_rate_key)
     return _limiter
+
+
+def _rate_key(request: Request) -> str:
+    """Rate-limit key: first X-Forwarded-For hop when a trusted proxy is
+    configured, else the direct client address. X-Forwarded-For is never
+    trusted unless TRUST_PROXY_HEADERS=1 (set it only behind your own
+    reverse proxy), so clients cannot spoof the key."""
+    if os.environ.get("TRUST_PROXY_HEADERS") == "1":
+        xff = request.headers.get("x-forwarded-for")
+        if xff:
+            return xff.split(",")[0].strip()
+        real = request.headers.get("x-real-ip")
+        if real:
+            return real.strip()
+    return request.client.host if request.client else "unknown"
 
 
 def init_auth_routes(db_dir: Path) -> None:
@@ -34,8 +48,10 @@ def init_auth_routes(db_dir: Path) -> None:
 
 
 def _is_rate_limited() -> bool:
-    """Check if rate limiting should be applied."""
-    return not (os.environ.get("DEV_MODE") or os.environ.get("TEST_MODE"))
+    """Rate limiting is ON by default; only an explicit RATE_LIMIT_ENABLED=0
+    disables it. Mode flags (DEV_MODE/TEST_MODE) must never silently disable
+    the limiter — that was a production footgun."""
+    return os.environ.get("RATE_LIMIT_ENABLED", "1") != "0"
 
 
 @router.get("/login")
