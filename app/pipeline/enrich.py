@@ -1,5 +1,6 @@
 import json
 import re
+import yaml
 from pathlib import Path
 from string import Template
 from typing import Any, cast
@@ -56,9 +57,11 @@ class Enricher:
     def _write_frontmatter(path: Path, content: str, result: dict[str, Any], page: int | None) -> None:
         summary = result.get("summary", "")
         keywords = result.get("keywords", [])
-        kw_yaml = ", ".join(keywords) if isinstance(keywords, list) else str(keywords)
-        fm = f"---\nsummary: \"{summary}\"\nkeywords: [{kw_yaml}]\n"
+        fm: dict[str, Any] = {
+            "summary": str(summary),
+            "keywords": keywords if isinstance(keywords, list) else [],
+        }
         if page is not None:
-            fm += f"page: {page}\n"
-        fm += f"---\n\n{content}"
-        path.write_text(fm)
+            fm["page"] = page
+        block = yaml.safe_dump(fm, sort_keys=False, allow_unicode=True).strip()
+        path.write_text(f"---\n{block}\n---\n\n{content}")

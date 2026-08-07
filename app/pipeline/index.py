@@ -15,7 +15,14 @@ def parse_frontmatter(path: Path) -> tuple[dict[str, Any], str]:
         return {}, text
     fm_text = text[4:end]
     body = text[end + 5:]
-    fm = cast(dict[str, Any], yaml.safe_load(fm_text) or {})
+    try:
+        fm = cast(dict[str, Any], yaml.safe_load(fm_text) or {})
+    except yaml.YAMLError:
+        return {}, body
+    if not isinstance(fm, dict):
+        return {}, body
+    if not isinstance(fm.get("summary"), str):
+        fm["summary"] = str(fm.get("summary") or "")
     return fm, body
 
 
