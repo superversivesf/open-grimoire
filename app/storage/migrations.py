@@ -120,14 +120,6 @@ USER_MIGRATIONS: list[tuple[int, str, str]] = [
             path, title, summary, keywords, content, tokenize='porter'
         );
     """),
-    (2, "add_enrich_columns", """
-        ALTER TABLE docs ADD COLUMN enrich_progress INTEGER NOT NULL DEFAULT 0;
-        ALTER TABLE docs ADD COLUMN enrich_total INTEGER NOT NULL DEFAULT 0;
-        ALTER TABLE docs ADD COLUMN enrich_completed_paths TEXT NOT NULL DEFAULT '[]';
-    """),
-    (3, "add_session_name", """
-        ALTER TABLE sessions ADD COLUMN name TEXT NOT NULL DEFAULT '';
-    """),
 ]
 
 
@@ -192,17 +184,17 @@ def migrate_shared_db(conn: sqlite3.Connection) -> None:
 
 
 def migrate_user_db(conn: sqlite3.Connection) -> None:
-    """Apply pending migrations to user database."""
+    """Apply pending migrations to user database.
+
+    Failures propagate — a failed migration must never advance the
+    version, or the schema drifts silently. Migrations are idempotent
+    (CREATE ... IF NOT EXISTS), so a partial failure can be retried.
+    """
     current = _get_user_version(conn)
     for version, name, sql in USER_MIGRATIONS:
         if version > current:
             print(f"  [migrate] user: v{version} - {name}")
-            try:
-                conn.executescript(sql)
-            except sqlite3.OperationalError as e:
-                # Some migrations might partially apply (e.g., column already exists)
-                # Log but continue
-                print(f"  [migrate] user: v{version} warning: {e}")
+            conn.executescript(sql)
             _set_user_version(conn, version)
     conn.commit()
 
