@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import quote
 import hashlib
+import time
 import uuid
 import shutil
 import markdown as md_lib
@@ -141,15 +142,33 @@ async def upload_form(request: Request, collection_id: str) -> Response:
 
 from app.constants import MAX_UPLOAD_BYTES, USER_STORAGE_LIMIT
 
+# TTL cache for storage usage — rglob over the whole user tree is O(files)
+# per call; the hot paths (page load, upload loop) must not pay it.
+_storage_cache: dict[str, tuple[float, int]] = {}
+_STORAGE_TTL = 10.0
+
+
+def _invalidate_storage(uid: str) -> None:
+    if uid == "__all__":
+        _storage_cache.clear()
+    else:
+        _storage_cache.pop(uid, None)
+
 
 def _user_storage_used(data_dir: Path, uid: str) -> int:
+    now = time.monotonic()
+    hit = _storage_cache.get(uid)
+    if hit and now - hit[0] < _STORAGE_TTL:
+        return hit[1]
     user_dir = data_dir / uid
     if not user_dir.exists():
+        _storage_cache[uid] = (now, 0)
         return 0
     total = 0
     for f in user_dir.rglob("*"):
         if f.is_file():
             total += f.stat().st_size
+    _storage_cache[uid] = (now, total)
     return total
 
 
@@ -174,13 +193,13 @@ async def upload(request: Request, collection_id: str = Form(...), files: list[U
     sconn = init_shared_db(_db_dir)
     uconn = init_user_db(_db_dir, uid)
     try:
+        used = _user_storage_used(_data_dir, uid)
         for f in files:
             if not f.filename or not f.filename.lower().endswith(".pdf"):
                 continue
             data = await f.read()
             if len(data) > MAX_UPLOAD_BYTES:
                 continue
-            used = _user_storage_used(_data_dir, uid)
             if used + len(data) > USER_STORAGE_LIMIT:
                 continue
             sha = hashlib.sha256(data).hexdigest()
@@ -188,8 +207,10 @@ async def upload(request: Request, collection_id: str = Form(...), files: list[U
             doc_dir = udata / doc_id
             doc_dir.mkdir(parents=True, exist_ok=True)
             (doc_dir / "original.pdf").write_bytes(data)
+            used += len(data)
             create_doc(uconn, doc_id, collection_id, f.filename.rsplit(".", 1)[0], sha)
             enqueue_job(sconn, uid, doc_id, str(doc_dir / "original.pdf"))
+        _invalidate_storage(uid)
     finally:
         uconn.close()
         sconn.close()
@@ -235,6 +256,7 @@ async def delete_doc_route(request: Request, doc_id: str, _: None = Depends(requ
     doc_dir = _data_dir / uid / doc_id
     if doc_dir.exists():
         shutil.rmtree(doc_dir)
+    _invalidate_storage(uid)
     return RedirectResponse("/", status_code=303)
 
 
