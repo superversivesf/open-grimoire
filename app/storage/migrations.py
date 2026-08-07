@@ -36,6 +36,7 @@ SHARED_MIGRATIONS: list[tuple[int, str, str]] = [
             updated_at TEXT NOT NULL DEFAULT (datetime('now'))
         );
         CREATE INDEX IF NOT EXISTS idx_queue_status ON queue_jobs(status, created_at);
+        ALTER TABLE queue_jobs ADD COLUMN lease_expires_at TEXT;
         CREATE TABLE IF NOT EXISTS query_log (
             log_id TEXT PRIMARY KEY,
             user_id TEXT NOT NULL,

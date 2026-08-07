@@ -211,24 +211,49 @@ def enqueue_job(conn: DbConn, user_id: str, doc_id: str, pdf_path: str) -> str:
 
 
 def claim_next_job(conn: DbConn) -> dict[str, Any] | None:
+    """Atomically claim the next job, reclaiming expired leases.
+
+    A job whose lease has expired (crashed worker) is reclaimed, up to
+    MAX_JOB_ATTEMPTS. The claim is a single UPDATE ... RETURNING so two
+    workers can never claim the same job.
+    """
+    from app.constants import MAX_JOB_ATTEMPTS, JOB_LEASE_SECONDS
     row = conn.execute(
-        "SELECT job_id FROM queue_jobs WHERE status = 'queued' ORDER BY created_at LIMIT 1"
+        """
+        UPDATE queue_jobs
+           SET status = 'processing',
+               attempts = attempts + 1,
+               lease_expires_at = datetime('now', ?),
+               updated_at = datetime('now')
+         WHERE job_id = (
+             SELECT job_id FROM queue_jobs
+              WHERE status = 'queued'
+                 OR (status = 'processing' AND lease_expires_at < datetime('now'))
+              ORDER BY created_at LIMIT 1
+         )
+           AND attempts < ?
+         RETURNING *
+        """,
+        (f"+{JOB_LEASE_SECONDS} seconds", MAX_JOB_ATTEMPTS),
     ).fetchone()
-    if not row:
-        return None
-    job_id = row["job_id"]
+    conn.commit()
+    return dict(row) if row else None
+
+
+def heartbeat_job(conn: DbConn, job_id: str) -> None:
+    """Refresh the lease for a job still being processed."""
+    from app.constants import JOB_LEASE_SECONDS
     conn.execute(
-        "UPDATE queue_jobs SET status = 'processing', updated_at = datetime('now') WHERE job_id = ?",
-        (job_id,),
+        "UPDATE queue_jobs SET lease_expires_at = datetime('now', ?) WHERE job_id = ?",
+        (f"+{JOB_LEASE_SECONDS} seconds", job_id),
     )
     conn.commit()
-    return get_job(conn, job_id)
 
 
 def complete_job(conn: DbConn, job_id: str, error: str | None = None) -> None:
     status = "failed" if error else "done"
     conn.execute(
-        "UPDATE queue_jobs SET status = ?, error = ?, updated_at = datetime('now') WHERE job_id = ?",
+        "UPDATE queue_jobs SET status = ?, error = ?, lease_expires_at = NULL, updated_at = datetime('now') WHERE job_id = ?",
         (status, error, job_id),
     )
     conn.commit()

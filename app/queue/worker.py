@@ -3,9 +3,9 @@ import asyncio
 import signal
 from pathlib import Path
 from typing import Any
-from app.storage.shared_db import init_shared_db, claim_next_job
+from app.storage.shared_db import init_shared_db, claim_next_job, heartbeat_job
 from app.logging_utils import get_logger, set_job_id
-from app.constants import WORKER_POLL_INTERVAL
+from app.constants import WORKER_POLL_INTERVAL, JOB_LEASE_SECONDS
 
 log = get_logger("worker")
 
@@ -18,6 +18,20 @@ class QueueWorker:
         self._stop_event = asyncio.Event()
         self._current_job_id: str | None = None
 
+    async def _heartbeat_loop(self, job_id: str) -> None:
+        """Refresh the job lease while it is being processed."""
+        interval = max(1.0, JOB_LEASE_SECONDS / 3)
+        try:
+            while not self._stop_event.is_set():
+                await asyncio.sleep(interval)
+                conn = init_shared_db(self.db_dir)
+                try:
+                    heartbeat_job(conn, job_id)
+                finally:
+                    conn.close()
+        except asyncio.CancelledError:
+            pass
+
     async def run_once(self) -> bool:
         conn = init_shared_db(self.db_dir)
         try:
@@ -27,7 +41,15 @@ class QueueWorker:
             self._current_job_id = job["job_id"]
             set_job_id(self._current_job_id)
             conn.close()
-            await self.runner.run_job(job)
+            heartbeat_task = asyncio.create_task(self._heartbeat_loop(job["job_id"]))
+            try:
+                await self.runner.run_job(job)
+            finally:
+                heartbeat_task.cancel()
+                try:
+                    await heartbeat_task
+                except asyncio.CancelledError:
+                    pass
             return True
         finally:
             if conn:
