@@ -439,7 +439,7 @@ class TestUploadPipelineJourney:
 
     @pytest.mark.asyncio
     async def test_pipeline_corrupt_pdf_fails_gracefully(self, app_with_user, tmp_dirs):
-        """Corrupt PDF should mark doc as failed, not crash."""
+        """Corrupt PDF (no %PDF- magic bytes) is rejected at upload, not queued."""
         app, uid, gateway = app_with_user
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             await _login(client)
@@ -455,12 +455,10 @@ class TestUploadPipelineJourney:
         from app.storage.shared_db import init_shared_db, claim_next_job
         sconn = init_shared_db(tmp_dirs["db"])
         job = claim_next_job(sconn)
-        assert job is not None
-        runner = PipelineRunner(gateway, tmp_dirs["data"], tmp_dirs["db"])
-        await runner.run_job(job)
+        assert job is None, "corrupt PDF must be rejected at upload, not queued"
         uconn = init_user_db(tmp_dirs["db"], uid)
         docs = list_docs(uconn, cid)
-        assert docs[0]["status"] == "failed"
+        assert len(docs) == 0
         uconn.close()
         sconn.close()
 

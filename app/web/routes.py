@@ -197,8 +197,12 @@ async def upload(request: Request, collection_id: str = Form(...), files: list[U
         for f in files:
             if not f.filename or not f.filename.lower().endswith(".pdf"):
                 continue
-            data = await f.read()
+            # Stream-read with a hard size cap — never buffer the whole body.
+            data = await f.read(MAX_UPLOAD_BYTES + 1)
             if len(data) > MAX_UPLOAD_BYTES:
+                continue
+            # Magic-byte check: a .pdf name is not a PDF.
+            if not data.startswith(b"%PDF-"):
                 continue
             if used + len(data) > USER_STORAGE_LIMIT:
                 continue
@@ -206,7 +210,9 @@ async def upload(request: Request, collection_id: str = Form(...), files: list[U
             doc_id = uuid.uuid4().hex
             doc_dir = udata / doc_id
             doc_dir.mkdir(parents=True, exist_ok=True)
-            (doc_dir / "original.pdf").write_bytes(data)
+            tmp = doc_dir / "original.pdf.tmp"
+            tmp.write_bytes(data)
+            tmp.replace(doc_dir / "original.pdf")
             used += len(data)
             create_doc(uconn, doc_id, collection_id, f.filename.rsplit(".", 1)[0], sha)
             enqueue_job(sconn, uid, doc_id, str(doc_dir / "original.pdf"))

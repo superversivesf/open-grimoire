@@ -24,6 +24,50 @@ def app_and_user(tmp_dirs, test_config):
 
 
 @pytest.mark.asyncio
+async def test_upload_rejects_non_pdf_magic_bytes(app_and_user, tmp_dirs):
+    """A file named .pdf but not starting with %PDF- must be rejected."""
+    app, cid, uid = app_and_user
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        await client.post("/login", data={"username": "alice", "password": "pw"})
+        r = await client.post(
+            "/upload",
+            data={"collection_id": cid, "_csrf": csrf_for(client, "s")},
+            files=[("files", ("fake.pdf", b"not a real pdf at all", "application/pdf"))],
+        )
+        assert r.status_code in (200, 303)
+        # No doc should have been created
+        uconn = init_user_db(tmp_dirs["db"], uid)
+        docs = list_docs(uconn, cid)
+        uconn.close()
+        assert len(docs) == 0
+
+
+@pytest.mark.asyncio
+async def test_upload_accepts_real_pdf_magic_bytes(app_and_user, tmp_dirs):
+    """A real PDF (starting with %PDF-) must be accepted."""
+    app, cid, uid = app_and_user
+    from fpdf import FPDF
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Helvetica", size=12)
+    pdf.cell(0, 10, txt="Chapter 1: Test")
+    buf = io.BytesIO()
+    pdf.output(buf)
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        await client.post("/login", data={"username": "alice", "password": "pw"})
+        r = await client.post(
+            "/upload",
+            data={"collection_id": cid, "_csrf": csrf_for(client, "s")},
+            files=[("files", ("book.pdf", buf.getvalue(), "application/pdf"))],
+        )
+        assert r.status_code in (200, 303)
+        uconn = init_user_db(tmp_dirs["db"], uid)
+        docs = list_docs(uconn, cid)
+        uconn.close()
+        assert len(docs) == 1
+
+
+@pytest.mark.asyncio
 async def test_upload_single_pdf(app_and_user):
     app, cid, uid = app_and_user
     from fpdf import FPDF
