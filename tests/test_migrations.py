@@ -49,5 +49,19 @@ def test_migrate_shared_db_applies_all_versions(tmp_path):
     conn = sqlite3.connect(tmp_path / "shared.sqlite")
     conn.row_factory = sqlite3.Row
     migrate_shared_db(conn)
-    assert _get_shared_version(conn) == 1
+    assert _get_shared_version(conn) == 2
+    conn.close()
+
+
+def test_shared_migration_v2_applies(tmp_path):
+    conn = sqlite3.connect(tmp_path / "shared.sqlite")
+    conn.row_factory = sqlite3.Row
+    migrate_shared_db(conn)
+    assert _get_shared_version(conn) == 2
+    cols = {r["name"] for r in conn.execute("PRAGMA table_info(users)")}
+    assert "status" in cols
+    row = conn.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='collection_members'"
+    ).fetchone()
+    assert row is not None
     conn.close()

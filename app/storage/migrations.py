@@ -84,6 +84,17 @@ SHARED_MIGRATIONS: list[tuple[int, str, str]] = [
         );
         CREATE INDEX IF NOT EXISTS idx_user_books_hash ON user_books(content_hash);
     """),
+    (2, "add_user_status_and_collection_members", """
+        ALTER TABLE users ADD COLUMN status TEXT NOT NULL DEFAULT 'active';
+        CREATE TABLE IF NOT EXISTS collection_members (
+            collection_id TEXT NOT NULL,
+            user_id TEXT NOT NULL,
+            role TEXT NOT NULL DEFAULT 'member' CHECK (role IN ('owner', 'member')),
+            added_at TEXT NOT NULL DEFAULT (datetime('now')),
+            PRIMARY KEY (collection_id, user_id)
+        );
+        CREATE INDEX IF NOT EXISTS idx_collection_members_user ON collection_members(user_id);
+    """),
 ]
 
 # ─── User Database Migrations ────────────────────────────────────────
