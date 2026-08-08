@@ -8,8 +8,42 @@
 </div>
 
 <div class="rpg-page-header">
-  <h1 class="rpg-page-title"><span class="icon">&#128218;</span> {{ collection.name }}</h1>
+  <h1 class="rpg-page-title"><span class="icon">&#128218;</span> {{ collection.name }}
+    {% if role == "owner" and collection.shared %}<span class="rpg-badge">&#128101; owner</span>
+    {% elif role == "member" %}<span class="rpg-badge">&#128101; shared</span>{% endif %}
+  </h1>
 </div>
+
+{% if role == "owner" %}
+<div class="rpg-card" style="margin-bottom:1.5rem;">
+  <h3 style="margin-bottom:0.5rem;">&#128101; Share this collection</h3>
+  <form method="post" action="/collections/{{ collection.collection_id }}/share" class="rpg-inline-form"
+        style="display:flex; gap:0.5rem; align-items:center;">
+    <input type="hidden" name="_csrf" value="{{ request.state.csrf_token }}">
+    <input type="text" name="username" placeholder="Username to share with" required style="flex:1;">
+    <select name="role">
+      <option value="member">Member</option>
+      <option value="owner">Co-owner</option>
+    </select>
+    <button type="submit" class="rpg-btn">Share</button>
+  </form>
+  {% if members %}
+  <p class="rpg-meta" style="margin-top:0.8rem;">Shared with:</p>
+  {% for m in members %}
+  <span style="display:inline-block; margin-right:1rem;">
+    {{ m.username }} ({{ m.role }})
+    <form method="post" action="/collections/{{ collection.collection_id }}/unshare" style="display:inline">
+      <input type="hidden" name="_csrf" value="{{ request.state.csrf_token }}">
+      <input type="hidden" name="username" value="{{ m.username }}">
+      <button type="submit" class="rpg-btn-danger rpg-btn-sm">Remove</button>
+    </form>
+  </span>
+  {% endfor %}
+  {% endif %}
+</div>
+{% elif role == "member" %}
+<p class="rpg-meta" style="margin-bottom:1rem;">&#128101; Shared collection — you can read books and add new ones.</p>
+{% endif %}
 
 <div class="rpg-card" style="margin-bottom:1.5rem;">
   <p class="rpg-meta" style="margin-bottom:0.8rem;">Ask a question about the books in this collection:</p>

@@ -31,7 +31,9 @@
 <div class="rpg-card-grid">
   {% for c in collections %}
   <div class="rpg-collection-card">
-    <h3><a href="/collections/{{ c.collection_id }}">&#128218; {{ c.name }}</a></h3>
+    <h3><a href="/collections/{{ c.collection_id }}">&#128218; {{ c.name }}</a>
+      {% if c.shared %}<span class="rpg-badge" style="font-size:0.7rem; vertical-align:middle;">&#128101; shared</span>{% endif %}
+    </h3>
     <p class="meta">Created {{ c.created_at }}</p>
     <div class="rpg-card-actions">
       <button class="rpg-btn-secondary rpg-btn-sm" onclick="renameCollection('{{ c.collection_id }}', '{{ c.name }}')">&#9998; Rename</button>

@@ -225,10 +225,25 @@ async def collection_view(request: Request, collection_id: str) -> Response:
     if not col:
         return RedirectResponse("/", status_code=303)
     col = {**col, "shared": role != "owner" or col.get("shared", False)}
+    # Members list (owner only) with usernames for the share UI
+    members = []
+    if role == "owner":
+        sconn = init_shared_db(_db_dir)
+        try:
+            rows = list_collection_members(sconn, collection_id)
+            for m in rows:
+                if m["user_id"] == owner:
+                    continue  # owner shown implicitly
+                uname = sconn.execute(
+                    "SELECT username FROM users WHERE user_id = ?", (m["user_id"],)
+                ).fetchone()
+                members.append({"username": uname["username"] if uname else m["user_id"], "role": m["role"]})
+        finally:
+            sconn.close()
     return _templates.TemplateResponse(
         request,
         "collection.html",
-        {"user_id": uid, "collection": col, "docs": docs, "role": role},
+        {"user_id": uid, "collection": col, "docs": docs, "role": role, "members": members},
     )
 
 

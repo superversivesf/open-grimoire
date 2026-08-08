@@ -22,3 +22,4 @@ server:
 
 # All values above can be overridden by environment variables:
 #   OLLAMA_HOST, SESSION_SECRET, DATA_DIR, DB_DIR, HOST, PORT, COOKIE_SECURE, DEV_MODE
+#   ALLOW_REGISTRATION=1 — enable self-registration (pending approval)
