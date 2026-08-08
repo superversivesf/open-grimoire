@@ -85,7 +85,6 @@ SHARED_MIGRATIONS: list[tuple[int, str, str]] = [
         CREATE INDEX IF NOT EXISTS idx_user_books_hash ON user_books(content_hash);
     """),
     (2, "add_user_status_and_collection_members", """
-        ALTER TABLE users ADD COLUMN status TEXT NOT NULL DEFAULT 'active';
         CREATE TABLE IF NOT EXISTS collection_members (
             collection_id TEXT NOT NULL,
             user_id TEXT NOT NULL,
@@ -96,6 +95,14 @@ SHARED_MIGRATIONS: list[tuple[int, str, str]] = [
         CREATE INDEX IF NOT EXISTS idx_collection_members_user ON collection_members(user_id);
     """),
 ]
+
+# Migration 2's ALTER TABLE is not intrinsically idempotent: if it succeeds
+# but a later statement in the same script fails, the version stays at 1 and
+# the retry hits "duplicate column name". Guard the ALTER in Python before
+# executing the script so a partial failure is retry-safe.
+_GUARDED_ALTERS: dict[int, tuple[str, str]] = {
+    2: ("users", "status"),
+}
 
 # ─── User Database Migrations ────────────────────────────────────────
 
@@ -184,12 +191,27 @@ def _set_user_version(conn: sqlite3.Connection, version: int) -> None:
     conn.execute("UPDATE schema_version SET version = ?", (version,))
 
 
+def _add_column(conn: sqlite3.Connection, table: str, column: str, ddl: str) -> None:
+    """Idempotent ALTER TABLE ADD COLUMN — skip if the column already exists."""
+    cols = {r["name"] for r in conn.execute(f"PRAGMA table_info({table})")}
+    if column not in cols:
+        conn.execute(ddl)
+
+
 def migrate_shared_db(conn: sqlite3.Connection) -> None:
-    """Apply pending migrations to shared database."""
+    """Apply pending migrations to shared database.
+
+    Failures propagate and the version only advances after a successful
+    script. ALTER-based migrations are guarded for column existence first
+    (see _GUARDED_ALTERS) so a partial failure can be retried safely.
+    """
     current = _get_shared_version(conn)
     for version, name, sql in SHARED_MIGRATIONS:
         if version > current:
             print(f"  [migrate] shared: v{version} - {name}")
+            guard = _GUARDED_ALTERS.get(version)
+            if guard:
+                _add_column(conn, guard[0], guard[1], f"ALTER TABLE {guard[0]} ADD COLUMN {guard[1]} TEXT NOT NULL DEFAULT 'active'")
             conn.executescript(sql)
             _set_shared_version(conn, version)
     conn.commit()

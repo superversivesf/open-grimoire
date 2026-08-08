@@ -51,3 +51,15 @@ def test_existing_users_default_active(tmp_path):
     row = get_user_by_username(conn, "alice")
     assert row["status"] == "active"
     conn.close()
+
+
+def test_role_change_preserves_added_at(tmp_path):
+    """ON CONFLICT DO UPDATE must not rewrite the join date (INSERT OR REPLACE would)."""
+    conn = init_shared_db(tmp_path)
+    add_collection_member(conn, "c1", "bob", "member")
+    first = get_membership(conn, "c1", "bob")["added_at"]
+    add_collection_member(conn, "c1", "bob", "owner")  # demotion/promotion path
+    after = get_membership(conn, "c1", "bob")
+    assert after["role"] == "owner"
+    assert after["added_at"] == first
+    conn.close()

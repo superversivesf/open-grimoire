@@ -221,8 +221,11 @@ def list_users(conn: DbConn) -> list[dict[str, Any]]:
 
 
 def add_collection_member(conn: DbConn, collection_id: str, user_id: str, role: str = "member") -> None:
+    # ON CONFLICT DO UPDATE (not INSERT OR REPLACE): preserves added_at so a
+    # role change or re-add doesn't rewrite the original join date.
     conn.execute(
-        "INSERT OR REPLACE INTO collection_members (collection_id, user_id, role) VALUES (?, ?, ?)",
+        """INSERT INTO collection_members (collection_id, user_id, role) VALUES (?, ?, ?)
+           ON CONFLICT(collection_id, user_id) DO UPDATE SET role = excluded.role""",
         (collection_id, user_id, role),
     )
     conn.commit()
