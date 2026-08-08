@@ -134,6 +134,28 @@ async def test_login_token_survives_multiple_page_loads(app_with_user):
 
 
 @pytest.mark.asyncio
+async def test_failed_login_page_keeps_csrf_token(app_with_user):
+    """A 401 error re-render must embed the CSRF token — otherwise the next
+    submit from that page has an empty _csrf field and fails with 403."""
+    async with AsyncClient(transport=ASGITransport(app=app_with_user), base_url="http://test") as client:
+        await client.get("/login")
+        token = client.cookies.get("login_csrf")
+        r = await client.post(
+            "/login",
+            data={"username": "alice", "password": "wrong-password", "_csrf": token},
+        )
+        assert r.status_code == 401
+        # The error page's form must carry a non-empty _csrf field
+        assert f'value="{token}"' in r.text
+        # And a retry from that page (same token) must NOT be 403
+        r2 = await client.post(
+            "/login",
+            data={"username": "alice", "password": "wrong-password", "_csrf": token},
+        )
+        assert r2.status_code != 403
+
+
+@pytest.mark.asyncio
 async def test_login_without_csrf_token_rejected(app_with_user):
     async with AsyncClient(transport=ASGITransport(app=app_with_user), base_url="http://test") as client:
         await client.get("/login")

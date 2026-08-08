@@ -89,7 +89,7 @@ async def login_submit(request: Request, username: str = Form(...), password: st
         return _templates.TemplateResponse(
             request,
             "login.html",
-            {"user_id": None, "error": "Invalid username or password"},
+            {"user_id": None, "error": "Invalid username or password", "csrf_token": request.cookies.get("login_csrf", "")},
             status_code=401,
         )
     token = sign_session(user["user_id"], request.app.state.session_secret, is_admin=user.get("is_admin", False))
