@@ -316,11 +316,15 @@ async def upload(request: Request, collection_id: str = Form(...), files: list[U
     uid = current_user_id(request)
     if not uid:
         return RedirectResponse("/login", status_code=303)
-    udata = user_data_dir(_data_dir, uid)
+    # Shared collections: files/docs/jobs belong to the owner.
+    owner, role, auth = _resolve_owner(request, collection_id)
+    if not owner:
+        return RedirectResponse("/login" if not auth else "/", status_code=303)
+    udata = user_data_dir(_data_dir, owner)
     sconn = init_shared_db(_db_dir)
-    uconn = init_user_db(_db_dir, uid)
+    uconn = init_user_db(_db_dir, owner)
     try:
-        used = _user_storage_used(_data_dir, uid)
+        used = _user_storage_used(_data_dir, owner)
         for f in files:
             if not f.filename or not f.filename.lower().endswith(".pdf"):
                 continue
@@ -342,8 +346,8 @@ async def upload(request: Request, collection_id: str = Form(...), files: list[U
             tmp.replace(doc_dir / "original.pdf")
             used += len(data)
             create_doc(uconn, doc_id, collection_id, f.filename.rsplit(".", 1)[0], sha)
-            enqueue_job(sconn, uid, doc_id, str(doc_dir / "original.pdf"))
-        _invalidate_storage(uid)
+            enqueue_job(sconn, owner, doc_id, str(doc_dir / "original.pdf"))
+        _invalidate_storage(owner)
     finally:
         uconn.close()
         sconn.close()
@@ -376,20 +380,24 @@ async def delete_doc_route(request: Request, doc_id: str, _: None = Depends(requ
     uid = current_user_id(request)
     if not uid:
         return RedirectResponse("/login", status_code=303)
-    uconn = init_user_db(_db_dir, uid)
+    owner, d, auth = _resolve_doc_owner(request, doc_id)
+    if not owner or not d:
+        return RedirectResponse("/login" if not auth else "/", status_code=303)
+    # Owner-only delete: members cannot delete docs in a shared collection.
+    if owner != uid:
+        return RedirectResponse("/", status_code=303)
+    uconn = init_user_db(_db_dir, owner)
     try:
-        d = _get_doc(uconn, doc_id)
-        if d:
-            _delete_doc(uconn, doc_id)
+        _delete_doc(uconn, doc_id)
     finally:
         uconn.close()
     sconn = init_shared_db(_db_dir)
     unlink_user_book(sconn, doc_id)
     sconn.close()
-    doc_dir = _data_dir / uid / doc_id
+    doc_dir = _data_dir / owner / doc_id
     if doc_dir.exists():
         shutil.rmtree(doc_dir)
-    _invalidate_storage(uid)
+    _invalidate_storage(owner)
     return RedirectResponse("/", status_code=303)
 
 
