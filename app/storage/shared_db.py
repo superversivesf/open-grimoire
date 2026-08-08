@@ -168,18 +168,38 @@ def get_usage_summary(conn: DbConn, days: int = 30) -> dict[str, Any]:
 
 
 def create_user(conn: DbConn, username: str, password_hash: str, is_admin: bool = False) -> str:
+    return create_user_with_status(conn, username, password_hash, is_admin=is_admin, status="active")
+
+
+def create_user_with_status(conn: DbConn, username: str, password_hash: str, is_admin: bool = False, status: str = "active") -> str:
     user_id = uuid.uuid4().hex
     conn.execute(
-        "INSERT INTO users (user_id, username, password_hash, is_admin) VALUES (?, ?, ?, ?)",
-        (user_id, username, password_hash, 1 if is_admin else 0),
+        "INSERT INTO users (user_id, username, password_hash, is_admin, status) VALUES (?, ?, ?, ?, ?)",
+        (user_id, username, password_hash, 1 if is_admin else 0, status),
     )
     conn.commit()
     return user_id
 
 
+def set_user_status(conn: DbConn, user_id: str, status: str) -> None:
+    conn.execute(
+        "UPDATE users SET status = ? WHERE user_id = ?",
+        (status, user_id),
+    )
+    conn.commit()
+
+
+def list_users_by_status(conn: DbConn, status: str) -> list[dict[str, Any]]:
+    rows = conn.execute(
+        "SELECT user_id, username, is_admin, status, created_at FROM users WHERE status = ? ORDER BY created_at",
+        (status,),
+    ).fetchall()
+    return [dict(r) for r in rows]
+
+
 def get_user_by_username(conn: DbConn, username: str) -> dict[str, Any] | None:
     row = conn.execute(
-        "SELECT user_id, username, password_hash, is_admin, created_at FROM users WHERE username = ?",
+        "SELECT user_id, username, password_hash, is_admin, status, created_at FROM users WHERE username = ?",
         (username,),
     ).fetchone()
     return dict(row) if row else None
@@ -187,7 +207,7 @@ def get_user_by_username(conn: DbConn, username: str) -> dict[str, Any] | None:
 
 def get_user_by_id(conn: DbConn, user_id: str) -> dict[str, Any] | None:
     row = conn.execute(
-        "SELECT user_id, username, password_hash, is_admin, created_at FROM users WHERE user_id = ?",
+        "SELECT user_id, username, password_hash, is_admin, status, created_at FROM users WHERE user_id = ?",
         (user_id,),
     ).fetchone()
     return dict(row) if row else None
@@ -195,7 +215,47 @@ def get_user_by_id(conn: DbConn, user_id: str) -> dict[str, Any] | None:
 
 def list_users(conn: DbConn) -> list[dict[str, Any]]:
     rows = conn.execute(
-        "SELECT user_id, username, is_admin, created_at FROM users ORDER BY created_at"
+        "SELECT user_id, username, is_admin, status, created_at FROM users ORDER BY created_at"
+    ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def add_collection_member(conn: DbConn, collection_id: str, user_id: str, role: str = "member") -> None:
+    conn.execute(
+        "INSERT OR REPLACE INTO collection_members (collection_id, user_id, role) VALUES (?, ?, ?)",
+        (collection_id, user_id, role),
+    )
+    conn.commit()
+
+
+def remove_collection_member(conn: DbConn, collection_id: str, user_id: str) -> None:
+    conn.execute(
+        "DELETE FROM collection_members WHERE collection_id = ? AND user_id = ?",
+        (collection_id, user_id),
+    )
+    conn.commit()
+
+
+def list_collection_members(conn: DbConn, collection_id: str) -> list[dict[str, Any]]:
+    rows = conn.execute(
+        "SELECT collection_id, user_id, role, added_at FROM collection_members WHERE collection_id = ?",
+        (collection_id,),
+    ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def get_membership(conn: DbConn, collection_id: str, user_id: str) -> dict[str, Any] | None:
+    row = conn.execute(
+        "SELECT collection_id, user_id, role, added_at FROM collection_members WHERE collection_id = ? AND user_id = ?",
+        (collection_id, user_id),
+    ).fetchone()
+    return dict(row) if row else None
+
+
+def list_shared_collections_for_user(conn: DbConn, user_id: str) -> list[dict[str, Any]]:
+    rows = conn.execute(
+        "SELECT collection_id, role, added_at FROM collection_members WHERE user_id = ? ORDER BY added_at",
+        (user_id,),
     ).fetchall()
     return [dict(r) for r in rows]
 
