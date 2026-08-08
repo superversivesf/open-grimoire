@@ -16,7 +16,8 @@ from app.storage.user_db import (
     delete_collection, list_docs, get_doc as _get_doc, delete_doc as _delete_doc,
     update_doc_status, create_doc,
 )
-from app.storage.shared_db import init_shared_db, unlink_user_book, enqueue_job
+from app.storage.shared_db import init_shared_db, unlink_user_book, enqueue_job, get_user_by_username, add_collection_member, remove_collection_member, list_collection_members
+from app.storage.resolver import resolve_collection
 from app.storage.paths import user_data_dir, validate_user_path
 from app.web.template_utils import create_templates
 
@@ -32,6 +33,59 @@ def init_web_routes(db_dir: Path, data_dir: Path) -> None:
     global _db_dir, _data_dir
     _db_dir = db_dir
     _data_dir = data_dir
+
+
+def _resolve_owner(request: Request, collection_id: str) -> tuple[str | None, str | None]:
+    """Return (owner_uid, role) for an accessible collection, or (None, None).
+
+    The authorization seam: every collection-scoped route must use this
+    before touching the DB or filesystem.
+    """
+    uid = current_user_id(request)
+    if not uid:
+        return None, None
+    r = resolve_collection(_db_dir, collection_id, uid)
+    if not r:
+        return None, None
+    return r["owner_uid"], r["role"]
+
+
+@router.post("/collections/{collection_id}/share")
+async def share_collection_route(request: Request, collection_id: str, username: str = Form(...), role: str = Form("member"), _: None = Depends(require_csrf)) -> Response:
+    """Share a collection with another user (owner only)."""
+    owner, current_role = _resolve_owner(request, collection_id)
+    if not owner or current_role != "owner":
+        return RedirectResponse("/", status_code=303)
+    if role not in ("owner", "member"):
+        role = "member"
+    sconn = init_shared_db(_db_dir)
+    try:
+        target = get_user_by_username(sconn, username.strip())
+        if not target:
+            return RedirectResponse(f"/collections/{collection_id}", status_code=303)
+        add_collection_member(sconn, collection_id, target["user_id"], role)
+    finally:
+        sconn.close()
+    return RedirectResponse(f"/collections/{collection_id}", status_code=303)
+
+
+@router.post("/collections/{collection_id}/unshare")
+async def unshare_collection_route(request: Request, collection_id: str, username: str = Form(...), _: None = Depends(require_csrf)) -> Response:
+    """Remove a user from a shared collection (owner only)."""
+    owner, current_role = _resolve_owner(request, collection_id)
+    if not owner or current_role != "owner":
+        return RedirectResponse("/", status_code=303)
+    sconn = init_shared_db(_db_dir)
+    try:
+        target = get_user_by_username(sconn, username.strip())
+        if not target:
+            return RedirectResponse(f"/collections/{collection_id}", status_code=303)
+        # Owner cannot remove themselves (would orphan the collection)
+        if target["user_id"] != owner:
+            remove_collection_member(sconn, collection_id, target["user_id"])
+    finally:
+        sconn.close()
+    return RedirectResponse(f"/collections/{collection_id}", status_code=303)
 
 
 @router.get("/")
