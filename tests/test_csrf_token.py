@@ -98,6 +98,14 @@ async def test_login_page_sets_csrf_cookie(app_with_user):
 
 
 @pytest.mark.asyncio
+async def test_login_page_not_cacheable(app_with_user):
+    """A cached login page would carry a stale CSRF token — must be no-store."""
+    async with AsyncClient(transport=ASGITransport(app=app_with_user), base_url="http://test") as client:
+        r = await client.get("/login")
+        assert r.headers.get("cache-control") == "no-store"
+
+
+@pytest.mark.asyncio
 async def test_login_without_csrf_token_rejected(app_with_user):
     async with AsyncClient(transport=ASGITransport(app=app_with_user), base_url="http://test") as client:
         await client.get("/login")

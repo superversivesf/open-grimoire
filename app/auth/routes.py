@@ -59,6 +59,9 @@ def _is_rate_limited() -> bool:
 async def login_page(request: Request) -> Response:
     token = secrets.token_urlsafe(16)
     resp = _templates.TemplateResponse(request, "login.html", {"user_id": None, "csrf_token": token})
+    # Never cache the login page: a cached copy would carry a stale CSRF
+    # token that no longer matches the cookie.
+    resp.headers["Cache-Control"] = "no-store"
     secure = getattr(request.app.state.config, "cookie_secure", False)
     resp.set_cookie("login_csrf", token, httponly=True, max_age=SESSION_COOKIE_MAX_AGE, samesite="lax", secure=secure)
     return resp
