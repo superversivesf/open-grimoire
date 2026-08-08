@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, Depends
 from fastapi.responses import RedirectResponse, Response
 from pathlib import Path
 from typing import Any
 from app.auth.middleware import current_user_id
-from app.storage.shared_db import init_shared_db, get_usage_summary, list_users
+from app.auth.csrf import require_csrf
+from app.storage.shared_db import init_shared_db, get_usage_summary, list_users, set_user_status, list_users_by_status
 from app.storage.user_db import init_user_db, list_collections
 from app.usage.tokens import estimate_cost_usd
 from app.web.template_utils import create_templates
@@ -67,6 +68,10 @@ async def admin_dashboard(request: Request) -> Response:
 
     cost_per_1000 = _project_cost_per_1000(summary, total_query_cost)
 
+    sconn2 = init_shared_db(_db_dir)
+    pending_users = list_users_by_status(sconn2, "pending")
+    sconn2.close()
+
     return _templates.TemplateResponse(
         request,
         "admin.html",
@@ -74,9 +79,45 @@ async def admin_dashboard(request: Request) -> Response:
             "user_id": uid,
             "summary": summary,
             "users": users,
+            "pending_users": pending_users,
             "total_query_cost": total_query_cost,
             "total_enrich_cost": total_enrich_cost,
             "total_cost": total_query_cost + total_enrich_cost,
             "cost_per_1000": cost_per_1000,
         },
     )
+
+
+def _is_admin_request(request: Request) -> bool:
+    """Reuse the admin_dashboard authz check: scan users for uid + is_admin."""
+    uid = current_user_id(request)
+    if not uid:
+        return False
+    sconn = init_shared_db(_db_dir)
+    try:
+        for u in list_users(sconn):
+            if u["user_id"] == uid and u["is_admin"]:
+                return True
+        return False
+    finally:
+        sconn.close()
+
+
+@router.post("/admin/users/{user_id}/approve")
+async def approve_user_route(request: Request, user_id: str, _: None = Depends(require_csrf)) -> Response:
+    if not _is_admin_request(request):
+        return RedirectResponse("/", status_code=303)
+    sconn = init_shared_db(_db_dir)
+    set_user_status(sconn, user_id, "active")
+    sconn.close()
+    return RedirectResponse("/admin", status_code=303)
+
+
+@router.post("/admin/users/{user_id}/reject")
+async def reject_user_route(request: Request, user_id: str, _: None = Depends(require_csrf)) -> Response:
+    if not _is_admin_request(request):
+        return RedirectResponse("/", status_code=303)
+    sconn = init_shared_db(_db_dir)
+    set_user_status(sconn, user_id, "rejected")
+    sconn.close()
+    return RedirectResponse("/admin", status_code=303)

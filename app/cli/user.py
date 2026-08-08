@@ -1,6 +1,6 @@
 import click
 from pathlib import Path
-from app.storage.shared_db import init_shared_db, create_user, get_user_by_username
+from app.storage.shared_db import init_shared_db, create_user, get_user_by_username, set_user_status
 from app.auth.passwords import hash_password
 
 _db_dir: Path | None = None
@@ -85,6 +85,38 @@ def passwd_cmd(username: str, password: str | None) -> None:
         )
         conn.commit()
         click.echo(f"Password updated for '{username}'")
+    finally:
+        conn.close()
+
+
+@cli.command("approve")
+@click.option("--username", required=True, help="Username to approve.")
+def approve_cmd(username: str) -> None:
+    """Approve a pending registration."""
+    conn = init_shared_db(_resolve_db_dir())
+    try:
+        user = get_user_by_username(conn, username)
+        if not user:
+            click.echo(f"Error: user '{username}' not found", err=True)
+            raise click.exceptions.Exit(1)
+        set_user_status(conn, user["user_id"], "active")
+        click.echo(f"Approved '{username}'")
+    finally:
+        conn.close()
+
+
+@cli.command("reject")
+@click.option("--username", required=True, help="Username to reject.")
+def reject_cmd(username: str) -> None:
+    """Reject a pending registration."""
+    conn = init_shared_db(_resolve_db_dir())
+    try:
+        user = get_user_by_username(conn, username)
+        if not user:
+            click.echo(f"Error: user '{username}' not found", err=True)
+            raise click.exceptions.Exit(1)
+        set_user_status(conn, user["user_id"], "rejected")
+        click.echo(f"Rejected '{username}'")
     finally:
         conn.close()
 

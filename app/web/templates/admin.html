@@ -191,6 +191,36 @@
   {% endif %}
 </div>
 
+{% if pending_users %}
+<!-- Pending Approvals -->
+<div class="rpg-card">
+  <h3>&#9203; Pending Approvals</h3>
+  <table class="rpg-table" style="width: 100%; margin-top: 1rem;">
+    <tr>
+      <th>Username</th>
+      <th>Requested</th>
+      <th>Actions</th>
+    </tr>
+    {% for u in pending_users %}
+    <tr>
+      <td>{{ u.username }}</td>
+      <td>{{ u.created_at }}</td>
+      <td>
+        <form method="post" action="/admin/users/{{ u.user_id }}/approve" style="display:inline">
+          <input type="hidden" name="_csrf" value="{{ request.state.csrf_token }}">
+          <button type="submit" class="rpg-btn rpg-btn-sm">Approve</button>
+        </form>
+        <form method="post" action="/admin/users/{{ u.user_id }}/reject" style="display:inline">
+          <input type="hidden" name="_csrf" value="{{ request.state.csrf_token }}">
+          <button type="submit" class="rpg-btn-danger rpg-btn-sm">Reject</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+{% endif %}
+
 <!-- Users -->
 <div class="rpg-card">
   <h3>&#128101; Registered Users</h3>
@@ -198,12 +228,14 @@
     <tr>
       <th>Username</th>
       <th>Admin</th>
+      <th>Status</th>
       <th>Created</th>
     </tr>
     {% for u in users %}
     <tr>
       <td>{{ u.username }}</td>
       <td>{{ "Yes" if u.is_admin else "No" }}</td>
+      <td>{{ u.status }}</td>
       <td>{{ u.created_at }}</td>
     </tr>
     {% endfor %}
