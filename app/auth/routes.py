@@ -57,7 +57,10 @@ def _is_rate_limited() -> bool:
 
 @router.get("/login")
 async def login_page(request: Request) -> Response:
-    token = secrets.token_urlsafe(16)
+    # Reuse an existing csrf cookie if present — a fresh token per GET would
+    # rotate the cookie out from under any other open tab's form (multi-tab
+    # logins fail with CSRF check failed).
+    token = request.cookies.get("login_csrf") or secrets.token_urlsafe(16)
     resp = _templates.TemplateResponse(request, "login.html", {"user_id": None, "csrf_token": token})
     # Never cache the login page: a cached copy would carry a stale CSRF
     # token that no longer matches the cookie.

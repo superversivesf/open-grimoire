@@ -106,6 +106,34 @@ async def test_login_page_not_cacheable(app_with_user):
 
 
 @pytest.mark.asyncio
+async def test_login_page_reuses_existing_csrf_cookie(app_with_user):
+    """GET /login must not rotate the token when a cookie already exists —
+    otherwise a second tab's page load invalidates the first tab's form."""
+    async with AsyncClient(transport=ASGITransport(app=app_with_user), base_url="http://test") as client:
+        await client.get("/login")
+        first = client.cookies.get("login_csrf")
+        r2 = await client.get("/login")
+        assert client.cookies.get("login_csrf") == first
+        assert first in r2.text
+
+
+@pytest.mark.asyncio
+async def test_login_token_survives_multiple_page_loads(app_with_user):
+    """Multi-tab simulation: token from the first GET stays valid after a
+    second GET overwrites nothing."""
+    async with AsyncClient(transport=ASGITransport(app=app_with_user), base_url="http://test") as client:
+        await client.get("/login")
+        token = client.cookies.get("login_csrf")
+        await client.get("/login")
+        r = await client.post(
+            "/login",
+            data={"username": "alice", "password": "pw123", "_csrf": token},
+        )
+        assert r.status_code in (200, 303)
+        assert "session" in r.cookies
+
+
+@pytest.mark.asyncio
 async def test_login_without_csrf_token_rejected(app_with_user):
     async with AsyncClient(transport=ASGITransport(app=app_with_user), base_url="http://test") as client:
         await client.get("/login")
