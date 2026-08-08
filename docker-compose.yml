@@ -11,6 +11,7 @@ services:
     environment:
       - OLLAMA_HOST=http://host.docker.internal:11434
       - SESSION_SECRET=${SESSION_SECRET:-change-me-in-production}
+      - ALLOW_REGISTRATION=${ALLOW_REGISTRATION:-0}
       - HOST=0.0.0.0
       - PORT=8050
     restart: unless-stopped
@@ -35,6 +36,7 @@ services:
     environment:
       - OLLAMA_HOST=http://host.docker.internal:11434
       - SESSION_SECRET=${TEST_SESSION_SECRET:-test-secret-change-me}
+      - ALLOW_REGISTRATION=${ALLOW_REGISTRATION:-0}
       - HOST=0.0.0.0
       - PORT=8051
     restart: unless-stopped
