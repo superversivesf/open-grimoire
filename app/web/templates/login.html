@@ -19,6 +19,8 @@
       <button type="submit" class="rpg-btn" style="width:100%;">Enter the Library</button>
     </p>
   </form>
+  {% if allow_registration %}
   <p style="text-align:center; margin-top:1rem;"><a href="/register">Create an account</a></p>
+  {% endif %}
 </div>
 {% endblock %}

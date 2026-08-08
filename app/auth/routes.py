@@ -57,11 +57,10 @@ def _is_rate_limited() -> bool:
 
 @router.get("/login")
 async def login_page(request: Request) -> Response:
-    # Reuse an existing csrf cookie if present — a fresh token per GET would
-    # rotate the cookie out from under any other open tab's form (multi-tab
-    # logins fail with CSRF check failed).
     token = request.cookies.get("login_csrf") or secrets.token_urlsafe(16)
-    resp = _templates.TemplateResponse(request, "login.html", {"user_id": None, "csrf_token": token})
+    cfg = getattr(request.app.state, "config", None)
+    allow_reg = bool(getattr(cfg, "allow_registration", False))
+    resp = _templates.TemplateResponse(request, "login.html", {"user_id": None, "csrf_token": token, "allow_registration": allow_reg})
     # Never cache the login page: a cached copy would carry a stale CSRF
     # token that no longer matches the cookie.
     resp.headers["Cache-Control"] = "no-store"
@@ -97,9 +96,17 @@ async def register_submit(request: Request, username: str = Form(...), password:
              "submitted": False, "error": "Password must be at least 8 characters"},
             status_code=400,
         )
+    username = username.strip()
+    if len(username) < 3:
+        return _templates.TemplateResponse(
+            request, "register.html",
+            {"user_id": None, "csrf_token": request.cookies.get("login_csrf", ""),
+             "submitted": False, "error": "Username must be at least 3 characters"},
+            status_code=400,
+        )
     conn = init_shared_db(_db_dir)
     try:
-        create_user_with_status(conn, username.strip(), hash_password(password), status="pending")
+        create_user_with_status(conn, username, hash_password(password), status="pending")
     except Exception:
         pass  # duplicate username → same generic response (no enumeration)
     finally:
@@ -134,10 +141,15 @@ async def login_submit(request: Request, username: str = Form(...), password: st
             status_code=401,
         )
     if user.get("status") not in ("active", None):
+        message = (
+            "Your account was rejected by an administrator."
+            if user.get("status") == "rejected"
+            else "Your account is pending approval by an administrator."
+        )
         return _templates.TemplateResponse(
             request,
             "login.html",
-            {"user_id": None, "error": "Your account is pending approval by an administrator.", "csrf_token": request.cookies.get("login_csrf", "")},
+            {"user_id": None, "error": message, "csrf_token": request.cookies.get("login_csrf", "")},
             status_code=401,
         )
     token = sign_session(user["user_id"], request.app.state.session_secret, is_admin=user.get("is_admin", False))
