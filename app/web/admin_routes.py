@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Request, Depends
+from fastapi import APIRouter, Request, Depends, Form
 from fastapi.responses import RedirectResponse, Response
 from pathlib import Path
 from typing import Any
 from app.auth.middleware import current_user_id, is_admin as is_admin_request
 from app.auth.csrf import require_csrf
-from app.storage.shared_db import init_shared_db, get_usage_summary, list_users, set_user_status, list_users_by_status
+from app.auth.passwords import hash_password
+from app.storage.shared_db import init_shared_db, get_usage_summary, list_users, set_user_status, list_users_by_status, create_user_with_status
 from app.storage.user_db import init_user_db, list_collections
 from app.usage.tokens import estimate_cost_usd
 from app.web.template_utils import create_templates
@@ -108,4 +109,25 @@ async def reject_user_route(request: Request, user_id: str, _: None = Depends(re
     sconn = init_shared_db(_db_dir)
     set_user_status(sconn, user_id, "rejected")
     sconn.close()
+    return RedirectResponse("/admin", status_code=303)
+
+
+@router.post("/admin/users/create")
+async def create_user_route(request: Request, username: str = Form(...), password: str = Form(...), is_admin: str = Form("0"), _: None = Depends(require_csrf)) -> Response:
+    """Create a user directly from the admin dashboard (equivalent to the CLI)."""
+    if not is_admin_request(request):
+        return RedirectResponse("/", status_code=303)
+    username = username.strip()
+    if len(username) < 3 or len(password) < 8:
+        return RedirectResponse("/admin", status_code=303)
+    sconn = init_shared_db(_db_dir)
+    try:
+        create_user_with_status(
+            sconn, username, hash_password(password),
+            is_admin=is_admin == "1", status="active",
+        )
+    except Exception:
+        pass  # duplicate username — redirect back
+    finally:
+        sconn.close()
     return RedirectResponse("/admin", status_code=303)

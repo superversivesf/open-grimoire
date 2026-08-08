@@ -84,3 +84,50 @@ async def test_approved_user_can_login(app_with_users, tmp_dirs):
     async with AsyncClient(transport=ASGITransport(app=app_with_users), base_url="http://test") as client:
         await _login(client, "newbie", "pw123456")
         assert "session" in client.cookies
+
+
+@pytest.mark.asyncio
+async def test_admin_creates_user_in_app(app_with_users, tmp_dirs):
+    """Admins can create users directly from the admin dashboard."""
+    async with AsyncClient(transport=ASGITransport(app=app_with_users), base_url="http://test") as client:
+        await _login(client, "admin", "adminpw")
+        r = await client.post(
+            "/admin/users/create",
+            data={"username": "carol", "password": "pw123456", "is_admin": "0", "_csrf": csrf_for(client)},
+        )
+        assert r.status_code in (200, 303)
+        conn = init_shared_db(tmp_dirs["db"])
+        u = get_user_by_username(conn, "carol")
+        assert u is not None
+        assert u["status"] == "active"
+        assert u["is_admin"] == 0
+        conn.close()
+
+
+@pytest.mark.asyncio
+async def test_admin_creates_admin_user_in_app(app_with_users, tmp_dirs):
+    async with AsyncClient(transport=ASGITransport(app=app_with_users), base_url="http://test") as client:
+        await _login(client, "admin", "adminpw")
+        r = await client.post(
+            "/admin/users/create",
+            data={"username": "boss", "password": "pw123456", "is_admin": "1", "_csrf": csrf_for(client)},
+        )
+        assert r.status_code in (200, 303)
+        conn = init_shared_db(tmp_dirs["db"])
+        u = get_user_by_username(conn, "boss")
+        assert u["is_admin"] == 1
+        conn.close()
+
+
+@pytest.mark.asyncio
+async def test_non_admin_cannot_create_user(app_with_users, tmp_dirs):
+    async with AsyncClient(transport=ASGITransport(app=app_with_users), base_url="http://test") as client:
+        await _login(client, "alice", "pw123456")
+        r = await client.post(
+            "/admin/users/create",
+            data={"username": "mallory", "password": "pw123456", "is_admin": "0", "_csrf": csrf_for(client)},
+        )
+        assert r.status_code == 303
+        conn = init_shared_db(tmp_dirs["db"])
+        assert get_user_by_username(conn, "mallory") is None
+        conn.close()

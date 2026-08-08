@@ -221,6 +221,20 @@
 </div>
 {% endif %}
 
+<!-- Create User -->
+<div class="rpg-card">
+  <h3>&#128100; Create User</h3>
+  <form method="post" action="/admin/users/create" class="rpg-inline-form" style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+    <input type="hidden" name="_csrf" value="{{ request.state.csrf_token }}">
+    <input type="text" name="username" placeholder="Username" required minlength="3">
+    <input type="password" name="password" placeholder="Password (min 8 chars)" required minlength="8">
+    <label style="display:inline-flex; align-items:center; gap:0.3rem;">
+      <input type="checkbox" name="is_admin" value="1"> Admin
+    </label>
+    <button type="submit" class="rpg-btn">Create User</button>
+  </form>
+</div>
+
 <!-- Users -->
 <div class="rpg-card">
   <h3>&#128101; Registered Users</h3>
