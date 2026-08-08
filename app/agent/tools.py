@@ -40,14 +40,17 @@ def _eval_dice(expr: str) -> str:
 
 
 class ToolBox:
-    def __init__(self, data_dir: Path, user_id: str, db_dir: Path, collection_id: str):
+    def __init__(self, data_dir: Path, user_id: str, db_dir: Path, collection_id: str, owner_uid: str | None = None):
         self.data_dir = data_dir
         self.user_id = user_id
+        # Shared collections: all DB/FTS/file access resolves to the owner's
+        # tree. Private collections: owner == user.
+        self.owner_uid = owner_uid or user_id
         self.db_dir = db_dir
         self.collection_id = collection_id
 
     def fts_search(self, query: str) -> list[dict[str, Any]]:
-        conn = init_user_db(self.db_dir, self.user_id)
+        conn = init_user_db(self.db_dir, self.owner_uid)
         try:
             doc_rows = conn.execute(
                 "SELECT doc_id FROM docs WHERE collection_id = ?", (self.collection_id,)
@@ -90,7 +93,7 @@ class ToolBox:
 
     def _page_for(self, path: str) -> int | None:
         try:
-            full = self.data_dir / self.user_id / path
+            full = self.data_dir / self.owner_uid / path
             if not full.is_file():
                 return None
             text = full.read_text()
@@ -131,11 +134,11 @@ class ToolBox:
         return extra
 
     def read_file(self, path: str, lines: str | None = None) -> str:
-        return safe_read_file(self.data_dir, self.user_id, path, lines)
+        return safe_read_file(self.data_dir, self.owner_uid, path, lines)
 
     def list_index(self, path: str) -> list[dict[str, Any]]:
         try:
-            full = validate_user_path(self.data_dir, self.user_id, path)
+            full = validate_user_path(self.data_dir, self.owner_uid, path)
         except ValueError:
             return []
         if not full.exists():
@@ -163,7 +166,7 @@ class ToolBox:
         except rex.error:
             return []
         # Restrict search to docs in this collection only
-        conn = init_user_db(self.db_dir, self.user_id)
+        conn = init_user_db(self.db_dir, self.owner_uid)
         doc_rows = conn.execute(
             "SELECT doc_id FROM docs WHERE collection_id = ?", (self.collection_id,)
         ).fetchall()
@@ -174,12 +177,12 @@ class ToolBox:
 
         hits = []
         for did in doc_ids:
-            root = self.data_dir / self.user_id / did
+            root = self.data_dir / self.owner_uid / did
             if not root.exists():
                 continue
             if path:
                 try:
-                    root = validate_user_path(self.data_dir, self.user_id, path)
+                    root = validate_user_path(self.data_dir, self.owner_uid, path)
                 except ValueError:
                     continue
             for f in root.rglob("*.md"):
@@ -187,7 +190,7 @@ class ToolBox:
                     for i, line in enumerate(f.read_text().splitlines(), start=1):
                         try:
                             if compiled.search(line, timeout=_GREP_TIMEOUT):
-                                rel = str(f.relative_to(self.data_dir / self.user_id))
+                                rel = str(f.relative_to(self.data_dir / self.owner_uid))
                                 hits.append({"path": rel, "line": i, "text": line.strip()[:200]})
                                 if len(hits) >= 20:
                                     return hits
@@ -228,7 +231,7 @@ class ToolBox:
 
     def ls(self, dir_path: str) -> list[str]:
         try:
-            return safe_ls(self.data_dir, self.user_id, dir_path)
+            return safe_ls(self.data_dir, self.owner_uid, dir_path)
         except ValueError:
             return []
 

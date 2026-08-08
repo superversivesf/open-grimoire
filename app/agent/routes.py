@@ -32,12 +32,24 @@ def init_agent_routes(db_dir: Path, data_dir: Path, gateway: Any) -> None:
     _gateway = gateway
 
 
-def _make_loop(request: Request, uid: str, collection_id: str) -> AgentLoop:
-    toolbox = ToolBox(_data_dir, uid, _db_dir, collection_id)
+def _make_loop(request: Request, uid: str, collection_id: str, owner_uid: str | None = None) -> AgentLoop:
+    toolbox = ToolBox(_data_dir, uid, _db_dir, collection_id, owner_uid=owner_uid)
     factory = getattr(request.app.state, "agent_loop_factory", None) or getattr(_gateway, "agent_loop_factory", None)
     if factory:
         return cast(AgentLoop, factory(toolbox))
     return AgentLoop(_gateway, toolbox)
+
+
+def _resolve_owner(request: Request, collection_id: str) -> tuple[str | None, bool]:
+    """(owner_uid, is_authenticated) via the sharing seam; (None, False) = login."""
+    uid = current_user_id(request)
+    if not uid:
+        return None, False
+    from app.storage.resolver import resolve_collection
+    r = resolve_collection(_db_dir, collection_id, uid)
+    if not r:
+        return None, True
+    return r["owner_uid"], True
 
 
 @router.post("/sessions")
@@ -45,11 +57,14 @@ async def start_session(request: Request, collection_id: str = Form(...), questi
     uid = current_user_id(request)
     if not uid:
         return RedirectResponse("/login", status_code=303)
+    owner, auth = _resolve_owner(request, collection_id)
+    if not owner:
+        return RedirectResponse("/login" if not auth else "/", status_code=303)
     conn = init_user_db(_db_dir, uid)
     try:
         sid = create_session(conn, collection_id, name=question[:80])
         history = load_history(conn, sid)
-        loop = _make_loop(request, uid, collection_id)
+        loop = _make_loop(request, uid, collection_id, owner_uid=owner)
         t0 = time.time()
         result = await loop.run(history, question)
         elapsed = time.time() - t0
@@ -85,8 +100,11 @@ async def continue_session(request: Request, session_id: str, question: str = Fo
         session = get_session(conn, session_id)
         if not session:
             return RedirectResponse("/sessions", status_code=303)
+        owner, auth = _resolve_owner(request, session["collection_id"])
+        if not owner:
+            return RedirectResponse("/login" if not auth else "/", status_code=303)
         history = load_history(conn, session_id)
-        loop = _make_loop(request, uid, session["collection_id"])
+        loop = _make_loop(request, uid, session["collection_id"], owner_uid=owner)
         t0 = time.time()
         result = await loop.run(history, question)
         elapsed = time.time() - t0
@@ -135,7 +153,11 @@ async def continue_session_stream(request: Request, session_id: str, question: s
             history = load_history(conn, session_id)
         finally:
             conn.close()
-        loop = _make_loop(request, uid, session["collection_id"])
+        owner, auth = _resolve_owner(request, session["collection_id"])
+        if not owner:
+            yield _sse_format("error", {"message": "Access denied"})
+            return
+        loop = _make_loop(request, uid, session["collection_id"], owner_uid=owner)
 
         async for event in loop.run_stream(history, question):
             if event["type"] == "thinking":
