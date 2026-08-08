@@ -3,13 +3,13 @@ from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from pathlib import Path
 from slowapi import Limiter
-from app.auth.passwords import verify_password
+from app.auth.passwords import verify_password, hash_password
 from app.auth.session import sign_session
 from app.auth.csrf import require_csrf, require_login_csrf
-from app.storage.shared_db import init_shared_db, get_user_by_username
+from app.storage.shared_db import init_shared_db, get_user_by_username, create_user_with_status
 from app.web.template_utils import create_templates
 from app.config import Config
-from app.constants import SESSION_COOKIE_MAX_AGE, LOGIN_RATE_LIMIT
+from app.constants import SESSION_COOKIE_MAX_AGE, LOGIN_RATE_LIMIT, REGISTER_RATE_LIMIT
 import os
 import secrets
 
@@ -70,6 +70,47 @@ async def login_page(request: Request) -> Response:
     return resp
 
 
+@router.get("/register")
+async def register_page(request: Request) -> Response:
+    cfg = getattr(request.app.state, "config", None)
+    if not getattr(cfg, "allow_registration", False):
+        return RedirectResponse("/login", status_code=303)
+    token = request.cookies.get("login_csrf") or secrets.token_urlsafe(16)
+    resp = _templates.TemplateResponse(request, "register.html", {"user_id": None, "csrf_token": token, "submitted": False})
+    resp.headers["Cache-Control"] = "no-store"
+    secure = getattr(request.app.state.config, "cookie_secure", False)
+    resp.set_cookie("login_csrf", token, httponly=True, max_age=SESSION_COOKIE_MAX_AGE, samesite="lax", secure=secure)
+    return resp
+
+
+@router.post("/register")
+@_get_limiter().limit(REGISTER_RATE_LIMIT)
+async def register_submit(request: Request, username: str = Form(...), password: str = Form(...), csrf: str = Form("", alias="_csrf")) -> Response:
+    require_login_csrf(request, csrf)
+    cfg = getattr(request.app.state, "config", None)
+    if not getattr(cfg, "allow_registration", False):
+        return RedirectResponse("/login", status_code=303)
+    if len(password) < 8:
+        return _templates.TemplateResponse(
+            request, "register.html",
+            {"user_id": None, "csrf_token": request.cookies.get("login_csrf", ""),
+             "submitted": False, "error": "Password must be at least 8 characters"},
+            status_code=400,
+        )
+    conn = init_shared_db(_db_dir)
+    try:
+        create_user_with_status(conn, username.strip(), hash_password(password), status="pending")
+    except Exception:
+        pass  # duplicate username → same generic response (no enumeration)
+    finally:
+        conn.close()
+    return _templates.TemplateResponse(
+        request, "register.html",
+        {"user_id": None, "csrf_token": request.cookies.get("login_csrf", ""),
+         "submitted": True},
+    )
+
+
 @router.post("/login")
 @_get_limiter().limit(LOGIN_RATE_LIMIT)
 async def login_submit(request: Request, username: str = Form(...), password: str = Form(...), csrf: str = Form("", alias="_csrf")) -> Response:
@@ -90,6 +131,13 @@ async def login_submit(request: Request, username: str = Form(...), password: st
             request,
             "login.html",
             {"user_id": None, "error": "Invalid username or password", "csrf_token": request.cookies.get("login_csrf", "")},
+            status_code=401,
+        )
+    if user.get("status") not in ("active", None):
+        return _templates.TemplateResponse(
+            request,
+            "login.html",
+            {"user_id": None, "error": "Your account is pending approval by an administrator.", "csrf_token": request.cookies.get("login_csrf", "")},
             status_code=401,
         )
     token = sign_session(user["user_id"], request.app.state.session_secret, is_admin=user.get("is_admin", False))

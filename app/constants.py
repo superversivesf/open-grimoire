@@ -12,6 +12,7 @@ USER_STORAGE_LIMIT = 1024 * 1024 * 1024       # 1 GB per user
 WORKER_POLL_INTERVAL = 2.0                    # seconds between queue polls
 JOB_LEASE_SECONDS = 300                       # lease duration for a claimed job
 MAX_JOB_ATTEMPTS = 3                          # max claim attempts before giving up
+REGISTER_RATE_LIMIT = "5/hour"                # slowapi limit for /register
 OLLAMA_TIMEOUT = 300.0                        # seconds for Ollama HTTP requests
 READYZ_TIMEOUT = 2.0                          # seconds for /readyz health checks
 ENRICH_SUMMARY_MAX_CHARS = 60                 # chars for enrichment summary preview

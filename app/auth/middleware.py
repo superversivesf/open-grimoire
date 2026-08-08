@@ -7,7 +7,7 @@ from app.auth.session import verify_session, get_csrf_token
 
 
 # Paths that don't require authentication
-SKIP_AUTH_PATHS = {"/healthz", "/readyz", "/static", "/login", "/favicon.ico"}
+SKIP_AUTH_PATHS = {"/healthz", "/readyz", "/static", "/login", "/register", "/favicon.ico"}
 
 
 def current_user_id(request: Request) -> str | None:

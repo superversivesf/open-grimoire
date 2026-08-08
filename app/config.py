@@ -19,6 +19,7 @@ class Config:
     port: int = 8000
     cookie_secure: bool = True
     num_ctx: int = DEFAULT_NUM_CTX
+    allow_registration: bool = False
 
 
 def load_config(path: str) -> Config:
@@ -64,5 +65,6 @@ def load_config(path: str) -> Config:
         port=int(os.environ.get("PORT", server.get("port", 8000))),
         session_secret=session_secret,
         cookie_secure=cookie_secure,
+        allow_registration=os.environ.get("ALLOW_REGISTRATION", "").lower() in ("1", "true", "yes"),
         num_ctx=int(os.environ.get("NUM_CTX", options.get("num_ctx", DEFAULT_NUM_CTX))),
     )
