@@ -16,7 +16,7 @@ from app.storage.user_db import (
     delete_collection, list_docs, get_doc as _get_doc, delete_doc as _delete_doc,
     update_doc_status, create_doc,
 )
-from app.storage.shared_db import init_shared_db, unlink_user_book, enqueue_job, get_user_by_username, add_collection_member, remove_collection_member, list_collection_members
+from app.storage.shared_db import init_shared_db, unlink_user_book, enqueue_job, get_user_by_username, add_collection_member, remove_collection_member, list_collection_members, list_shared_collections_for_user
 from app.storage.resolver import resolve_collection
 from app.storage.paths import user_data_dir, validate_user_path
 from app.web.template_utils import create_templates
@@ -35,27 +35,70 @@ def init_web_routes(db_dir: Path, data_dir: Path) -> None:
     _data_dir = data_dir
 
 
-def _resolve_owner(request: Request, collection_id: str) -> tuple[str | None, str | None]:
-    """Return (owner_uid, role) for an accessible collection, or (None, None).
+def _resolve_owner(request: Request, collection_id: str) -> tuple[str | None, str | None, bool]:
+    """Return (owner_uid, role, is_authenticated).
 
     The authorization seam: every collection-scoped route must use this
-    before touching the DB or filesystem.
+    before touching the DB or filesystem. Unauthenticated callers get
+    (None, None, False) — routes redirect to /login. No-access callers
+    get (None, None, True) — routes redirect to /.
     """
     uid = current_user_id(request)
     if not uid:
-        return None, None
+        return None, None, False
     r = resolve_collection(_db_dir, collection_id, uid)
     if not r:
-        return None, None
-    return r["owner_uid"], r["role"]
+        return None, None, True
+    return r["owner_uid"], r["role"], True
+
+
+def _resolve_doc_owner(request: Request, doc_id: str) -> tuple[str | None, dict | None, bool]:
+    """Return (owner_uid, doc, is_authenticated).
+
+    Finds the collection containing the doc (checking the user's own DB
+    first, then any shared collection they belong to whose owner has it).
+    """
+    uid = current_user_id(request)
+    if not uid:
+        return None, None, False
+    # Private: the doc exists in the user's own DB
+    uconn = init_user_db(_db_dir, uid)
+    try:
+        d = _get_doc(uconn, doc_id)
+        if d:
+            return uid, d, True
+    finally:
+        uconn.close()
+    # Shared: any membership whose owner has this doc
+    sconn = init_shared_db(_db_dir)
+    try:
+        memberships = list_shared_collections_for_user(sconn, uid)
+        for m in memberships:
+            cid = m["collection_id"]
+            if m["role"] != "member":
+                continue
+            resolved = resolve_collection(_db_dir, cid, uid)
+            if not resolved:
+                continue
+            owner_uid = resolved["owner_uid"]
+            owner_uconn = init_user_db(_db_dir, owner_uid)
+            try:
+                d = _get_doc(owner_uconn, doc_id)
+                if d and d["collection_id"] == cid:
+                    return owner_uid, d, True
+            finally:
+                owner_uconn.close()
+    finally:
+        sconn.close()
+    return None, None, True
 
 
 @router.post("/collections/{collection_id}/share")
 async def share_collection_route(request: Request, collection_id: str, username: str = Form(...), role: str = Form("member"), _: None = Depends(require_csrf)) -> Response:
     """Share a collection with another user (owner only)."""
-    owner, current_role = _resolve_owner(request, collection_id)
+    owner, current_role, auth = _resolve_owner(request, collection_id)
     if not owner or current_role != "owner":
-        return RedirectResponse("/", status_code=303)
+        return RedirectResponse("/login" if not auth else "/", status_code=303)
     if role not in ("owner", "member"):
         role = "member"
     sconn = init_shared_db(_db_dir)
@@ -72,9 +115,9 @@ async def share_collection_route(request: Request, collection_id: str, username:
 @router.post("/collections/{collection_id}/unshare")
 async def unshare_collection_route(request: Request, collection_id: str, username: str = Form(...), _: None = Depends(require_csrf)) -> Response:
     """Remove a user from a shared collection (owner only)."""
-    owner, current_role = _resolve_owner(request, collection_id)
+    owner, current_role, auth = _resolve_owner(request, collection_id)
     if not owner or current_role != "owner":
-        return RedirectResponse("/", status_code=303)
+        return RedirectResponse("/login" if not auth else "/", status_code=303)
     sconn = init_shared_db(_db_dir)
     try:
         target = get_user_by_username(sconn, username.strip())
@@ -96,10 +139,36 @@ async def library(request: Request) -> Response:
     conn = init_user_db(_db_dir, uid)
     cols = list_collections(conn)
     conn.close()
+    # Merge shared collections (from shared DB) — owner's name resolved
+    # from the owner's per-user DB.
+    shared = []
+    sconn = init_shared_db(_db_dir)
+    try:
+        memberships = list_shared_collections_for_user(sconn, uid)
+        for m in memberships:
+            cid = m["collection_id"]
+            owner_uconn = init_user_db(_db_dir, m["user_id"])
+            try:
+                row = owner_uconn.execute(
+                    "SELECT name FROM collections WHERE collection_id = ?", (cid,)
+                ).fetchone()
+            finally:
+                owner_uconn.close()
+            if row:
+                shared.append({
+                    "collection_id": cid,
+                    "name": row["name"],
+                    "created_at": m.get("added_at", ""),
+                    "shared": True,
+                    "role": m["role"],
+                })
+    finally:
+        sconn.close()
+    all_cols = cols + shared
     return _templates.TemplateResponse(
         request,
         "library.html",
-        {"user_id": uid, "collections": cols, "storage": _storage_info(_data_dir, uid)},
+        {"user_id": uid, "collections": all_cols, "storage": _storage_info(_data_dir, uid)},
     )
 
 
@@ -144,44 +213,48 @@ async def delete_collection_route(request: Request, collection_id: str, _: None 
 
 @router.get("/collections/{collection_id}")
 async def collection_view(request: Request, collection_id: str) -> Response:
+    owner, role, auth = _resolve_owner(request, collection_id)
+    if not owner:
+        return RedirectResponse("/login" if not auth else "/", status_code=303)
     uid = current_user_id(request)
-    if not uid:
-        return RedirectResponse("/login", status_code=303)
-    conn = init_user_db(_db_dir, uid)
+    conn = init_user_db(_db_dir, owner)
     cols = list_collections(conn)
     col = next((c for c in cols if c["collection_id"] == collection_id), None)
     docs = list_docs(conn, collection_id)
     conn.close()
     if not col:
         return RedirectResponse("/", status_code=303)
+    col = {**col, "shared": role != "owner" or col.get("shared", False)}
     return _templates.TemplateResponse(
         request,
         "collection.html",
-        {"user_id": uid, "collection": col, "docs": docs},
+        {"user_id": uid, "collection": col, "docs": docs, "role": role},
     )
 
 
 @router.get("/collections/{collection_id}/table")
 async def collection_table(request: Request, collection_id: str) -> Response:
+    owner, role, auth = _resolve_owner(request, collection_id)
+    if not owner:
+        return RedirectResponse("/login" if not auth else "/", status_code=303)
     uid = current_user_id(request)
-    if not uid:
-        return RedirectResponse("/login", status_code=303)
-    conn = init_user_db(_db_dir, uid)
+    conn = init_user_db(_db_dir, owner)
     docs = list_docs(conn, collection_id)
     conn.close()
     return _templates.TemplateResponse(
         request,
         "_table.html",
-        {"user_id": uid, "collection_id": collection_id, "docs": docs},
+        {"user_id": uid, "collection_id": collection_id, "docs": docs, "role": role},
     )
 
 
 @router.get("/collections/{collection_id}/upload")
 async def upload_form(request: Request, collection_id: str) -> Response:
+    owner, role, auth = _resolve_owner(request, collection_id)
+    if not owner:
+        return RedirectResponse("/login" if not auth else "/", status_code=303)
     uid = current_user_id(request)
-    if not uid:
-        return RedirectResponse("/login", status_code=303)
-    conn = init_user_db(_db_dir, uid)
+    conn = init_user_db(_db_dir, owner)
     cols = list_collections(conn)
     col = next((c for c in cols if c["collection_id"] == collection_id), None)
     conn.close()
@@ -388,10 +461,11 @@ async def doc_search_path(request: Request, path: str) -> Response:
 @router.get("/docs/{doc_id}/cover")
 async def doc_cover(request: Request, doc_id: str) -> Response:
     """Serve the cover image (first page as JPG)."""
+    owner, _, auth = _resolve_doc_owner(request, doc_id)
+    if not owner:
+        return RedirectResponse("/login" if not auth else "/", status_code=303)
     uid = current_user_id(request)
-    if not uid:
-        return RedirectResponse("/login", status_code=303)
-    cover_path = _data_dir / uid / doc_id / "cover.jpg"
+    cover_path = _data_dir / owner / doc_id / "cover.jpg"
     if cover_path.exists():
         return FileResponse(str(cover_path), media_type="image/jpeg")
     # Fallback: no cover
@@ -406,10 +480,11 @@ async def doc_pdf(request: Request, doc_id: str, page: int = 0) -> Response:
     across all browsers (mobile included). The #page= fragment anchor
     doesn't work reliably on mobile PDF viewers.
     """
+    owner, _, auth = _resolve_doc_owner(request, doc_id)
+    if not owner:
+        return RedirectResponse("/login" if not auth else "/", status_code=303)
     uid = current_user_id(request)
-    if not uid:
-        return RedirectResponse("/login", status_code=303)
-    pdf_path = _data_dir / uid / doc_id / "original.pdf"
+    pdf_path = _data_dir / owner / doc_id / "original.pdf"
     if pdf_path.exists():
         if page and page > 0:
             # Return HTML wrapper that scrolls to the right page
@@ -424,15 +499,11 @@ async def doc_pdf(request: Request, doc_id: str, page: int = 0) -> Response:
 
 @router.get("/docs/{doc_id}")
 async def doc_view(request: Request, doc_id: str) -> Response:
+    owner, d, auth = _resolve_doc_owner(request, doc_id)
+    if not owner or not d:
+        return RedirectResponse("/login" if not auth else "/", status_code=303)
     uid = current_user_id(request)
-    if not uid:
-        return RedirectResponse("/login", status_code=303)
-    uconn = init_user_db(_db_dir, uid)
-    d = _get_doc(uconn, doc_id)
-    uconn.close()
-    if not d:
-        return RedirectResponse("/", status_code=303)
-    tree = _build_doc_tree(_data_dir, uid, doc_id)
+    tree = _build_doc_tree(_data_dir, owner, doc_id)
     return _templates.TemplateResponse(
         request,
         "doc.html",
