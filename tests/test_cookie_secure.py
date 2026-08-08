@@ -61,3 +61,54 @@ async def test_security_headers_present(app_with_user):
         assert "X-Frame-Options" in r.headers
         assert "Referrer-Policy" in r.headers
         assert "Content-Security-Policy" in r.headers
+
+
+@pytest.mark.asyncio
+async def test_htmx_vendored_locally_and_csp_compatible():
+    """htmx must be served from /static (CSP script-src 'self' allows it),
+    never from an external CDN the CSP would block — otherwise hx-post is
+    inert and the ask spinner never shows."""
+    from pathlib import Path
+    static_dir = Path(__file__).parent.parent / "app" / "web" / "static"
+    htmx = static_dir / "htmx.min.js"
+    assert htmx.exists(), "htmx must be vendored in app/web/static/"
+    assert htmx.stat().st_size > 10000, "vendored htmx looks truncated"
+    text = htmx.read_text()
+    assert "htmx" in text.lower()
+
+    base = (Path(__file__).parent.parent / "app" / "web" / "templates" / "base.html").read_text()
+    assert "/static/htmx.min.js" in base, "base.html must load htmx from /static"
+    assert "unpkg.com" not in base, "base.html must not load htmx from a CDN"
+    assert "fonts.googleapis.com" not in base, "Google Fonts links are blocked by CSP — remove them"
+
+
+@pytest.mark.asyncio
+async def test_ask_form_has_spinner_wiring(app_with_user):
+    """The ask form must keep its hx-post and hx-indicator wiring, and the
+    spinner element must exist — the attribute→element contract that makes
+    the loading indicator show during questions."""
+    from httpx import AsyncClient, ASGITransport
+    from app.storage.shared_db import init_shared_db, create_user
+    from app.storage.user_db import init_user_db, create_collection
+    from app.auth.passwords import hash_password
+    from tests.conftest import csrf_for
+
+    conn = init_shared_db(app_with_user.state.config.db_dir)
+    uid = create_user(conn, "bob", hash_password("pw"))
+    conn.close()
+    uconn = init_user_db(app_with_user.state.config.db_dir, uid)
+    cid = create_collection(uconn, "C")
+    uconn.close()
+
+    async with AsyncClient(transport=ASGITransport(app=app_with_user), base_url="http://test") as client:
+        await client.get("/login")
+        token = client.cookies.get("login_csrf")
+        r = await client.post("/login", data={"username": "bob", "password": "pw", "_csrf": token})
+        assert r.status_code in (200, 303)
+        page = await client.get(f"/collections/{cid}")
+        assert page.status_code == 200
+        html = page.text
+        assert 'hx-post="/sessions"' in html
+        assert 'hx-indicator="#ask-spinner"' in html
+        assert 'id="ask-spinner"' in html
+        assert "Searching the manuals..." in html
