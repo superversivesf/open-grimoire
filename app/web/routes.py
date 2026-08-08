@@ -106,6 +106,9 @@ async def share_collection_route(request: Request, collection_id: str, username:
         target = get_user_by_username(sconn, username.strip())
         if not target:
             return RedirectResponse(f"/collections/{collection_id}", status_code=303)
+        # Self-share would create a member row for the owner and demote them
+        if target["user_id"] == owner:
+            return RedirectResponse(f"/collections/{collection_id}", status_code=303)
         add_collection_member(sconn, collection_id, target["user_id"], role)
     finally:
         sconn.close()
@@ -140,14 +143,18 @@ async def library(request: Request) -> Response:
     cols = list_collections(conn)
     conn.close()
     # Merge shared collections (from shared DB) — owner's name resolved
-    # from the owner's per-user DB.
+    # via the resolver (membership rows don't carry the owner id).
     shared = []
     sconn = init_shared_db(_db_dir)
     try:
         memberships = list_shared_collections_for_user(sconn, uid)
         for m in memberships:
             cid = m["collection_id"]
-            owner_uconn = init_user_db(_db_dir, m["user_id"])
+            resolved = resolve_collection(_db_dir, cid, uid)
+            if not resolved:
+                continue
+            owner_uid = resolved["owner_uid"]
+            owner_uconn = init_user_db(_db_dir, owner_uid)
             try:
                 row = owner_uconn.execute(
                     "SELECT name FROM collections WHERE collection_id = ?", (cid,)
@@ -188,7 +195,13 @@ async def rename_collection_route(request: Request, collection_id: str, name: st
     uid = current_user_id(request)
     if not uid:
         return RedirectResponse("/login", status_code=303)
-    conn = init_user_db(_db_dir, uid)
+    owner, role, auth = _resolve_owner(request, collection_id)
+    if not owner:
+        return RedirectResponse("/login" if not auth else "/", status_code=303)
+    # Rename is owner-only for shared collections
+    if role != "owner":
+        return RedirectResponse("/", status_code=303)
+    conn = init_user_db(_db_dir, owner)
     rename_collection(conn, collection_id, name)
     conn.close()
     return RedirectResponse(f"/collections/{collection_id}", status_code=303)
@@ -199,15 +212,27 @@ async def delete_collection_route(request: Request, collection_id: str, _: None 
     uid = current_user_id(request)
     if not uid:
         return RedirectResponse("/login", status_code=303)
-    conn = init_user_db(_db_dir, uid)
+    owner, role, auth = _resolve_owner(request, collection_id)
+    if not owner:
+        return RedirectResponse("/login" if not auth else "/", status_code=303)
+    # Delete is owner-only for shared collections
+    if role != "owner":
+        return RedirectResponse("/", status_code=303)
+    conn = init_user_db(_db_dir, owner)
     # Delete all doc files from disk
     docs = list_docs(conn, collection_id)
     for d in docs:
-        doc_dir = _data_dir / uid / d["doc_id"]
+        doc_dir = _data_dir / owner / d["doc_id"]
         if doc_dir.exists():
             shutil.rmtree(doc_dir)
     delete_collection(conn, collection_id)
     conn.close()
+    # Clean up membership rows
+    sconn = init_shared_db(_db_dir)
+    sconn.execute("DELETE FROM collection_members WHERE collection_id = ?", (collection_id,))
+    sconn.commit()
+    sconn.close()
+    _invalidate_storage(owner)
     return RedirectResponse("/", status_code=303)
 
 
@@ -374,16 +399,18 @@ async def reprocess_doc(request: Request, doc_id: str, _: None = Depends(require
     uid = current_user_id(request)
     if not uid:
         return RedirectResponse("/login", status_code=303)
-    uconn = init_user_db(_db_dir, uid)
+    owner, d, auth = _resolve_doc_owner(request, doc_id)
+    if not owner or not d:
+        return RedirectResponse("/login" if not auth else "/", status_code=303)
+    # Owner-only reprocess for shared collections
+    if owner != uid:
+        return RedirectResponse("/", status_code=303)
+    uconn = init_user_db(_db_dir, owner)
     sconn = init_shared_db(_db_dir)
-    d = None
     try:
-        d = _get_doc(uconn, doc_id)
-        if not d:
-            return RedirectResponse("/", status_code=303)
-        pdf_path = _data_dir / uid / doc_id / "original.pdf"
+        pdf_path = _data_dir / owner / doc_id / "original.pdf"
         update_doc_status(uconn, doc_id, "queued")
-        enqueue_job(sconn, uid, doc_id, str(pdf_path))
+        enqueue_job(sconn, owner, doc_id, str(pdf_path))
     finally:
         uconn.close()
         sconn.close()
@@ -429,8 +456,23 @@ async def doc_search_path(request: Request, path: str) -> Response:
     uid = current_user_id(request)
     if not uid:
         return RedirectResponse("/login", status_code=303)
-    user_root = _data_dir / uid
-    if not user_root.exists():
+    # Search roots: the user's own tree plus every shared collection's
+    # owner tree (members can cite shared docs).
+    roots: list[tuple[str, Path]] = [(uid, _data_dir / uid)]
+    sconn = init_shared_db(_db_dir)
+    try:
+        memberships = list_shared_collections_for_user(sconn, uid)
+        for m in memberships:
+            if m["role"] != "member":
+                continue
+            resolved = resolve_collection(_db_dir, m["collection_id"], uid)
+            if resolved:
+                owner_root = _data_dir / resolved["owner_uid"]
+                if owner_root.exists():
+                    roots.append((resolved["owner_uid"], owner_root))
+    finally:
+        sconn.close()
+    if not any(r.exists() for _, r in roots):
         return RedirectResponse("/", status_code=303)
 
     parts = path.split("/")
@@ -440,9 +482,10 @@ async def doc_search_path(request: Request, path: str) -> Response:
     if len(parts) > 1 and len(parts[0]) == 32:
         direct_doc_id = parts[0]
         direct_file = "/".join(parts[1:])
-        direct_path = user_root / direct_doc_id / direct_file
-        if direct_path.exists() and direct_path.is_file():
-            return RedirectResponse(f"/docs/{direct_doc_id}/view?path={quote(direct_file, safe='/')}", status_code=303)
+        for owner_uid, root in roots:
+            direct_path = root / direct_doc_id / direct_file
+            if direct_path.exists() and direct_path.is_file():
+                return RedirectResponse(f"/docs/{direct_doc_id}/view?path={quote(direct_file, safe='/')}", status_code=303)
 
     # 2. Strip /index.md suffix — LLM often hallucinates "section_name/index.md"
     #    when the actual file is "section_name.md" or "NN_section_name.md"
@@ -450,33 +493,36 @@ async def doc_search_path(request: Request, path: str) -> Response:
     if search_name == "index.md" and len(parts) > 1:
         search_name = parts[-2]  # Use the directory name as the search term
 
-    # 3. Search all doc directories
-    for doc_dir in sorted(user_root.iterdir()):
-        if not doc_dir.is_dir():
+    # 3. Search all doc directories across the user's + shared roots
+    for _owner_uid, root in roots:
+        if not root.exists():
             continue
-        # Try exact filename match
-        candidate = doc_dir / filename
-        if candidate.exists() and candidate.is_file():
-            return RedirectResponse(f"/docs/{doc_dir.name}/view?path={quote(filename, safe='/')}", status_code=303)
-        # Try the search_name (after stripping /index.md)
-        if search_name != filename:
-            candidate = doc_dir / search_name
+        for doc_dir in sorted(root.iterdir()):
+            if not doc_dir.is_dir():
+                continue
+            # Try exact filename match
+            candidate = doc_dir / filename
             if candidate.exists() and candidate.is_file():
-                return RedirectResponse(f"/docs/{doc_dir.name}/view?path={quote(search_name, safe='/')}", status_code=303)
-            candidate = doc_dir / (search_name + ".md")
-            if candidate.exists() and candidate.is_file():
-                return RedirectResponse(f"/docs/{doc_dir.name}/view?path={quote(search_name + '.md', safe='/')}", status_code=303)
-        # Recursive search for exact filename
-        for f in doc_dir.rglob(filename):
-            if f.is_file():
-                rel = str(f.relative_to(doc_dir))
-                return RedirectResponse(f"/docs/{doc_dir.name}/view?path={quote(rel, safe='/')}", status_code=303)
-        # Fuzzy: find files containing the search_name stem
-        stem = search_name.replace(".md", "").replace("_", " ")
-        for f in doc_dir.glob("*.md"):
-            if stem in f.stem.replace("_", " "):
-                rel = str(f.relative_to(doc_dir))
-                return RedirectResponse(f"/docs/{doc_dir.name}/view?path={quote(rel, safe='/')}", status_code=303)
+                return RedirectResponse(f"/docs/{doc_dir.name}/view?path={quote(filename, safe='/')}", status_code=303)
+            # Try the search_name (after stripping /index.md)
+            if search_name != filename:
+                candidate = doc_dir / search_name
+                if candidate.exists() and candidate.is_file():
+                    return RedirectResponse(f"/docs/{doc_dir.name}/view?path={quote(search_name, safe='/')}", status_code=303)
+                candidate = doc_dir / (search_name + ".md")
+                if candidate.exists() and candidate.is_file():
+                    return RedirectResponse(f"/docs/{doc_dir.name}/view?path={quote(search_name + '.md', safe='/')}", status_code=303)
+            # Recursive search for exact filename
+            for f in doc_dir.rglob(filename):
+                if f.is_file():
+                    rel = str(f.relative_to(doc_dir))
+                    return RedirectResponse(f"/docs/{doc_dir.name}/view?path={quote(rel, safe='/')}", status_code=303)
+            # Fuzzy: find files containing the search_name stem
+            stem = search_name.replace(".md", "").replace("_", " ")
+            for f in doc_dir.glob("*.md"):
+                if stem in f.stem.replace("_", " "):
+                    rel = str(f.relative_to(doc_dir))
+                    return RedirectResponse(f"/docs/{doc_dir.name}/view?path={quote(rel, safe='/')}", status_code=303)
 
     return RedirectResponse("/", status_code=303)
 
@@ -536,16 +582,18 @@ async def doc_view(request: Request, doc_id: str) -> Response:
 
 @router.get("/docs/{doc_id}/view")
 async def doc_view_leaf(request: Request, doc_id: str, path: str) -> Response:
+    owner, _, auth = _resolve_doc_owner(request, doc_id)
+    if not owner:
+        return RedirectResponse("/login" if not auth else "/", status_code=303)
     uid = current_user_id(request)
-    if not uid:
-        return RedirectResponse("/login", status_code=303)
     clean_path = path
     if path.startswith(doc_id + "/"):
         clean_path = path[len(doc_id) + 1:]
-    # Build path relative to user root: doc_id/file_path
+    # Build path relative to the OWNER's root (shared collections resolve
+    # to the owner's tree): doc_id/file_path
     rel_path = f"{doc_id}/{clean_path}"
     try:
-        full = validate_user_path(_data_dir, uid, rel_path)
+        full = validate_user_path(_data_dir, owner, rel_path)
     except ValueError:
         return RedirectResponse(f"/docs/{doc_id}", status_code=303)
     # Check is_file() too — directory paths return "file not found"

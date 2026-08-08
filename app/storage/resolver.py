@@ -18,9 +18,11 @@ def resolve_collection(db_dir: Path, collection_id: str, uid: str) -> dict[str, 
     try:
         membership = get_membership(conn, collection_id, uid)
         if membership:
-            # Find the owner row for this collection (role='owner')
+            # Find the owner row for this collection (role='owner').
+            # Deterministic: earliest added_at wins (first-created owner).
             owner = conn.execute(
-                "SELECT user_id FROM collection_members WHERE collection_id = ? AND role = 'owner'",
+                "SELECT user_id FROM collection_members WHERE collection_id = ? AND role = 'owner' "
+                "ORDER BY added_at ASC, user_id ASC LIMIT 1",
                 (collection_id,),
             ).fetchone()
             if owner:
