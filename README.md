@@ -221,6 +221,44 @@ Backups include:
 
 Keeps last 7 days of backups locally. Compressed with timestamp.
 
+### Background enrichment worker
+
+Pipeline enrichment runs in a dedicated background thread (launched at server
+start), so the web UI stays responsive while a large PDF is being enriched —
+heartbeats, upload progress, and chat requests continue to be served.
+
+**Shutdown semantics**
+
+- A container stop signals the worker and waits up to 30s; after that the
+  daemon thread is abandoned.
+- The stop request only lands *between* jobs: a mid-flight job runs to
+  completion or is reclaimed by the job lease on the next start.
+- Lease reclaim is capped at 3 attempts per job; beyond that the job is marked
+  failed.
+- A thread stuck in a sync subprocess (tesseract OCR, poppler cover
+  extraction) cannot be interrupted from outside — it blocks until the
+  subprocess returns.
+
+**SQLite WAL caveat**
+
+`journal_mode=WAL` silently falls back to `delete` mode on filesystems that
+don't support it (e.g. NFS-type mounts), which reintroduces read/write
+locking. This deployment uses ext4 bind mounts, which support WAL fine —
+`backup.sh` uses `sqlite3 .backup`, giving a WAL-safe consistent snapshot.
+
+**Ollama model contention**
+
+If `models.enrich` is the same model the agent chat uses, chat requests still
+queue behind enrichment at the Ollama level — one model instance serves one
+request at a time. Give enrichment a distinct model in `config.yaml` for full
+concurrency.
+
+**Single-process requirement**
+
+`uvicorn --workers > 1` would spawn one worker thread per process, running
+enrichment jobs concurrently against the same database. Keep the server
+single-process (`python -m app`).
+
 ## Tech Stack
 
 - **Backend**: FastAPI, Uvicorn, SQLite (FTS5)

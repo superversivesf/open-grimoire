@@ -3,6 +3,9 @@ ollama:
 
 models:
   query: deepseek-v4-flash:0731-cloud
+  # Give enrich a model distinct from `query`: enrichment runs in a
+  # background thread, but Ollama serves one request per model at a time —
+  # sharing a model makes chat queue behind enrichment.
   enrich: phi4-mini:3.8b
   structure: deepseek-v4-flash:0731-cloud
   vision: gemma3:4b
