@@ -36,7 +36,6 @@ SHARED_MIGRATIONS: list[tuple[int, str, str]] = [
             updated_at TEXT NOT NULL DEFAULT (datetime('now'))
         );
         CREATE INDEX IF NOT EXISTS idx_queue_status ON queue_jobs(status, created_at);
-        ALTER TABLE queue_jobs ADD COLUMN lease_expires_at TEXT;
         CREATE TABLE IF NOT EXISTS query_log (
             log_id TEXT PRIMARY KEY,
             user_id TEXT NOT NULL,
@@ -96,12 +95,14 @@ SHARED_MIGRATIONS: list[tuple[int, str, str]] = [
     """),
 ]
 
-# Migration 2's ALTER TABLE is not intrinsically idempotent: if it succeeds
-# but a later statement in the same script fails, the version stays at 1 and
-# the retry hits "duplicate column name". Guard the ALTER in Python before
-# executing the script so a partial failure is retry-safe.
-_GUARDED_ALTERS: dict[int, tuple[str, str]] = {
-    2: ("users", "status"),
+# Migrations 1 and 2's ALTER TABLEs are not intrinsically idempotent: if one
+# succeeds but a later statement in the same script fails, the version stays
+# behind and the retry hits "duplicate column name". Keep them out of the
+# scripts and execute them in Python after the script so a partial failure is
+# retry-safe.
+_GUARDED_ALTERS: dict[int, tuple[str, str, str]] = {
+    1: ("queue_jobs", "lease_expires_at", "ALTER TABLE queue_jobs ADD COLUMN lease_expires_at TEXT"),
+    2: ("users", "status", "ALTER TABLE users ADD COLUMN status TEXT NOT NULL DEFAULT 'active'"),
 }
 
 # ─── User Database Migrations ────────────────────────────────────────
@@ -192,10 +193,16 @@ def _set_user_version(conn: sqlite3.Connection, version: int) -> None:
 
 
 def _add_column(conn: sqlite3.Connection, table: str, column: str, ddl: str) -> None:
-    """Idempotent ALTER TABLE ADD COLUMN — skip if the column already exists."""
-    cols = {r["name"] for r in conn.execute(f"PRAGMA table_info({table})")}
-    if column not in cols:
+    """Idempotent ALTER TABLE ADD COLUMN — swallow duplicate column errors.
+
+    Exception-based rather than check-then-act so concurrent initializers
+    cannot race between the PRAGMA check and the ALTER.
+    """
+    try:
         conn.execute(ddl)
+    except sqlite3.OperationalError as exc:
+        if "duplicate column name" not in str(exc):
+            raise
 
 
 def migrate_shared_db(conn: sqlite3.Connection) -> None:
@@ -209,10 +216,10 @@ def migrate_shared_db(conn: sqlite3.Connection) -> None:
     for version, name, sql in SHARED_MIGRATIONS:
         if version > current:
             print(f"  [migrate] shared: v{version} - {name}")
+            conn.executescript(sql)
             guard = _GUARDED_ALTERS.get(version)
             if guard:
-                _add_column(conn, guard[0], guard[1], f"ALTER TABLE {guard[0]} ADD COLUMN {guard[1]} TEXT NOT NULL DEFAULT 'active'")
-            conn.executescript(sql)
+                _add_column(conn, guard[0], guard[1], guard[2])
             _set_shared_version(conn, version)
     conn.commit()
 
@@ -233,11 +240,20 @@ def migrate_user_db(conn: sqlite3.Connection) -> None:
     conn.commit()
 
 
+def _apply_connection_pragmas(conn: sqlite3.Connection) -> None:
+    """WAL + busy_timeout so the web loop and worker thread can write
+    concurrently without 'database is locked'."""
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA busy_timeout=30000")
+    conn.execute("PRAGMA synchronous=NORMAL")
+
+
 def init_shared_db_with_migrations(db_dir: Path) -> sqlite3.Connection:
     """Initialize shared database and run migrations."""
     db_dir.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(db_dir / "shared.sqlite")
     conn.row_factory = sqlite3.Row
+    _apply_connection_pragmas(conn)
     migrate_shared_db(conn)
     return conn
 
@@ -249,5 +265,6 @@ def init_user_db_with_migrations(db_dir: Path, user_id: str) -> sqlite3.Connecti
     p.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(p)
     conn.row_factory = sqlite3.Row
+    _apply_connection_pragmas(conn)
     migrate_user_db(conn)
     return conn
