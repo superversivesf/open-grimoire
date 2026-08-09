@@ -173,6 +173,11 @@ def create_app(cfg: Config, session_secret: str) -> FastAPI:
         t = getattr(app.state, "worker_thread", None)
         if t is not None:
             t.join(timeout=30)
+        # NOTE (I2): stop() only lands between jobs — a job mid-flight runs
+        # to completion (or until the process exits; the daemon flag
+        # guarantees exit). The lease reclaims abandoned jobs on next start.
+        # A thread stuck in a sync subprocess (tesseract/poppler) cannot be
+        # interrupted from outside — task.cancel only lands at the next await.
         await gateway.close()
 
     return app

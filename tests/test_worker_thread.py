@@ -82,3 +82,20 @@ async def test_worker_runs_in_thread_not_blocking_loop(tmp_dirs, test_config):
     assert t is not None, "worker_thread must be created by the startup hook"
     t.join(timeout=5)
     assert not t.is_alive(), "worker thread must exit cleanly after shutdown"
+
+
+@pytest.mark.asyncio
+async def test_shutdown_leaves_no_zombie_thread(tmp_dirs, test_config):
+    """Shutdown hook must stop+join the worker thread — no zombie threads.
+
+    FastAPI 0.141 has no public router.shutdown(); the on_shutdown hooks
+    run on lifespan context exit, so enter+exit triggers the hook.
+    """
+    from app.main import create_app
+
+    app = create_app(test_config, "testsecret")
+    async with app.router.lifespan_context(app):
+        pass
+    t = getattr(app.state, "worker_thread", None)
+    assert t is not None, "startup hook must create the worker thread"
+    assert not t.is_alive(), "shutdown hook must join the worker thread (no zombie)"
