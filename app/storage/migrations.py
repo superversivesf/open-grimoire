@@ -242,9 +242,13 @@ def migrate_user_db(conn: sqlite3.Connection) -> None:
 
 def _apply_connection_pragmas(conn: sqlite3.Connection) -> None:
     """WAL + busy_timeout so the web loop and worker thread can write
-    concurrently without 'database is locked'."""
-    conn.execute("PRAGMA journal_mode=WAL")
+    concurrently without 'database is locked'.
+
+    busy_timeout must be set BEFORE journal_mode: converting to WAL takes
+    an exclusive lock, and without the timeout a concurrent first-connect
+    fails immediately instead of waiting."""
     conn.execute("PRAGMA busy_timeout=30000")
+    conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA synchronous=NORMAL")
 
 

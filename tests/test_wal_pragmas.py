@@ -19,8 +19,16 @@ def test_user_db_uses_wal(tmp_path):
 
 
 def test_concurrent_writes_no_lock(tmp_path):
-    """Two threads writing the same DB must not hit 'database is locked'."""
+    """Two threads writing the same DB must not hit 'database is locked'.
+
+    The DB is initialized once up-front (migrations + WAL conversion happen
+    at startup by a single connection, as in production); the threads then
+    race plain writes only.
+    """
     import threading
+
+    init_shared_db_with_migrations(tmp_path)  # warm-up: migrate + convert to WAL
+
     errors = []
 
     def writer(name):
