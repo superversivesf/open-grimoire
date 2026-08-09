@@ -1,6 +1,5 @@
 # app/queue/worker.py
 import asyncio
-import signal
 from pathlib import Path
 from typing import Any
 from app.storage.shared_db import init_shared_db, claim_next_job, heartbeat_job
@@ -17,6 +16,7 @@ class QueueWorker:
         self.poll_interval = poll_interval
         self._stop_event = asyncio.Event()
         self._current_job_id: str | None = None
+        self._loop: asyncio.AbstractEventLoop | None = None
 
     async def _heartbeat_loop(self, job_id: str) -> None:
         """Refresh the job lease while it is being processed."""
@@ -58,19 +58,8 @@ class QueueWorker:
             set_job_id(None)
 
     async def run_forever(self) -> None:
-        """Run the worker until stopped by signal."""
-        loop = asyncio.get_event_loop()
-
-        def _signal_handler(sig: signal.Signals) -> None:
-            log.info("shutdown_signal_received", signal=sig.name)
-            self._stop_event.set()
-
-        for sig in (signal.SIGTERM, signal.SIGINT):
-            try:
-                loop.add_signal_handler(sig, _signal_handler, sig)
-            except NotImplementedError:
-                # Windows doesn't support add_signal_handler
-                pass
+        """Run the worker until stopped."""
+        self._loop = asyncio.get_running_loop()
 
         log.info("worker_started", poll_interval=self.poll_interval)
         try:
@@ -88,5 +77,8 @@ class QueueWorker:
             log.info("worker_stopped")
 
     def stop(self) -> None:
-        """Signal the worker to stop (for testing)."""
-        self._stop_event.set()
+        """Signal the worker to stop (cross-thread safe)."""
+        if self._loop is not None and self._loop.is_running():
+            self._loop.call_soon_threadsafe(self._stop_event.set)
+        else:
+            self._stop_event.set()
