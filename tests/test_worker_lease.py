@@ -1,5 +1,8 @@
 """Worker job-claim lease tests — crashed jobs must be reclaimed."""
 
+from pathlib import Path
+from typing import Any
+
 import pytest
 from app.storage.shared_db import init_shared_db, enqueue_job, claim_next_job, complete_job, get_job
 
@@ -92,3 +95,67 @@ def test_complete_job_clears_lease(tmp_dirs):
     assert job["status"] == "done"
     assert job["lease_expires_at"] is None
     conn.close()
+
+
+def test_heartbeat_fires_during_long_sync_stage(tmp_dirs: dict[str, Any], monkeypatch: pytest.MonkeyPatch) -> None:
+    """A job with a long sync stage must keep its lease fresh (heartbeat fires).
+
+    Regression for the codex finding: with the sync extract stage blocking the
+    worker's loop, the heartbeat task never fires and a job longer than
+    JOB_LEASE_SECONDS gets reclaimed as crashed.
+    """
+    import asyncio
+    import threading
+    import time
+    from unittest.mock import AsyncMock, MagicMock
+
+    from app.pipeline.extract import Extractor
+    from app.pipeline.runner import PipelineRunner
+    from app.queue.worker import QueueWorker
+    from app.storage.shared_db import init_shared_db, enqueue_job, get_job
+
+    # Shrink the lease so the test runs in seconds instead of 5 minutes.
+    monkeypatch.setattr("app.constants.JOB_LEASE_SECONDS", 2)
+    monkeypatch.setattr("app.queue.worker.JOB_LEASE_SECONDS", 2)
+
+    conn = init_shared_db(tmp_dirs["db"])
+    jid = enqueue_job(conn, "alice", "d1", "/x.pdf")
+    conn.close()
+
+    gw = MagicMock()
+    gw.call = AsyncMock(return_value={"message": {"content": '{"summary": "s", "keywords": []}'}})
+    runner = PipelineRunner(gw, tmp_dirs["data"], tmp_dirs["db"])
+
+    # Patch the real extract path to block for 3.5s — longer than the 2s lease.
+    def slow_extract(self: Extractor, pdf_path: Path) -> list[dict[str, Any]]:
+        time.sleep(3.5)
+        return [{"page": 1, "text": "Chapter 1: Combat", "ocr": False}]
+    monkeypatch.setattr(Extractor, "extract", slow_extract)
+
+    worker = QueueWorker(runner, tmp_dirs["db"], poll_interval=0.05)
+    t = threading.Thread(target=lambda: asyncio.run(worker.run_forever()), daemon=True)
+    t.start()
+    try:
+        # Wait until the job is claimed and the slow extract stage is running.
+        deadline = time.monotonic() + 5.0
+        while True:
+            conn = init_shared_db(tmp_dirs["db"])
+            j = get_job(conn, jid)
+            conn.close()
+            if j and j["status"] == "processing":
+                break
+            assert time.monotonic() < deadline, "job never claimed"
+            time.sleep(0.05)
+        # Mid-stage, past the original 2s lease: the lease must have been
+        # refreshed by the heartbeat — only possible if the loop stayed free.
+        time.sleep(2.5)
+        conn = init_shared_db(tmp_dirs["db"])
+        fresh = conn.execute(
+            "SELECT lease_expires_at > datetime('now') FROM queue_jobs WHERE job_id = ?",
+            (jid,),
+        ).fetchone()[0]
+        conn.close()
+        assert fresh, "lease expired during long sync stage — heartbeat never fired"
+    finally:
+        worker.stop()
+        t.join(timeout=10)

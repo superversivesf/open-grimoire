@@ -41,7 +41,9 @@ class PipelineRunner:
             update_doc_status(uconn, doc_id, "extracting")
             log.info(f"JOB {job_id[:8]} STAGE 1: extracting text from {pdf_path.name}")
             extractor = Extractor(self.gateway)
-            blocks = extractor.extract(pdf_path)
+            # Sync subprocess calls (poppler/tesseract) — offload so the
+            # worker's loop stays free to fire heartbeats during long jobs.
+            blocks = await asyncio.to_thread(extractor.extract, pdf_path)
             total_pages = len(blocks)
             ocr_pages = sum(1 for b in blocks if b.get("ocr"))
             text_chars = sum(len(b["text"]) for b in blocks)
@@ -128,7 +130,8 @@ class PipelineRunner:
             update_doc_status(uconn, doc_id, "tiering")
             log.info(f"JOB {job_id[:8]} STAGE 3: writing markdown files")
             doc_title = self._doc_title(uconn, doc_id)
-            leaf_paths = tier_document(tree, udata, doc_id, doc_title)
+            # Sync file writes — offload so the loop stays free for heartbeats.
+            leaf_paths = await asyncio.to_thread(tier_document, tree, udata, doc_id, doc_title)
             log.info(f"JOB {job_id[:8]} STAGE 3 DONE: {len(leaf_paths)} files written to data/{user_id[:8]}/{doc_id[:8]}/, {time.time()-t0:.1f}s")
 
             # Stage 4: Enrich
