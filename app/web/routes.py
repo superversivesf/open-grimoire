@@ -142,6 +142,17 @@ async def library(request: Request) -> Response:
     conn = init_user_db(_db_dir, uid)
     cols = list_collections(conn)
     conn.close()
+    # Processing flag: any doc in the collection not in a terminal state.
+    def _processing(owner_uid: str, cid: str) -> bool:
+        uconn = init_user_db(_db_dir, owner_uid)
+        try:
+            docs = list_docs(uconn, cid)
+        finally:
+            uconn.close()
+        return any(d["status"] not in ("done", "failed") for d in docs)
+
+    for c in cols:
+        c["processing"] = _processing(uid, c["collection_id"])
     # Merge shared collections (from shared DB) — owner's name resolved
     # via the resolver (membership rows don't carry the owner id).
     shared = []
@@ -168,6 +179,7 @@ async def library(request: Request) -> Response:
                     "created_at": m.get("added_at", ""),
                     "shared": True,
                     "role": m["role"],
+                    "processing": _processing(owner_uid, cid),
                 })
     finally:
         sconn.close()
@@ -307,7 +319,7 @@ async def upload_form(request: Request, collection_id: str) -> Response:
     )
 
 
-from app.constants import MAX_UPLOAD_BYTES, USER_STORAGE_LIMIT
+from app.storage.limits import max_upload_bytes, user_storage_limit
 
 # TTL cache for storage usage — rglob over the whole user tree is O(files)
 # per call; the hot paths (page load, upload loop) must not pay it.
@@ -341,13 +353,14 @@ def _user_storage_used(data_dir: Path, uid: str) -> int:
 
 def _storage_info(data_dir: Path, uid: str) -> dict[str, Any]:
     used = _user_storage_used(data_dir, uid)
+    limit = user_storage_limit()
     return {
         "used_bytes": used,
-        "limit_bytes": USER_STORAGE_LIMIT,
+        "limit_bytes": limit,
         "used_mb": used / (1024 * 1024),
-        "limit_mb": USER_STORAGE_LIMIT / (1024 * 1024),
-        "percent": round((used / USER_STORAGE_LIMIT) * 100) if USER_STORAGE_LIMIT else 0,
-        "remaining_mb": (USER_STORAGE_LIMIT - used) / (1024 * 1024),
+        "limit_mb": limit / (1024 * 1024),
+        "percent": round((used / limit) * 100) if limit else 0,
+        "remaining_mb": (limit - used) / (1024 * 1024),
     }
 
 
@@ -365,17 +378,19 @@ async def upload(request: Request, collection_id: str = Form(...), files: list[U
     uconn = init_user_db(_db_dir, owner)
     try:
         used = _user_storage_used(_data_dir, owner)
+        upload_cap = max_upload_bytes()
+        storage_cap = user_storage_limit()
         for f in files:
             if not f.filename or not f.filename.lower().endswith(".pdf"):
                 continue
             # Stream-read with a hard size cap — never buffer the whole body.
-            data = await f.read(MAX_UPLOAD_BYTES + 1)
-            if len(data) > MAX_UPLOAD_BYTES:
+            data = await f.read(upload_cap + 1)
+            if len(data) > upload_cap:
                 continue
             # Magic-byte check: a .pdf name is not a PDF.
             if not data.startswith(b"%PDF-"):
                 continue
-            if used + len(data) > USER_STORAGE_LIMIT:
+            if used + len(data) > storage_cap:
                 continue
             sha = hashlib.sha256(data).hexdigest()
             doc_id = uuid.uuid4().hex

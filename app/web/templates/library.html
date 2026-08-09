@@ -32,6 +32,7 @@
   {% for c in collections %}
   <div class="rpg-collection-card">
     <h3><a href="/collections/{{ c.collection_id }}">&#128218; {{ c.name }}</a>
+      {% if c.processing %}<span class="rpg-badge rpg-badge-processing" style="font-size:0.7rem; vertical-align:middle;">&#9203; processing</span>{% endif %}
       {% if c.shared %}<span class="rpg-badge" style="font-size:0.7rem; vertical-align:middle;">&#128101; shared</span>{% endif %}
     </h3>
     <p class="meta">Created {{ c.created_at }}</p>

@@ -110,7 +110,7 @@ def app_and_user(tmp_dirs, test_config):
 async def test_upload_rejects_oversized_file(app_and_user, monkeypatch):
     app, cid, uid = app_and_user
     import app.web.routes as routes
-    monkeypatch.setattr(routes, "MAX_UPLOAD_BYTES", 1024)
+    monkeypatch.setattr(routes, "max_upload_bytes", lambda: 1024)
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         await client.post("/login", data={"username": "alice", "password": "pw"})
         big = b"%PDF-1.4\n" + b"x" * 4096

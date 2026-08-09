@@ -110,12 +110,13 @@ async def test_full_pdf_processing_pipeline(app_and_user, tmp_dirs):
 
 
 @pytest.mark.asyncio
-async def test_upload_oversized_file_skipped(app_and_user, tmp_dirs):
-    """Files over MAX_UPLOAD_BYTES are silently skipped."""
-    from app.web.routes import MAX_UPLOAD_BYTES
+async def test_upload_oversized_file_skipped(app_and_user, tmp_dirs, monkeypatch):
+    """Files over the upload cap are silently skipped."""
+    import app.web.routes as routes
+    monkeypatch.setattr(routes, "max_upload_bytes", lambda: 1024)
     app, uid = app_and_user
 
-    oversized = b"\x00" * (MAX_UPLOAD_BYTES + 1)
+    oversized = b"\x00" * 2048
     uconn = init_user_db(tmp_dirs["db"], uid)
     cid = create_collection(uconn, "Test")
     uconn.close()
