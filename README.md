@@ -233,8 +233,8 @@ heartbeats, upload progress, and chat requests continue to be served.
   daemon thread is abandoned.
 - The stop request only lands *between* jobs: a mid-flight job runs to
   completion or is reclaimed by the job lease on the next start.
-- Lease reclaim is capped at 3 attempts per job; beyond that the job is marked
-  failed.
+- Lease reclaim is capped at 3 attempts per job; beyond that the job is
+  abandoned (left in `processing` state, no longer reclaimed).
 - A thread stuck in a sync subprocess (tesseract OCR, poppler cover
   extraction) cannot be interrupted from outside — it blocks until the
   subprocess returns.
