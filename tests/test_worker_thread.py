@@ -3,6 +3,7 @@
 import asyncio
 import threading
 import time
+import pytest
 from unittest.mock import AsyncMock, MagicMock
 
 from app.queue.worker import QueueWorker
@@ -31,3 +32,53 @@ def test_stop_from_other_thread(tmp_path):
     assert errors == [], f"worker thread crashed: {errors}"
     assert w._loop is not None, "run_forever must record its running loop"
     assert not t.is_alive(), "worker thread must exit cleanly after stop()"
+
+
+@pytest.mark.asyncio
+async def test_worker_runs_in_thread_not_blocking_loop(tmp_dirs, test_config):
+    """A slow job must not block the app's event loop (real app lifespan)."""
+    import time as time_mod
+    from unittest.mock import MagicMock
+
+    from app.main import create_app
+    from app.storage.shared_db import init_shared_db, enqueue_job, get_job, complete_job
+
+    app = create_app(test_config, "testsecret")
+    slow_runner = MagicMock()
+
+    async def slow_run(job):
+        time_mod.sleep(1.0)  # blocking sleep — stalls the loop if in-loop
+        conn = init_shared_db(test_config.db_dir)
+        complete_job(conn, job["job_id"])
+        conn.close()
+        return None
+
+    slow_runner.run_job = slow_run
+
+    async with app.router.lifespan_context(app):
+        # Swap the stub before enqueuing: the thread's first poll sees it.
+        app.state.worker.runner = slow_runner
+        conn = init_shared_db(test_config.db_dir)
+        job_id = enqueue_job(conn, "alice", "d1", "/x.pdf")
+        conn.close()
+
+        # Measure loop responsiveness while the worker processes the job.
+        # With an in-loop worker, the 1s blocking sleep stalls this loop and
+        # the overlapping asyncio.sleep(0.2) takes ~1.2s.
+        max_gap = 0.0
+        deadline = time_mod.monotonic() + 8.0
+        status = "queued"
+        while status != "done":
+            t0 = time_mod.monotonic()
+            await asyncio.sleep(0.2)
+            max_gap = max(max_gap, time_mod.monotonic() - t0)
+            conn = init_shared_db(test_config.db_dir)
+            status = get_job(conn, job_id)["status"]
+            conn.close()
+            assert time_mod.monotonic() < deadline, f"job stuck in {status}"
+        assert max_gap < 0.5, f"event loop blocked for {max_gap:.2f}s"
+
+    t = getattr(app.state, "worker_thread", None)
+    assert t is not None, "worker_thread must be created by the startup hook"
+    t.join(timeout=5)
+    assert not t.is_alive(), "worker thread must exit cleanly after shutdown"

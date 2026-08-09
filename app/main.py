@@ -6,6 +6,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 import asyncio
 import uuid
+import threading
 import httpx
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -145,13 +146,33 @@ def create_app(cfg: Config, session_secret: str) -> FastAPI:
     runner = PipelineRunner(gateway, cfg.data_dir, cfg.db_dir)
     worker = QueueWorker(runner, cfg.db_dir, poll_interval=WORKER_POLL_INTERVAL)
     app.state.worker = worker
+    # Build the worker gateway at create_app time (lazy AsyncClient — no
+    # loop binding until first use; no runner swap needed).
+    worker_gateway = OllamaGateway(cfg.ollama_host, cfg.models, num_ctx=cfg.num_ctx)
+    app.state.worker_gateway = worker_gateway
 
     @app.on_event("startup")
     async def _start_worker() -> None:
-        asyncio.create_task(worker.run_forever())
+        worker.runner = PipelineRunner(worker_gateway, cfg.data_dir, cfg.db_dir)
+
+        async def _run_worker() -> None:
+            try:
+                await worker.run_forever()
+            finally:
+                # Close in the SAME loop that created the client (I1)
+                await worker_gateway.close()
+
+        app.state.worker_thread = threading.Thread(
+            target=lambda: asyncio.run(_run_worker()), daemon=True
+        )
+        app.state.worker_thread.start()
 
     @app.on_event("shutdown")
     async def _close_gateway() -> None:
+        worker.stop()
+        t = getattr(app.state, "worker_thread", None)
+        if t is not None:
+            t.join(timeout=30)
         await gateway.close()
 
     return app
