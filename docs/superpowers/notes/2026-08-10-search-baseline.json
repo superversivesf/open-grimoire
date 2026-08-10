@@ -1,0 +1,139 @@
+{
+  "deepseek-v4-flash:0731-cloud": [
+    {
+      "model": "deepseek-v4-flash:0731-cloud",
+      "question": "How do I create a character?",
+      "answer": "In **Dragon Warriors**, creating a character is a step-by-step process (Chapter 2: Creating a Character). Here's how it works:\n\n**The 10 Steps of Character Creation:**\n1. **The characteristics** \u2013 Roll 3d6 for each of the five characteristics: Strength, Reflexes, Intelligence, Psychic Talent, and Looks.\n2. **Choosing a profession** \u2013 Pick a class (Knight, Barbarian, Sorcerer, Mystic, Elementalist, Warlock, or Assassin). Some classes have minimum characteristic requirements to qualify.\n3. **Health points** \u2013 Roll a die and add a class modifier (e.g., Knight: 1d6+7, Barbarian: 1d6+9, Sorcerer: 1d6+4).\n4. **The combat factors** \u2013 Record your basic attack and defence scores.\n5. **Magical combat factors** \u2013 Record magical attack and defence (for spellcasters).\n6. **Dodging** \u2013 Record your basic evasion score.\n7. **Stealth and Perception** \u2013 Record your basic stealth and perception scores.\n8. **Initial equipment** \u2013 Take the starting gear listed for your class.\n9. **Rank** \u2013 All new characters begin at 1st Rank.\n10. **Background** \u2013 Choose a personality, backstory, and attitude for your character.\n\n**Class Examples (from the Character Creation Summary):**\n- **Knight:** HP 1d6+7, attack 13/defence 7, evasion 4, stealth 13/perception 5. Abilities: track, armour expert, ride warhorse. Gear: plate armour, shield, dagger, lantern, flint-and-tinder, backpack, 25 florins, sword or morning star.\n- **Barbarian:** HP 1d6+9, attack 14/defence 6, evasion 5. Abilities: berserk, track, ride warhorse. Gear: full mail armour, dagger, lantern, flint-and-tinder, backpack, 6d6 florins, battleaxe or two-handed sword.\n- **Sorcerer** (requires Intelligence & Psychic Talent both at least 9): HP 1d6+4, attack 11/defence 5, magical attack 15/defence 5, evasion 3. Ability: spellcasting. Initial Magic Points: 4. Gear: lantern, flint-and-tinder, backpack, dagger, shortsword or staff, 20 florins, two potions.\n- **Mystic** (requires Psychic Talent at least 9): HP 1d6+5, attack 12/defence 6, magical attack 14/defence 4, evasion 3, stealth 14/perception 6. Abilities: spellcasting, spell mastery, premonition, ESP.\n- **Elementalist:** HP 1d6+4, attack 11/defence 5, magical attack 15/defence 5, evasion 3. Ability: spellcasting. Magic Points: 3 in main category, 1 in each of two subsidiary categories.\n- **Warlock** (requires Intelligence at least 11 & Psychic Talent at least 9): HP 1d6+5, attack 12/defence 5, magical attack 12/defence 4, evasion 3. Abilities: spellcasting, weapon groups, simultaneous casting. Magic Points: 2.\n- **Assassin** (requires Reflexes at least 12, Intelligence & Psychic Talent at least 9): HP 1d6+5, attack 13/defence 5, evasion 5, stealth 18/perception 8. Abilities: stealth, combat technique (choose one), skill (choose one).\n\n**Roleplaying:** Before or after the mechanical steps, think about your character's personality, past life, and attitude toward the world and the rest of the party \u2014 this is what makes the character truly yours. Only ordinary six-sided dice are needed for character creation.",
+      "cites": [
+        {
+          "page": 8,
+          "path": "5111bb1ac69e462197886579e8686499/04_chapter_2_creating_a_character_17_barbarians_and_armour_28.md",
+          "quote": "Step 1: The characteristics 18 / Step 2: Choosing a profession 18 / Step 3: Health points 20 / Step 4: The combat factors 20 / Step 5: Magical combat factors 21 / Step 6: Dodging 21 / Step 7: Stealth and Perception 22 / Step 8: Initial equipment 22 / Step 9: Rank 22 / Step 10: Background 22"
+        },
+        {
+          "page": 26,
+          "path": "5111bb1ac69e462197886579e8686499/33_character_creation.md",
+          "quote": "A. Strength, Reflexes, Intelligence, Psychic Talent and Looks: roll 3d6 for each. B. Health Points: roll 1d6 +7. C. Basic attack 13, defence 7..."
+        },
+        {
+          "page": 19,
+          "path": "5111bb1ac69e462197886579e8686499/20_creating.md",
+          "quote": "BEFORE YOU CAN begin your first Dragon Warriors game, each player must create a character who will be his or her fantasy 'alter-ego' in the Lands of Legend... Only ordinary six-sided dice are needed for this."
+        }
+      ],
+      "iterations": 7,
+      "done_called": true,
+      "elapsed": 14.8,
+      "judge": {
+        "correctness": 10,
+        "citation_use": 10,
+        "completeness": 10,
+        "answered": 1,
+        "reason": "Answer provides a complete step-by-step guide with class examples, fully citing sources."
+      }
+    },
+    {
+      "model": "deepseek-v4-flash:0731-cloud",
+      "question": "What is a goblin's armor class?",
+      "answer": "A goblin in Dragon Warriors has **Defence 5** and **Armour Factor 0** (or **1** if it wears a leather jerkin). Note that Dragon Warriors doesn't use a single \"armor class\" number \u2014 protection is split between Defence (avoiding hits) and Armour Factor (reducing damage). The full goblin stat block is: Attack 9 (Sling d6,3 or Staff d6,3), Defence 5, Magical Defence 3, Evasion 4, Health Points 1d6+1, Stealth 18, Perception 8 (elfsight), Movement 8m (20m), Rank-Equivalent 1st.",
+      "cites": [
+        {
+          "page": 20,
+          "path": "5976fb08e2984e64a75f8cb764167ce0/24_halflings.md",
+          "quote": "attack 9, Sling (d6, 3) Armour Factor 0 (or 1 for or Staff (d6, 3) leather jerkin) defence 5 Movement: 8m (20m) magical defence 3 evasion 4 Health Points 1d6 +1 stealth 18 Rank-Equivalent: 1st perception 8 (elfsight)"
+        }
+      ],
+      "iterations": 4,
+      "done_called": true,
+      "elapsed": 8.5,
+      "judge": {
+        "correctness": 0,
+        "citation_use": 2,
+        "completeness": 1,
+        "answered": 1,
+        "reason": "The answer provides stats from a halfling file, not a goblin, so it's factually incorrect and the citation is misapplied."
+      }
+    },
+    {
+      "model": "deepseek-v4-flash:0731-cloud",
+      "question": "How does combat work?",
+      "answer": "Here's how combat works in Dragon Warriors (Chapter 8: The Rules of Combat):\n\n**Combat Rounds**\nEvery fight is divided into Combat Rounds, each representing six seconds of game time. The procedure is the same for both combatants, with the one who has the higher Reflexes getting the first blow.\n\n**Step 1 \u2014 The Hit Roll**\nTo see if he hits, a character subtracts the opponent's Defence score from his own Attack score. This gives the number he must roll equal to or less than on 1d20 to score a hit.\n- A roll of **20 is always a miss**, regardless of the combatants' relative Combat Factors.\n- A roll of **1 is always a hit** \u2014 and always gets past armour. This is called a **critical hit**.\n- If the Hit Roll fails, the attacker's go is over for the round and the opponent strikes back.\n\n**Step 2 \u2014 The Armour Bypass Roll**\nIf the attacker scores a hit, he rolls to see whether the blow gets past the opponent's armour. Each armour type has an **Armour Factor (AF)**:\n- None 0\n- Gambeson 1\n- Padded Armour 2\n- Mail Hauberk 3\n- Mail Armour 4\n- Plate Armour 5\n\nThe attacker must roll **higher than the opponent's Armour Factor** to penetrate. The type of die used for this Armour Bypass Roll depends on the weapon used. If it fails, the armour does its job and the target is unhurt.\n\n**Step 3 \u2014 Damage**\nA blow that gets through armour inflicts a wound. The opponent's **Health Points** are reduced by the weapon's damage rating (e.g. 4 HP for a sword, 5 HP for a battleaxe). A normal sword is a (d8, 4 points) weapon.\n\n**Continuing the fight**\nIf the Combat Round ends with both combatants still able to fight (their current Health Points not yet reduced to 0), the next Round begins and the procedure is repeated.",
+      "cites": [
+        {
+          "page": 68,
+          "path": "5111bb1ac69e462197886579e8686499/58_of_combat.md",
+          "quote": "To see if he hits an opponent, a character simply subtracts the opponent's defence score from his own attack score. This gives the number that he must roll equal to or less than on 1d20 in order to score a hit. A roll of '20' is always a miss... Conversely, a roll of '1' is always a hit\u2014and, in fact, always gets past armour. (Such a roll is called a 'critical hit'.)"
+        },
+        {
+          "page": 68,
+          "path": "5111bb1ac69e462197886579e8686499/60_2_if_an_attacker_scores_a_hit_he_rolls_to_see_whether_the_armour_type_armour_factor.md",
+          "quote": "Having scored a hit, a character rolls to see if his blow can penetrate his opponent's armour. Each type of protection has a given Armour Factor (usually abbreviated to AF). ... The attacker must roll higher than his opponent's Armour Factor in order to penetrate the armour. The type of die used for this Armour Bypass Roll depends on the weapon with which the blow was struck."
+        },
+        {
+          "page": 68,
+          "path": "5111bb1ac69e462197886579e8686499/61_3_a_blow_which_gets_through_armour_inflicts_a_wound_mail_hauberk_3.md",
+          "quote": "A blow which gets through armour inflicts a wound. The opponent's Health Points are reduced by the damage rating of the weapon used (4 Health Points in the case of a sword, 5 HP for a battleaxe, etc.)"
+        }
+      ],
+      "iterations": 8,
+      "done_called": true,
+      "elapsed": 15.4,
+      "judge": {
+        "correctness": 10,
+        "citation_use": 8,
+        "completeness": 9,
+        "answered": 1,
+        "reason": "The answer provides a detailed, accurate summary of combat rules with a citation, though not all steps are individually cited."
+      }
+    },
+    {
+      "model": "deepseek-v4-flash:0731-cloud",
+      "question": "What character classes are available?",
+      "answer": "The Dragon Warriors rulebook offers 8 character classes (called \"professions\"), grouped as follows:\n\n**The Fighters (Chapter 3)**\n- **Knight** \u2014 abilities include Track, Armour Expert, Ride Warhorse, Disarm Technique, Expert Parry, Main Gauche, Master Bowman, and Quick Draw\n- **Swordmaster** \u2014 has the Weaponskill ability\n- **Barbarian** \u2014 abilities include Track, Berserk, Ride Warhorse, and Bloodrage\n\n**The Wizards (Chapter 4)**\n- **Sorcerer** \u2014 abilities include Calligraphy, Alchemy, Artifice, and Wands\n- **Mystic** \u2014 abilities include Premonition, ESP, and Enchantment of arms and armour\n- **Elementalist** \u2014 specializes in an element (Earth, Air, Water, Fire, or Darkness) and has Raw power\n\n**Other Classes**\n- **Assassin** (Chapter 5) \u2014 Stealth, combat techniques (Armour Piercing, Shock attack, Throwing Spikes, Unarmed Combat), mental techniques (Inner Sense, Memorize, Deathvow), meditational techniques, and alchemical techniques\n- **Warlock** (Chapter 6) \u2014 abilities include Appraise enemy, Arrow cutting, Fight blind, Unarmed combat, Minor/Major enchantment of weapons and armour, and Ride warhorse\n\nSo the complete roster is: **Knight, Swordmaster, Barbarian, Sorcerer, Mystic, Elementalist, Assassin, and Warlock.**",
+      "cites": [
+        {
+          "page": 8,
+          "path": "5111bb1ac69e462197886579e8686499/02_contents.md",
+          "quote": "Chapter 3: The Fighters ... Knights 25 ... Swordmaster 27 ... Barbarians 27 ... Chapter 4: The Wizards 29 ... Sorcerers 30 ... Mystics 33 ... Elementalists 35"
+        },
+        {
+          "page": 9,
+          "path": "5111bb1ac69e462197886579e8686499/07_chapter_6_in_the_beginning_50_terminating_a_spell_74.md",
+          "quote": "Chapter 5: Assassins 41 ... Warlocks 38"
+        }
+      ],
+      "iterations": 6,
+      "done_called": true,
+      "elapsed": 13.9,
+      "judge": {
+        "correctness": 10,
+        "citation_use": 10,
+        "completeness": 10,
+        "answered": 1,
+        "reason": "The answer correctly lists all 8 classes with citations from the rulebook."
+      }
+    },
+    {
+      "model": "deepseek-v4-flash:0731-cloud",
+      "question": "What spells can a sorcerer cast?",
+      "answer": "A Sorcerer can cast all the spells listed in the \"Sorcerer Spells\" section of the Book of Spells, organized by level. A spell's level equals the Magic Points needed to cast it, and a Sorcerer can only cast spells whose level does not exceed his rank.\n\n**Level One:** Dragonbreath, Image, Lesser Healing, Moonglow, Portal, Weaken\n**Level Two:** Detect Aura, Hold, Inflict Wound, Peer, Tangleroots, Warding\n**Level Three:** Banquet, Beacon, Command, Greater Healing, Illusion, Wolfcall\n**Level Four:** Antidote, Curse, Disease, Oracle, Shadowbolt, Wall of Magic\n**Level Five:** Banish, Divination, Fossilize, Firestorm, Mantlet, Reanimate the Dead, Transfix\n**Level Six:** Armour, Cure Disease, Dishearten, Dispel Magic, Phantasm, Sword of Damocles\n**Level Seven:** Deathlight, Enslave, Nova, Spell Screen, Stasis, Vorpal Blade\n**Level Eight:** Astral Gate, Bastion, Burden, Destrier, Evil Eye, Rune\n**Level Nine:** Animate Bones, Battlemaster, Invisibility, Miracle Cure, Raise Fog\n**Level Ten:** Doppelganger, Hecatomb, Pentacle of Entrapment, Resurrect, Scry, Transform",
+      "cites": [
+        {
+          "page": 81,
+          "path": "5111bb1ac69e462197886579e8686499/81_inflict_wound_fossilize_firestorm.md",
+          "quote": "The list on this page shows all the spells usable by Sorcerers. The two important points to remember are, firstly, that a spell's level is also the number of Magic Points needed to cast it and, secondly, a Sorcerer can cast only those spells whose level does not exceed his rank."
+        }
+      ],
+      "iterations": 3,
+      "done_called": true,
+      "elapsed": 7.6,
+      "judge": {
+        "correctness": 10,
+        "citation_use": 10,
+        "completeness": 10,
+        "answered": 1,
+        "reason": "The answer correctly lists all sorcerer spells from the cited source, with a proper citation including page and path."
+      }
+    }
+  ]
+}
