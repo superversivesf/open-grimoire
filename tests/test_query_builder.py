@@ -55,11 +55,28 @@ def test_build_or_query_prefix():
 
 
 def test_cascade_order_strictest_first():
-    cascade = build_query_cascade(["goblin", "ac"])
+    cascade = build_query_cascade(["gobli"])
     assert len(cascade) == 3
-    # 1: AND of groups; 2: OR; 3: OR with prefix
-    assert " OR " in cascade[1]
+    # 1: strict term; 2: same (no OR needed for one member); 3: prefix stage
     assert "*" in cascade[2]
+    assert "*" not in cascade[1]
+
+
+def test_cascade_skips_prefix_for_multiple_terms():
+    cascade = build_query_cascade(["goblin", "ac"])
+    assert len(cascade) == 2  # AND + OR, no prefix stage
+    assert "*" not in cascade[-1]
+
+
+def test_cascade_keeps_prefix_for_single_term():
+    cascade = build_query_cascade(["gobli"])
+    assert len(cascade) == 3
+
+
+def test_cascade_skips_prefix_for_broad_stems():
+    cascade = build_query_cascade(["feat"])
+    assert len(cascade) == 2
+    assert "*" not in cascade[-1]
 
 
 def test_cascade_empty_for_all_stop_words():

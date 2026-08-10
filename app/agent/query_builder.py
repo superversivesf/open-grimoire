@@ -130,12 +130,23 @@ def build_or_query(expanded: list[set[str]], prefix: bool = False) -> str:
     return " OR ".join(sorted(tokens))
 
 
+_PREFIX_BLACKLIST = {"feat", "init"}
+
+
+def _allow_prefix(expanded: list[set[str]]) -> bool:
+    """Prefix wildcards only for a single term whose stem is not a common
+    English prefix (feat* -> feature, init* -> initial)."""
+    if len(expanded) != 1:
+        return False
+    return not any(m in _PREFIX_BLACKLIST for m in expanded[0])
+
+
 def build_query_cascade(terms: list[str], extra_synonyms: dict[str, list[str]] | None = None) -> list[str]:
     """Return FTS5 queries from strictest to loosest.
 
     1. AND of synonym groups (stop words removed)
     2. OR of everything
-    3. OR of everything with prefix wildcards
+    3. OR of everything with prefix wildcards (single terms only)
     """
     if not terms:
         return []
@@ -150,7 +161,8 @@ def build_query_cascade(terms: list[str], extra_synonyms: dict[str, list[str]] |
     or_query = build_or_query(expanded)
     if or_query not in cascade:
         cascade.append(or_query)
-    prefix_query = build_or_query(expanded, prefix=True)
-    if prefix_query not in cascade:
-        cascade.append(prefix_query)
+    if _allow_prefix(expanded):
+        prefix_query = build_or_query(expanded, prefix=True)
+        if prefix_query not in cascade:
+            cascade.append(prefix_query)
     return cascade
