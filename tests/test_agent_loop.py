@@ -10,6 +10,17 @@ async def test_system_prompt_mentions_search_strategy():
     assert "grep" in SYSTEM_PROMPT
 
 
+def test_cites_extracted_from_read_file():
+    from app.agent.loop import _extract_cites_from_history
+    messages = [
+        {"role": "assistant", "content": 'read_file {"path": "abc/01_goblin.md"}'},
+        {"role": "tool", "name": "read_file",
+         "content": "# Goblin\n\nAC 15, HP 7. A small humanoid.\n\nmore text" * 40},
+    ]
+    cites = _extract_cites_from_history(messages)
+    assert any(c["path"] == "abc/01_goblin.md" for c in cites)
+
+
 def test_system_prompt_no_book_preference_instruction():
     assert "prefer matches from that book" not in SYSTEM_PROMPT
 

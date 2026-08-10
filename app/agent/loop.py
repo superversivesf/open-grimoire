@@ -91,8 +91,21 @@ def _extract_cites_from_history(messages: list[dict[str, Any]]) -> list[dict[str
     """Scan tool results in message history for file paths that could serve as citations."""
     cites = []
     seen_paths = set()
+    pending_read_path = None
     for msg in messages:
-        if msg.get("role") == "tool":
+        if msg.get("role") == "assistant":
+            parsed = _parse_text_tool_call(msg.get("content", ""))
+            pending_read_path = None
+            if parsed and parsed["function"]["name"] == "read_file":
+                pending_read_path = parsed["function"].get("arguments", {}).get("path")
+            for tc in msg.get("tool_calls") or []:
+                if tc.get("function", {}).get("name") == "read_file":
+                    try:
+                        args = json.loads(tc["function"]["arguments"])
+                        pending_read_path = args.get("path")
+                    except (json.JSONDecodeError, TypeError):
+                        pass
+        elif msg.get("role") == "tool":
             tool_name = msg.get("name", "")
             content = msg.get("content", "")
             # fts_search results
@@ -117,11 +130,12 @@ def _extract_cites_from_history(messages: list[dict[str, Any]]) -> list[dict[str
                             if potential_path.endswith(".md") and potential_path not in seen_paths:
                                 seen_paths.add(potential_path)
                                 cites.append({"path": potential_path, "quote": line[:200]})
-            # read_file results - extract the path from context or content
+            # read_file results - pair with the path from the preceding assistant call
             elif tool_name == "read_file":
-                # read_file tool result may contain the path in the first line or as metadata
-                # Look for patterns like "File: path/to/file.md" or just extract from context
-                pass
+                if pending_read_path and pending_read_path not in seen_paths:
+                    seen_paths.add(pending_read_path)
+                    cites.append({"path": pending_read_path, "quote": content[:200]})
+                pending_read_path = None
     return cites[:5]
 
 
