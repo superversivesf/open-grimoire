@@ -284,7 +284,7 @@ async def collection_view(request: Request, collection_id: str) -> Response:
     return _templates.TemplateResponse(
         request,
         "collection.html",
-        {"user_id": uid, "collection": col, "docs": docs, "role": role, "members": members},
+        {"user_id": uid, "collection": col, "collection_id": collection_id, "docs": docs, "role": role, "members": members},
     )
 
 
