@@ -41,6 +41,11 @@ async def test_enrich_does_not_write_frontmatter_on_final_failure(tmp_path):
     assert result["keywords"] == []
 
 
+def test_enrich_prompt_uses_optimal_keywords_constant():
+    from app.constants import ENRICH_OPTIMAL_KEYWORDS
+    assert f"5-{ENRICH_OPTIMAL_KEYWORDS}" in ENRICH_PROMPT.template
+
+
 @pytest.mark.asyncio
 async def test_enrich_leaf_writes_frontmatter(tmp_path):
     leaf = tmp_path / "goblin.md"

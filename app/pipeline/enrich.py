@@ -6,6 +6,7 @@ from string import Template
 from typing import Any, cast
 
 from app.logging_utils import get_logger
+from app.constants import ENRICH_OPTIMAL_KEYWORDS
 
 log = get_logger("enrich")
 
@@ -21,7 +22,7 @@ ENRICH_PROMPT = Template(
     "Rules:\n"
     '- "summary": 2-3 sentences covering what this section describes, including key game numbers '
     '(AC, HP, DC, damage dice, costs, levels) when present.\n'
-    '- "keywords": 5-10 lowercase keywords or short phrases (e.g. "spell slot", "saving throw"): '
+    '- "keywords": 5-' + str(ENRICH_OPTIMAL_KEYWORDS) + ' lowercase keywords or short phrases (e.g. "spell slot", "saving throw"): '
     'proper nouns, rule names, spell/monster/class names, stat abbreviations (ac, hp), and distinctive jargon.\n'
     '- Exclude common words (the, and, of, a, or) from keywords.\n'
     '- Use canonical lowercase forms.\n\n'
