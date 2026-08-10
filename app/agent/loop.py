@@ -262,6 +262,7 @@ class AgentLoop:
         state_iterations = 0
         total_iterations = 0
         nudge_given = False
+        consecutive_dedups = 0
 
         while total_iterations < self.max_iterations:
             total_iterations += 1
@@ -332,19 +333,31 @@ class AgentLoop:
                 if name == "read_file":
                     fpath = args.get("path", "")
                     if fpath in files_read:
+                        consecutive_dedups += 1
                         log.info(f"  iter {total_iterations}: DEDUP skip read_file({fpath}) — already read ({llm_time:.1f}s)")
                         messages.append({"role": "assistant", "content": content})
                         messages.append({"role": "tool", "name": name, "content": f"Already read this file. You have its content above. If you need more information, try reading a DIFFERENT file from your fts_search results, or call done with what you know."})
+                        if consecutive_dedups >= 2:
+                            log.info(f"  iter {total_iterations}: repeated dedup skips ({consecutive_dedups}), forcing SYNTHESIZING")
+                            state = AgentState.SYNTHESIZING
+                            state_iterations = 0
                         continue
+                    consecutive_dedups = 0
                     files_read.add(fpath)
 
                 if name == "fts_search":
                     q = args.get("query", "").strip().lower()
                     if q in searches_done:
+                        consecutive_dedups += 1
                         log.info(f"  iter {total_iterations}: DEDUP skip fts_search({q}) — already searched ({llm_time:.1f}s)")
                         messages.append({"role": "assistant", "content": content})
                         messages.append({"role": "tool", "name": name, "content": f"Already searched for \"{q}\". Try a different query or call done."})
+                        if consecutive_dedups >= 2:
+                            log.info(f"  iter {total_iterations}: repeated dedup skips ({consecutive_dedups}), forcing SYNTHESIZING")
+                            state = AgentState.SYNTHESIZING
+                            state_iterations = 0
                         continue
+                    consecutive_dedups = 0
                     searches_done.add(q)
 
                 # Emit thinking event

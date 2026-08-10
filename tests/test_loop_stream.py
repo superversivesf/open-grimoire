@@ -185,3 +185,30 @@ async def test_stream_no_tool_calls_short_content_yields_done():
     done = [e for e in events if e["type"] == "done"]
     assert done[0]["done_called"] is False
     assert "AC 15" in done[0]["answer"]
+
+
+@pytest.mark.asyncio
+async def test_repeated_dedup_reads_force_synthesis():
+    """A model that keeps requesting the SAME file must be forced into
+    SYNTHESIZING after 2 consecutive dedup skips — not allowed to burn the
+    whole iteration budget re-reading nothing."""
+    same_file = {"function": {"name": "read_file", "arguments": '{"path": "d1/x.md"}'}}
+    gw = _gateway([
+        {"message": {"content": "", "tool_calls": [same_file]}},  # iter 1: real read
+        {"message": {"content": "", "tool_calls": [same_file]}},  # iter 2: dedup #1
+        {"message": {"content": "", "tool_calls": [same_file]}},  # iter 3: dedup #2 -> force
+        {"message": {"content": "", "tool_calls": [
+            {"function": {"name": "done", "arguments": '{"answer": "Found it.", "cites": [{"path": "d1/x.md", "page": 1, "quote": "AC 15"}]}'}}]}},
+    ])
+    toolbox = MagicMock()
+    toolbox.execute = MagicMock(return_value="file content here")
+    loop = AgentLoop(gw, toolbox, max_iterations=10)
+
+    events = await _collect(loop, [], "What is in d1/x.md?")
+    done = [e for e in events if e["type"] == "done"]
+    assert done, "loop must terminate with a done event"
+    assert done[0]["done_called"] is True
+    assert done[0]["answer"] == "Found it."
+    # The dedup skips must not consume the full budget: 3 tool iterations
+    # + 1 done call, not 10.
+    assert done[0]["iterations"] < 6
