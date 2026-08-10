@@ -10,11 +10,17 @@ from typing import Any, cast
 # JSON brace escaping confusion with str.format().
 ENRICH_PROMPT = Template(
     "You are enriching an RPG rulebook section for search indexing. "
-    "Read the section and return ONLY valid JSON, no prose:\n"
-    '{"summary": "2-3 sentences covering what this section describes, including key game numbers '
-    '(AC, HP, DC, damage dice, costs, levels) when present.", '
-    '"keywords": ["5-10 lowercase keywords: proper nouns, rule names, spell/monster/class names, '
-    'stat abbreviations (ac, hp), and distinctive jargon"]}\n\n'
+    "Read the section and return ONLY valid JSON, no prose, no markdown fences. "
+    'Example of the exact format:\n'
+    '{"summary": "Fireball is a 3rd-level evocation spell dealing 8d6 fire damage on a failed save.", '
+    '"keywords": ["fireball", "evocation", "8d6", "saving throw", "fire damage"]}\n\n'
+    "Rules:\n"
+    '- "summary": 2-3 sentences covering what this section describes, including key game numbers '
+    '(AC, HP, DC, damage dice, costs, levels) when present.\n'
+    '- "keywords": 5-10 lowercase keywords or short phrases (e.g. "spell slot", "saving throw"): '
+    'proper nouns, rule names, spell/monster/class names, stat abbreviations (ac, hp), and distinctive jargon.\n'
+    '- Exclude common words (the, and, of, a, or) from keywords.\n'
+    '- Use canonical lowercase forms.\n\n'
     "$content"
 )
 

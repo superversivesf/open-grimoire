@@ -4,6 +4,16 @@ from unittest.mock import AsyncMock, MagicMock
 from app.pipeline.enrich import Enricher, ENRICH_PROMPT
 
 
+def test_enrich_prompt_has_few_shot_example():
+    assert '"summary"' in ENRICH_PROMPT.template
+    assert '"keywords"' in ENRICH_PROMPT.template
+    assert "fireball" in ENRICH_PROMPT.template
+
+
+def test_enrich_prompt_excludes_stop_words():
+    assert "common words" in ENRICH_PROMPT.template
+
+
 @pytest.mark.asyncio
 async def test_enrich_leaf_writes_frontmatter(tmp_path):
     leaf = tmp_path / "goblin.md"
