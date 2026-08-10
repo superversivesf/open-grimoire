@@ -1,11 +1,15 @@
 #!/bin/bash
 # Deploy script for Open Grimoire
 # Usage:
-#   ./scripts/deploy.sh prod   — build + deploy production (port 8050)
+#   ./scripts/deploy.sh prod   — run smoke tests + build + deploy production (port 8050)
 #   ./scripts/deploy.sh test   — build + deploy test/staging (port 8051)
 #   ./scripts/deploy.sh all    — build + deploy both
+#   ./scripts/deploy.sh smoke  — run live smoke tests against the test container only
 #   ./scripts/deploy.sh stop   — stop all
 #   ./scripts/deploy.sh status — check status
+#
+# Smoke tests require: TEST_SMOKE_PASS (test admin password), optional
+# TEST_SMOKE_URL/TEST_SMOKE_WRITE/TEST_SMOKE_USER overrides.
 
 set -euo pipefail
 
@@ -62,6 +66,14 @@ case "$ACTION" in
         check_host_ollama
         ensure_admin_user "prod" "${SOURCE_DIR}/db-prod" "${SOURCE_DIR}/config-prod.yaml"
         echo ""
+        echo "Running smoke tests against test container (${TEST_SMOKE_URL:-http://localhost:8051})..."
+        docker compose up -d --build test
+        LIVE_SMOKE_URL="${TEST_SMOKE_URL:-http://localhost:8051}" \
+            LIVE_SMOKE_WRITE="${TEST_SMOKE_WRITE:-0}" \
+            LIVE_SMOKE_USER="${TEST_SMOKE_USER:-admin}" \
+            LIVE_SMOKE_PASS="${TEST_SMOKE_PASS:-}" \
+            .venv/bin/python -m pytest tests/test_live_smoke.py -q -m live
+        echo ""
         echo "Building and starting prod container..."
         docker compose up -d --build prod
         echo ""
@@ -98,6 +110,16 @@ case "$ACTION" in
         echo "  Logs: docker compose logs -f"
         ;;
 
+    smoke)
+        echo "=== Running Live Smoke Tests ==="
+        docker compose up -d --build test
+        LIVE_SMOKE_URL="${TEST_SMOKE_URL:-http://localhost:8051}" \
+            LIVE_SMOKE_WRITE="${TEST_SMOKE_WRITE:-1}" \
+            LIVE_SMOKE_USER="${TEST_SMOKE_USER:-admin}" \
+            LIVE_SMOKE_PASS="${TEST_SMOKE_PASS:-}" \
+            .venv/bin/python -m pytest tests/test_live_smoke.py -q -m live
+        ;;
+
     stop)
         echo "Stopping all containers..."
         docker compose stop
@@ -129,7 +151,7 @@ case "$ACTION" in
         ;;
 
     *)
-        echo "Usage: $0 {prod|test|all|stop|down|status}"
+        echo "Usage: $0 {prod|test|all|smoke|stop|down|status}"
         exit 1
         ;;
 esac

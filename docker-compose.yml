@@ -39,6 +39,9 @@ services:
       - ALLOW_REGISTRATION=${ALLOW_REGISTRATION:-0}
       - HOST=0.0.0.0
       - PORT=8051
+      # Test/staging is served over plain HTTP locally — Secure cookies
+      # would never be sent, breaking login (CSRF double-submit).
+      - COOKIE_SECURE=0
     restart: unless-stopped
     extra_hosts:
       - "host.docker.internal:host-gateway"
