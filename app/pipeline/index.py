@@ -49,5 +49,5 @@ def index_document(conn: sqlite3.Connection, leaf_paths: list[str], data_dir: Pa
         summary = fm.get("summary", "")
         keywords = fm.get("keywords", "")
         if isinstance(keywords, list):
-            keywords = ", ".join(keywords)
+            keywords = ", ".join(str(k) for k in keywords)
         insert_fts_row(conn, rel, title, str(summary), str(keywords), _clean_content(body))

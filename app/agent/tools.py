@@ -112,9 +112,9 @@ class ToolBox:
             scope = "(" + " OR ".join(f"path LIKE ?" for _ in doc_ids) + ")"
             for stage, fts_query in enumerate(cascade):
                 sql = (
-                    f"SELECT path, title, summary, "
+                    f"SELECT path, title, summary, keywords, "
                     f"snippet(documents_fts, 4, '<mark>', '</mark>', '...', 15) as snippet, "
-                    f"bm25(documents_fts, 0, 5, 8, 8, 1) as rank "
+                    f"bm25(documents_fts, 0, 5, 4, 4, 3) as rank "
                     f"FROM documents_fts WHERE documents_fts MATCH ? AND {scope} "
                     f"ORDER BY rank LIMIT 5"
                 )

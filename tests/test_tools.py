@@ -172,6 +172,11 @@ def test_fts_search_empty_returns_hint_item(toolbox):
     assert "hint" in results[0]
 
 
+def test_fts_search_results_expose_keywords(toolbox):
+    results = toolbox.fts_search("goblin")
+    assert "keywords" in results[0]
+
+
 def test_execute_dispatch(toolbox):
     result = toolbox.execute("fts_search", {"query": "goblin"})
     import json
