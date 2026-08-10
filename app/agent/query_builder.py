@@ -24,13 +24,32 @@ SYNONYM_GROUPS = {
 }
 
 _TERM_RE = re.compile(r"[^a-z0-9]+")
+_ATOMIC_RE = re.compile(r"\d+\.\d+e\b|\d+\.\d+|\d+[dD]\d+|[1-9]e\b", re.IGNORECASE)
 
 
 def tokenize_terms(query: str) -> list[str]:
-    """Split a raw query into clean lowercase terms, dropping stop words."""
+    """Split a raw query into clean lowercase terms, dropping stop words.
+
+    Edition/dice tokens (3.5, 1d20, 5e) are protected from splitting and kept
+    atomic; single-digit tokens are dropped (page-number/CR noise).
+    """
     lowered = query.lower()
-    words = [w for w in _TERM_RE.split(lowered) if w]
-    return [w for w in words if w not in STOP_WORDS]
+    atoms: dict[str, str] = {}
+
+    def protect(m: re.Match[str]) -> str:
+        key = f"zzat{len(atoms)}zz"
+        atoms[key] = m.group(0)
+        return key
+
+    protected = _ATOMIC_RE.sub(protect, lowered)
+    words = [w for w in _TERM_RE.split(protected) if w]
+    out = []
+    for w in words:
+        if w in atoms:
+            out.append(atoms[w])
+        elif not (w.isdigit() and len(w) == 1):
+            out.append(w)
+    return [w for w in out if w not in STOP_WORDS]
 
 
 def _group_lookup() -> dict[str, set[str]]:
@@ -74,8 +93,10 @@ def expand_terms(terms: list[str], extra_synonyms: dict[str, list[str]] | None =
 
 
 def _quote(token: str) -> str | None:
-    clean = _TERM_RE.sub(" ", token.lower()).strip()
-    return f'"{clean}"' if clean else None
+    clean = re.sub(r"\s+", " ", token.lower().strip())
+    if not clean or re.search(r'["\x00]', clean):
+        return None
+    return f'"{clean}"'
 
 
 def build_and_query(expanded: list[set[str]]) -> str:

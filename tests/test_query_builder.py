@@ -67,6 +67,36 @@ def test_cascade_empty_for_all_stop_words():
     assert build_query_cascade(["how", "does", "the"]) == []
 
 
+def test_tokenize_protects_edition_numbers():
+    assert tokenize_terms("What is a 3.5 fighter?") == ["3.5", "fighter"]
+
+
+def test_tokenize_protects_dice_notation():
+    assert tokenize_terms("roll 1d20+5") == ["roll", "1d20"]
+
+
+def test_tokenize_drops_single_digit_tokens():
+    assert tokenize_terms("level 5") == ["level"]
+
+
+def test_tokenize_keeps_edition_suffix():
+    assert tokenize_terms("5e rules") == ["5e", "rules"]
+
+
+def test_tokenize_handles_3_5e_edition():
+    assert tokenize_terms("3.5e fighter") == ["3.5e", "fighter"]
+
+
+def test_tokenize_does_not_protect_fake_editions():
+    assert tokenize_terms("2e10 damage") == ["2e10", "damage"]
+
+
+def test_quote_preserves_dots_in_atomic_tokens():
+    expanded = expand_terms(["3.5"])
+    q = build_or_query(expanded)
+    assert '"3.5"' in q
+
+
 def test_expand_ngram_two_token_synonym():
     assert expand_terms(["saving", "throw"]) == [
         {"st", "save", "saves", "saving throw", "saving throws"}
