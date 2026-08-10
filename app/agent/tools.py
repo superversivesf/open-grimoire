@@ -125,6 +125,7 @@ class ToolBox:
                     results = []
                     for r in rows:
                         item = dict(r)
+                        item["summary"] = (item.get("summary") or "")[:300]
                         item["match_mode"] = match_mode
                         item["page"] = self._page_for(item["path"])
                         results.append(item)

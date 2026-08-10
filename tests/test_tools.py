@@ -177,6 +177,14 @@ def test_fts_search_results_expose_keywords(toolbox):
     assert "keywords" in results[0]
 
 
+def test_fts_search_summary_truncated(toolbox):
+    uconn = init_user_db(toolbox.db_dir, "alice")
+    insert_fts_row(uconn, "d1/01_chapter/03_long.md", "Long", "S" * 5000, "long", "long content here")
+    uconn.close()
+    results = toolbox.fts_search("long")
+    assert len(results[0]["summary"]) <= 320
+
+
 def test_execute_dispatch(toolbox):
     result = toolbox.execute("fts_search", {"query": "goblin"})
     import json
