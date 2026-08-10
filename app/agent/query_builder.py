@@ -13,14 +13,21 @@ STOP_WORDS = {
 SYNONYM_GROUPS = {
     "ac": {"ac", "armor class", "armour class"},
     "hp": {"hp", "hit points", "hit point"},
-    "st": {"st", "save", "saves", "saving throw", "saving throws"},
+    "st": {"st", "save", "saves", "saving", "saving throw", "saving throws"},
     "dc": {"dc", "difficulty class", "difficulty classes"},
     "xp": {"xp", "experience points", "experience point"},
     "init": {"init", "initiative"},
     "tohit": {"tohit", "to hit", "attack roll", "attack rolls", "attack bonus"},
-    "proficiency": {"proficiency", "proficiencies", "proficient"},
-    "spell": {"spell", "spellcasting"},
+    "proficiency": {"proficiency", "proficiencies", "proficient", "prof", "proficiency bonus"},
+    "spell": {"spell", "spellcasting", "slot", "slots", "cantrip", "spell slot", "spell slots"},
     "feat": {"feat", "feats"},
+    "advantage": {"advantage", "adv", "disadvantage"},
+    "concentration": {"concentration", "concentrating"},
+    "ability": {"str", "dex",
+                "strength", "dexterity", "constitution", "intelligence",
+                "wisdom", "charisma"},
+    "dmg": {"dmg", "damage", "damages"},
+    "crit": {"crit", "critical", "critical hit", "critical hits"},
 }
 
 _TERM_RE = re.compile(r"[^a-z0-9]+")

@@ -37,9 +37,8 @@ def test_expand_terms_synonym_group():
 
 
 def test_expand_terms_merges_extra_synonyms():
-    assert expand_terms(["spell"], {"spell": ["spellcasting", "sorcery"]}) == [
-        {"spell", "spellcasting", "sorcery"}
-    ]
+    expanded = expand_terms(["spell"], {"spell": ["spellcasting", "sorcery"]})
+    assert expanded[0] == {"spell", "spellcasting", "slot", "slots", "cantrip", "spell slot", "spell slots", "sorcery"}
 
 
 def test_build_and_query_groups():
@@ -97,9 +96,40 @@ def test_quote_preserves_dots_in_atomic_tokens():
     assert '"3.5"' in q
 
 
+def test_synonym_group_advantage():
+    assert expand_terms(["advantage"]) == [{"advantage", "adv", "disadvantage"}]
+
+
+def test_synonym_group_ability_scores():
+    expanded = expand_terms(["str"])
+    assert "strength" in expanded[0]
+    # short forms with common-English collisions stay plain tokens
+    assert expand_terms(["con"]) == [{"con"}]
+    assert expand_terms(["int"]) == [{"int"}]
+    assert expand_terms(["wis"]) == [{"wis"}]
+
+
+def test_synonym_group_dmg():
+    assert expand_terms(["dmg"]) == [{"dmg", "damage", "damages"}]
+
+
+def test_synonym_group_spell_slot():
+    expanded = expand_terms(["spell", "slot"])
+    assert len(expanded) == 1  # n-gram collapses into the spell group
+    assert "cantrip" in expanded[0]
+
+
+def test_stop_words_keep_will():
+    assert tokenize_terms("will save") == ["save"]
+
+
+def test_synonym_group_saving_singular():
+    assert "saving" in expand_terms(["saving"])[0]
+
+
 def test_expand_ngram_two_token_synonym():
     assert expand_terms(["saving", "throw"]) == [
-        {"st", "save", "saves", "saving throw", "saving throws"}
+        {"st", "save", "saves", "saving", "saving throw", "saving throws"}
     ]
 
 
@@ -116,7 +146,7 @@ def test_expand_ngram_mixed_single_and_pair():
     expanded = expand_terms(["goblin", "saving", "throw"])
     assert expanded == [
         {"goblin"},
-        {"st", "save", "saves", "saving throw", "saving throws"},
+        {"st", "save", "saves", "saving", "saving throw", "saving throws"},
     ]
 
 
