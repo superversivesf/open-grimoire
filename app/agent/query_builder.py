@@ -33,25 +33,43 @@ def tokenize_terms(query: str) -> list[str]:
     return [w for w in words if w not in STOP_WORDS]
 
 
-def _group_for(term: str) -> set[str] | None:
+def _group_lookup() -> dict[str, set[str]]:
+    """Normalized member string -> group. Multi-word members keyed with single spaces."""
+    lookup: dict[str, set[str]] = {}
     for group in SYNONYM_GROUPS.values():
-        if term in group:
-            return group
-    return None
+        for member in group:
+            key = " ".join(member.lower().split())
+            lookup.setdefault(key, set(group))
+    return lookup
+
+
+_GROUP_LOOKUP = _group_lookup()
 
 
 def expand_terms(terms: list[str], extra_synonyms: dict[str, list[str]] | None = None) -> list[set[str]]:
-    """Expand each term into an OR-set of synonym tokens.
+    """Expand each term (or adjacent term pair forming a known synonym phrase)
+    into an OR-set of synonym tokens.
 
     extra_synonyms maps a term to additional per-collection keyword matches.
     """
-    expanded = []
-    for term in terms:
-        group = _group_for(term)
-        members = set(group) if group else {term}
+    expanded: list[set[str]] = []
+    i = 0
+    while i < len(terms):
+        term = terms[i]
+        group = None
+        ngram_consumed = False
+        if i + 1 < len(terms) and " " not in term and " " not in terms[i + 1]:
+            pair = f"{term} {terms[i + 1]}"
+            if pair in _GROUP_LOOKUP:
+                group = set(_GROUP_LOOKUP[pair])
+                ngram_consumed = True
+        if group is None:
+            key = " ".join(term.lower().split())
+            group = set(_GROUP_LOOKUP[key]) if key in _GROUP_LOOKUP else {term}
         for extra in (extra_synonyms or {}).get(term, []):
-            members.add(extra)
-        expanded.append(members)
+            group.add(extra)
+        expanded.append(group)
+        i += 2 if ngram_consumed else 1
     return expanded
 
 

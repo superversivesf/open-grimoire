@@ -67,6 +67,29 @@ def test_cascade_empty_for_all_stop_words():
     assert build_query_cascade(["how", "does", "the"]) == []
 
 
+def test_expand_ngram_two_token_synonym():
+    assert expand_terms(["saving", "throw"]) == [
+        {"st", "save", "saves", "saving throw", "saving throws"}
+    ]
+
+
+def test_expand_ngram_collapses_to_single_group():
+    assert len(expand_terms(["armor", "class"])) == 1
+    assert expand_terms(["hit", "points"]) == [{"hp", "hit point", "hit points"}]
+
+
+def test_expand_ngram_keeps_unmatched_adjacent_terms():
+    assert expand_terms(["goblin", "knight"]) == [{"goblin"}, {"knight"}]
+
+
+def test_expand_ngram_mixed_single_and_pair():
+    expanded = expand_terms(["goblin", "saving", "throw"])
+    assert expanded == [
+        {"goblin"},
+        {"st", "save", "saves", "saving throw", "saving throws"},
+    ]
+
+
 def test_cascade_outputs_execute_against_real_fts5():
     import sqlite3
     conn = sqlite3.connect(":memory:")
