@@ -28,6 +28,7 @@ dependencies = [
 dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.23",
+    "pytest-playwright>=0.4",
     "fpdf2>=2.7",
     "mypy>=1.10",
 ]
@@ -38,6 +39,7 @@ testpaths = ["tests"]
 markers = [
     "e2e: requires real Ollama instance running on localhost:11434",
     "live: requires a deployed instance (LIVE_SMOKE_URL); run against test container or prod read-only",
+    "browser: requires Playwright + live instance (BROWSER_SMOKE_URL); browser-based E2E",
 ]
 
 [tool.setuptools.packages.find]

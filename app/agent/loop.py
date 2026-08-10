@@ -254,6 +254,7 @@ class AgentLoop:
 
         last_content = ""
         files_read: set[str] = set()
+        file_cache: dict[str, str] = {}
         searches_done: set[str] = set()
         total_input_tokens = 0
         total_output_tokens = 0
@@ -343,9 +344,17 @@ class AgentLoop:
                     fpath = args.get("path", "")
                     if fpath in files_read:
                         consecutive_dedups += 1
-                        log.info(f"  iter {total_iterations}: DEDUP skip read_file({fpath}) — already read ({llm_time:.1f}s)")
-                        messages.append({"role": "assistant", "content": content})
-                        messages.append({"role": "tool", "name": name, "content": f"Already read this file. You have its content above. If you need more information, try reading a DIFFERENT file from your fts_search results, or call done with what you know."})
+                        # Replay the cached content so the model can't claim it
+                        # lacks the file — it already has this in context.
+                        cached = file_cache.get(fpath, "")
+                        if cached:
+                            log.info(f"  iter {total_iterations}: REPLAY read_file({fpath}) from cache ({len(cached)} chars)")
+                            messages.append({"role": "assistant", "content": content})
+                            messages.append({"role": "tool", "name": name, "content": cached})
+                        else:
+                            log.info(f"  iter {total_iterations}: DEDUP skip read_file({fpath}) — already read ({llm_time:.1f}s)")
+                            messages.append({"role": "assistant", "content": content})
+                            messages.append({"role": "tool", "name": name, "content": f"Already read this file. You have its content above. If you need more information, try reading a DIFFERENT file from your fts_search results, or call done with what you know."})
                         if consecutive_dedups >= 2:
                             log.info(f"  iter {total_iterations}: repeated dedup skips ({consecutive_dedups}), forcing SYNTHESIZING")
                             state = AgentState.SYNTHESIZING
@@ -388,6 +397,8 @@ class AgentLoop:
                     log.error(f"QUERY ERROR (tool {name}): {e}", exc_info=True)
                     yield {"type": "error", "message": str(e)}
                     return
+                if name == "read_file":
+                    file_cache[args.get("path", "")] = result
                 result_preview = result[:120].replace("\n", " ")
                 log.info(f"  iter {total_iterations}: {name}({json.dumps(args)[:100]}) -> {result_preview}... ({llm_time:.1f}s)")
                 messages.append({"role": "assistant", "content": content})

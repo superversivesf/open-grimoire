@@ -212,3 +212,37 @@ async def test_repeated_dedup_reads_force_synthesis():
     # The dedup skips must not consume the full budget: 3 tool iterations
     # + 1 done call, not 10.
     assert done[0]["iterations"] < 6
+
+
+@pytest.mark.asyncio
+async def test_repeated_read_replays_cached_content():
+    """A repeat read_file must return the cached content (not a generic
+    'already read' message) so the model can't claim the content is missing."""
+    same_file = {"function": {"name": "read_file", "arguments": '{"path": "d1/x.md"}'}}
+    seen_messages = []
+
+    async def call(role, prompt, tools=None, messages=None):
+        seen_messages.append(list(messages or []))
+        if len(seen_messages) == 1:
+            return {"message": {"content": "", "tool_calls": [same_file]}}
+        if len(seen_messages) == 2:
+            return {"message": {"content": "", "tool_calls": [same_file]}}
+        return {"message": {"content": "", "tool_calls": [
+            {"function": {"name": "done", "arguments": '{"answer": "AC 15 from the file."}'}}]}}
+
+    gw = MagicMock()
+    gw.call = call
+    toolbox = MagicMock()
+    toolbox.execute = MagicMock(return_value="AC 15, HP 7. Goblin stats.")
+    loop = AgentLoop(gw, toolbox, max_iterations=5)
+
+    events = await _collect(loop, [], "What is in d1/x.md?")
+    done = [e for e in events if e["type"] == "done"]
+    assert done[0]["done_called"] is True
+    assert done[0]["answer"] == "AC 15 from the file."
+    # The second gateway call's messages must contain the replayed content,
+    # not the generic dedup message.
+    assert len(seen_messages) >= 2
+    tool_contents = [m.get("content", "") for m in seen_messages[1] if m.get("role") == "tool"]
+    assert any("AC 15, HP 7" in c for c in tool_contents), \
+        "repeat read must replay cached content, not a generic dedup message"
