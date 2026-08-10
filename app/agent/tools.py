@@ -166,7 +166,7 @@ class ToolBox:
         short_terms = [t for t in terms if len(t) >= 4]
         if not short_terms:
             return {}
-        cache_key = self.collection_id
+        cache_key = (self.collection_id, len(doc_ids))
         now = time.monotonic()
         cached = _KEYWORD_CACHE.get(cache_key)
         if cached and now - cached[0] < _KEYWORD_CACHE_TTL:
@@ -186,7 +186,7 @@ class ToolBox:
             _KEYWORD_CACHE[cache_key] = (now, all_keywords)
         extra = {}
         for t in short_terms:
-            hits = {kw for kw in all_keywords if t in kw or kw in t}
+            hits = {kw for kw in all_keywords if t in kw}
             if hits:
                 extra[t] = sorted(hits)
         return extra

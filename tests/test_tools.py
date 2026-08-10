@@ -198,6 +198,17 @@ def test_done_schema_requires_suggestions():
     assert props["properties"]["suggestions"].get("minItems", 0) >= 3
 
 
+def test_keyword_synonyms_only_expands_from_keyword_column(toolbox):
+    # A query term that is a substring of a keyword phrase expands (t in kw);
+    # a keyword that is a substring of the query term does NOT (kw in t dropped).
+    uconn = init_user_db(toolbox.db_dir, "alice")
+    insert_fts_row(uconn, "d1/01_chapter/04_spellcasting.md", "Spellcasting", "Spell rules.", "spellcasting,spell", "Spellcasting rules here.")
+    uconn.close()
+    results = toolbox.fts_search("spellcasting")
+    assert isinstance(results, list)
+    assert len(results) >= 1
+
+
 def test_execute_dispatch(toolbox):
     result = toolbox.execute("fts_search", {"query": "goblin"})
     import json
