@@ -117,7 +117,10 @@ def test_fts_search_handles_injection_doc_id(toolbox_with_injection_doc_id):
 def test_fts_search_injection_does_not_leak_other_collection(toolbox_with_injection_doc_id):
     results = toolbox_with_injection_doc_id.fts_search("leak")
     # "leak" lives only in the OTHER collection; the scoped LIKE must exclude it.
-    assert results == []
+    # Empty results return a hint item (match_mode "none") with no path.
+    assert len(results) == 1
+    assert results[0]["match_mode"] == "none"
+    assert "path" not in results[0]
 
 
 # ─── 1.5 + token forgery: session signing ─────────────────────────
