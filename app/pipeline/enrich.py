@@ -5,6 +5,10 @@ from pathlib import Path
 from string import Template
 from typing import Any, cast
 
+from app.logging_utils import get_logger
+
+log = get_logger("enrich")
+
 
 # Template for enrichment prompt. Uses $content placeholder to avoid
 # JSON brace escaping confusion with str.format().
@@ -31,11 +35,20 @@ class Enricher:
 
     async def enrich_leaf(self, path: Path, page: int | None = None) -> dict[str, Any]:
         content = path.read_text()
-        prompt = ENRICH_PROMPT.substitute(content=content)
-        resp = await self.gateway.call("enrich", prompt)
-        raw = resp.get("message", {}).get("content", "")
-        result = self._parse_json(raw)
-        self._write_frontmatter(path, content, result, page)
+        result: dict[str, Any] = {}
+        for attempt in range(2):
+            prompt = ENRICH_PROMPT.substitute(content=content)
+            if attempt == 1:
+                prompt += "\n\nIMPORTANT: Your previous response could not be parsed. Return ONLY the JSON object with a summary and at least 5 keywords."
+            resp = await self.gateway.call("enrich", prompt)
+            raw = resp.get("message", {}).get("content", "")
+            result = self._parse_json(raw)
+            if result.get("keywords"):
+                break
+        if result.get("keywords"):
+            self._write_frontmatter(path, content, result, page)
+        else:
+            log.warning(f"enrich FAILED for {path.name}: unparsable response, no frontmatter written")
         return result
 
     @staticmethod

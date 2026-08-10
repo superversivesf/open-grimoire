@@ -15,6 +15,33 @@ def test_enrich_prompt_excludes_stop_words():
 
 
 @pytest.mark.asyncio
+async def test_enrich_retries_once_on_empty_keywords(tmp_path):
+    leaf = tmp_path / "goblin.md"
+    leaf.write_text("# Goblin\n\nAC 15.\n")
+    gw = MagicMock()
+    gw.call = AsyncMock(side_effect=[
+        {"message": {"content": "not json at all"}},
+        {"message": {"content": '{"summary": "Goblin stats.", "keywords": ["goblin", "monster", "ac"]}'}},
+    ])
+    e = Enricher(gw)
+    result = await e.enrich_leaf(leaf)
+    assert gw.call.await_count == 2
+    assert result["keywords"]
+
+
+@pytest.mark.asyncio
+async def test_enrich_does_not_write_frontmatter_on_final_failure(tmp_path):
+    leaf = tmp_path / "goblin.md"
+    leaf.write_text("# Goblin\n\nAC 15.\n")
+    gw = MagicMock()
+    gw.call = AsyncMock(return_value={"message": {"content": "garbage"}})
+    e = Enricher(gw)
+    result = await e.enrich_leaf(leaf)
+    assert not leaf.read_text().startswith("---")
+    assert result["keywords"] == []
+
+
+@pytest.mark.asyncio
 async def test_enrich_leaf_writes_frontmatter(tmp_path):
     leaf = tmp_path / "goblin.md"
     leaf.write_text("# Goblin\n\nAC 15, HP 7, small humanoid.\n")

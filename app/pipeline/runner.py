@@ -165,13 +165,16 @@ class PipelineRunner:
                         continue
                     ok, r = result
                     if ok:
-                        enriched += 1
-                        add_enrich_completed_path(uconn, doc_id, rel_path)
                         summary = r.get("summary", "")
                         if not isinstance(summary, str):
                             summary = str(summary)
                         summary = summary[:ENRICH_SUMMARY_MAX_CHARS]
                         keywords = r.get("keywords", [])
+                        if not keywords:
+                            log.warning(f"JOB {job_id[:8]} ENRICH {enriched + i + 1}/{len(leaf_paths)} SKIPPED (no keywords): {full_paths[i].name}")
+                            continue
+                        enriched += 1
+                        add_enrich_completed_path(uconn, doc_id, rel_path)
                         log.debug(f"JOB {job_id[:8]} ENRICH {enriched}/{len(leaf_paths)}: {full_paths[i].name} -> summary=\"{summary}\" keywords={keywords}")
                     update_enrich_progress(uconn, doc_id, enriched, len(leaf_paths))
                 log.info(f"JOB {job_id[:8]} STAGE 4 DONE: {enriched}/{len(leaf_paths)} sections enriched, {time.time()-t0:.1f}s")
