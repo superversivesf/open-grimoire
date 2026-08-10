@@ -185,6 +185,12 @@ def test_fts_search_summary_truncated(toolbox):
     assert len(results[0]["summary"]) <= 320
 
 
+def test_read_file_blocks_index_md(toolbox):
+    result = toolbox.read_file(str(toolbox.data_dir / "alice" / "d1" / "index.md"))
+    assert "index.md" in result
+    assert "list_index" in result
+
+
 def test_execute_dispatch(toolbox):
     result = toolbox.execute("fts_search", {"query": "goblin"})
     import json

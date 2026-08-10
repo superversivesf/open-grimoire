@@ -192,6 +192,8 @@ class ToolBox:
         return extra
 
     def read_file(self, path: str, lines: str | None = None) -> str:
+        if str(path).endswith("index.md"):
+            return "index.md files are navigation only and cannot be read. Use list_index to navigate the book structure."
         return safe_read_file(self.data_dir, self.owner_uid, path, lines)
 
     def list_index(self, path: str) -> list[dict[str, Any]]:
