@@ -39,7 +39,7 @@ TOOL_DEFINITIONS: list[dict[str, Any]] = [
         "type": "function",
         "function": {
             "name": "fts_search",
-            "description": "Full-text search across all documents in the current collection. Returns ranked matches with path, title, summary, page, and a snippet. Start with ONE distinctive keyword (e.g. 'goblin', 'sorcerer'). Multi-word queries are AND-combined; abbreviations (AC, HP, DC) and stop words are handled automatically. If this returns nothing, try a different single keyword or use grep.",
+            "description": "Full-text search across all documents in the current collection. Returns ranked matches with path, title, summary, page, match_mode, and a snippet. Start with ONE distinctive keyword (e.g. 'goblin', 'sorcerer'). Multi-word queries are AND-combined; common RPG abbreviations (AC, HP, DC, ST, XP, dmg, crit) and stop words are handled automatically. match_mode 'and' means tight matches; 'or'/'prefix' means loose fallback matches. If this returns nothing, try a different single keyword or use grep.",
             "parameters": {
                 "type": "object",
                 "properties": {

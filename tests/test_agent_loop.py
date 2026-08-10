@@ -10,6 +10,22 @@ async def test_system_prompt_mentions_search_strategy():
     assert "grep" in SYSTEM_PROMPT
 
 
+def test_system_prompt_no_book_preference_instruction():
+    assert "prefer matches from that book" not in SYSTEM_PROMPT
+
+
+def test_system_prompt_no_duplicated_mechanics():
+    assert "AND-combined" not in SYSTEM_PROMPT
+
+
+def test_system_prompt_too_broad_guidance():
+    assert "more specific" in SYSTEM_PROMPT
+
+
+def test_system_prompt_mentions_match_mode():
+    assert "match_mode" in SYSTEM_PROMPT
+
+
 @pytest.mark.asyncio
 async def test_loop_calls_done_immediately():
     gw = MagicMock()
