@@ -10,7 +10,7 @@ from app.storage.shared_db import (
 from app.storage.user_db import init_user_db, create_collection
 from app.auth.passwords import hash_password
 from app.main import create_app
-from tests.conftest import csrf_for
+from tests.conftest import csrf_for, login
 
 
 def test_resolve_private_collection(tmp_dirs):
@@ -69,18 +69,11 @@ def app_with_collection(tmp_dirs, test_config):
     return app, alice, bob, cid
 
 
-async def _login(client, username, password):
-    await client.get("/login")
-    token = client.cookies.get("login_csrf")
-    r = await client.post("/login", data={"username": username, "password": password, "_csrf": token})
-    assert r.status_code in (200, 303)
-
-
 @pytest.mark.asyncio
 async def test_owner_shares_collection(app_with_collection):
     app, alice, bob, cid = app_with_collection
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-        await _login(client, "alice", "pw123456")
+        await login(client, "alice", password="pw123456")
         r = await client.post(
             f"/collections/{cid}/share",
             data={"username": "bob", "role": "member", "_csrf": csrf_for(client)},
@@ -95,7 +88,7 @@ async def test_owner_shares_collection(app_with_collection):
 async def test_non_owner_cannot_share(app_with_collection):
     app, alice, bob, cid = app_with_collection
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-        await _login(client, "bob", "pw123456")
+        await login(client, "bob", password="pw123456")
         r = await client.post(
             f"/collections/{cid}/share",
             data={"username": "alice", "role": "member", "_csrf": csrf_for(client)},
@@ -113,7 +106,7 @@ async def test_owner_unshares_member(app_with_collection):
     add_collection_member(conn, cid, bob, "member")
     conn.close()
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-        await _login(client, "alice", "pw123456")
+        await login(client, "alice", password="pw123456")
         r = await client.post(
             f"/collections/{cid}/unshare",
             data={"username": "bob", "_csrf": csrf_for(client)},

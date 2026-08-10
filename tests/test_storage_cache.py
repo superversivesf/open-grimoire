@@ -1,5 +1,6 @@
 """Tests for _user_storage_used caching — no rglob on the hot path."""
 
+import asyncio
 import time
 import pytest
 from pathlib import Path
@@ -21,35 +22,39 @@ def _make_tree(data_dir: Path, uid: str, files: dict[str, int]):
         p.write_bytes(b"x" * size)
 
 
-def test_storage_used_counts_files(tmp_dirs):
+@pytest.mark.asyncio
+async def test_storage_used_counts_files(tmp_dirs):
     _make_tree(tmp_dirs["data"], "alice", {"a.pdf": 100, "d1/leaf.md": 50})
-    assert _user_storage_used(tmp_dirs["data"], "alice") == 150
+    assert await _user_storage_used(tmp_dirs["data"], "alice") == 150
 
 
-def test_storage_used_zero_for_missing_user(tmp_dirs):
-    assert _user_storage_used(tmp_dirs["data"], "nobody") == 0
+@pytest.mark.asyncio
+async def test_storage_used_zero_for_missing_user(tmp_dirs):
+    assert await _user_storage_used(tmp_dirs["data"], "nobody") == 0
 
 
-def test_storage_used_cached_within_ttl(tmp_dirs):
+@pytest.mark.asyncio
+async def test_storage_used_cached_within_ttl(tmp_dirs):
     _make_tree(tmp_dirs["data"], "alice", {"a.pdf": 100})
-    first = _user_storage_used(tmp_dirs["data"], "alice")
-    # Add a file without invalidating — cache must still return the old value
+    first = await _user_storage_used(tmp_dirs["data"], "alice")
     (tmp_dirs["data"] / "alice" / "b.pdf").write_bytes(b"x" * 200)
-    second = _user_storage_used(tmp_dirs["data"], "alice")
+    second = await _user_storage_used(tmp_dirs["data"], "alice")
     assert first == second == 100
 
 
-def test_invalidate_storage_forces_recompute(tmp_dirs):
+@pytest.mark.asyncio
+async def test_invalidate_storage_forces_recompute(tmp_dirs):
     _make_tree(tmp_dirs["data"], "alice", {"a.pdf": 100})
-    _user_storage_used(tmp_dirs["data"], "alice")
+    await _user_storage_used(tmp_dirs["data"], "alice")
     (tmp_dirs["data"] / "alice" / "b.pdf").write_bytes(b"x" * 200)
     _invalidate_storage("alice")
-    assert _user_storage_used(tmp_dirs["data"], "alice") == 300
+    assert await _user_storage_used(tmp_dirs["data"], "alice") == 300
 
 
-def test_cache_expires_after_ttl(tmp_dirs, monkeypatch):
+@pytest.mark.asyncio
+async def test_cache_expires_after_ttl(tmp_dirs, monkeypatch):
     _make_tree(tmp_dirs["data"], "alice", {"a.pdf": 100})
-    _user_storage_used(tmp_dirs["data"], "alice")
+    await _user_storage_used(tmp_dirs["data"], "alice")
     (tmp_dirs["data"] / "alice" / "b.pdf").write_bytes(b"x" * 200)
     monkeypatch.setattr("app.web.routes._STORAGE_TTL", -1)
-    assert _user_storage_used(tmp_dirs["data"], "alice") == 300
+    assert await _user_storage_used(tmp_dirs["data"], "alice") == 300

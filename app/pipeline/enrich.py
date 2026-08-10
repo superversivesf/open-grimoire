@@ -37,12 +37,34 @@ class Enricher:
         try:
             return cast(dict[str, Any], json.loads(raw))
         except json.JSONDecodeError:
-            match = re.search(r"\{.*\}", raw, re.DOTALL)
-            if match:
-                try:
-                    return cast(dict[str, Any], json.loads(match.group(0)))
-                except json.JSONDecodeError:
-                    pass
+            pass
+        start = raw.find("{")
+        if start == -1:
+            return {"summary": "", "keywords": []}
+        depth = 0
+        in_string = False
+        escape = False
+        for i, ch in enumerate(raw[start:], start=start):
+            if escape:
+                escape = False
+                continue
+            if ch == "\\":
+                escape = True
+                continue
+            if ch == '"':
+                in_string = not in_string
+                continue
+            if in_string:
+                continue
+            if ch == "{":
+                depth += 1
+            elif ch == "}":
+                depth -= 1
+                if depth == 0:
+                    try:
+                        return cast(dict[str, Any], json.loads(raw[start:i + 1]))
+                    except json.JSONDecodeError:
+                        break
         return {"summary": "", "keywords": []}
 
     @staticmethod
@@ -56,4 +78,6 @@ class Enricher:
         if page is not None:
             fm["page"] = page
         block = yaml.safe_dump(fm, sort_keys=False, allow_unicode=True).strip()
-        path.write_text(f"---\n{block}\n---\n\n{content}")
+        tmp = path.with_suffix(".tmp")
+        tmp.write_text(f"---\n{block}\n---\n\n{content}")
+        tmp.replace(path)

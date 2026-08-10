@@ -6,7 +6,7 @@ def test_detect_numbered_chapters():
         {"page": 1, "text": "Chapter 1: Combat\nThe rules of combat."},
         {"page": 2, "text": "Chapter 2: Magic\nSpells and magic items."},
     ]
-    s = Structurer(gateway=None)
+    s = Structurer()
     tree = s.detect(blocks)
     assert len(tree) == 2
     assert tree[0]["title"] == "Chapter 1: Combat"
@@ -21,7 +21,7 @@ def test_detect_all_caps_headings():
         {"page": 1, "text": "COMBAT\nGoblins have AC 15."},
         {"page": 2, "text": "MAGIC\nFireball does 8d6."},
     ]
-    s = Structurer(gateway=None)
+    s = Structurer()
     tree = s.detect(blocks)
     assert len(tree) == 2
     assert tree[0]["title"] == "COMBAT"
@@ -32,7 +32,7 @@ def test_detect_subsections_numbered():
     blocks = [
         {"page": 1, "text": "Chapter 1: Combat\n1.1 Initiative\nRoll for initiative.\n1.2 Attacks\nAttack rolls."},
     ]
-    s = Structurer(gateway=None)
+    s = Structurer()
     tree = s.detect(blocks)
     assert len(tree) == 1
     assert tree[0]["title"] == "Chapter 1: Combat"
@@ -46,7 +46,7 @@ def test_no_structure_fallback_single_chapter():
         {"page": 1, "text": "Just a bunch of text with no headings."},
         {"page": 2, "text": "More text here."},
     ]
-    s = Structurer(gateway=None)
+    s = Structurer()
     tree = s.detect(blocks)
     assert len(tree) == 1
     assert tree[0]["level"] == 1
@@ -62,7 +62,7 @@ def test_heading_page_not_duplicated_across_chapters():
         {"page": 2, "text": "Chapter 2: Magic\nSpells and magic items."},
         {"page": 3, "text": "Chapter 3: Monsters\nBestiary entries."},
     ]
-    s = Structurer(gateway=None)
+    s = Structurer()
     tree = s.detect(blocks)
     assert len(tree) == 3
     # Chapter 1 must not contain Chapter 2's heading or text
@@ -82,7 +82,7 @@ def test_heading_line_itself_not_in_chapter_text():
     blocks = [
         {"page": 1, "text": "Chapter 1: Combat\nThe rules of combat."},
     ]
-    s = Structurer(gateway=None)
+    s = Structurer()
     tree = s.detect(blocks)
     assert tree[0]["title"] == "Chapter 1: Combat"
     assert "Chapter 1: Combat" not in tree[0]["text"]

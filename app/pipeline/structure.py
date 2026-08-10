@@ -10,14 +10,31 @@ class Structurer:
         re.compile(r"^([A-Z][A-Z\s]{4,})$"),
     ]
 
-    def __init__(self, gateway: Any = None):
-        self.gateway = gateway
+    def __init__(self) -> None:
+        pass
 
     def detect(self, blocks: list[dict[str, Any]]) -> list[dict[str, Any]]:
         flat = self._scan_headings(blocks)
         if not flat:
             return [self._fallback_chapter(blocks)]
         return self._build_tree(flat, blocks)
+
+    @staticmethod
+    def counts(tree: list[dict[str, Any]]) -> tuple[int, int]:
+        nodes = 0
+        leaves = 0
+
+        def walk(n: list[dict[str, Any]]) -> None:
+            nonlocal nodes, leaves
+            for node in n:
+                nodes += 1
+                if node.get("children"):
+                    walk(node["children"])
+                else:
+                    leaves += 1
+
+        walk(tree)
+        return nodes, leaves
 
     def _scan_headings(self, blocks: list[dict[str, Any]]) -> list[dict[str, Any]]:
         headings: list[dict[str, Any]] = []

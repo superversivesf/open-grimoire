@@ -31,7 +31,7 @@ async def require_csrf(request: Request) -> None:
     if supplied is None:
         form = await request.form()
         supplied = form.get("_csrf")
-    if not supplied or supplied != expected:
+    if not supplied or not hmac.compare_digest(supplied, expected):
         raise HTTPException(status_code=403, detail="CSRF check failed")
 
 

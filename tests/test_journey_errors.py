@@ -125,8 +125,13 @@ async def test_ollama_down_agent_fails_gracefully(app_with_user, tmp_dirs):
     toolbox = ToolBox(tmp_dirs["data"], uid, tmp_dirs["db"], cid)
     loop = AgentLoop(broken_gateway, toolbox, max_iterations=3)
 
-    with pytest.raises(Exception, match="Ollama"):
-        await loop.run([], "What is AC?")
+    # run() must not raise: run_stream surfaces the failure as an error event
+    # and run() converts it into a graceful fallback answer.
+    result = await loop.run([], "What is AC?")
+    assert "Ollama" in result["answer"]
+    assert result["done_called"] is False
+    assert result["cites"] == []
+    assert result["iterations"] == 0
 
 
 @pytest.mark.asyncio

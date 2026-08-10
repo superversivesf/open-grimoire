@@ -42,6 +42,10 @@ def delete_collection(conn: DbConn, collection_id: str) -> None:
         delete_doc(conn, row["doc_id"])
     # Delete sessions for this collection
     conn.execute(
+        "DELETE FROM turns WHERE session_id IN (SELECT session_id FROM sessions WHERE collection_id = ?)",
+        (collection_id,),
+    )
+    conn.execute(
         "DELETE FROM sessions WHERE collection_id = ?", (collection_id,)
     )
     # Delete the collection
@@ -95,6 +99,60 @@ def get_session(conn: DbConn, session_id: str) -> dict[str, Any] | None:
         (session_id,),
     ).fetchone()
     return dict(row) if row else None
+
+
+def list_turns(conn: DbConn, session_id: str) -> list[dict[str, Any]]:
+    rows = conn.execute(
+        "SELECT turn_index, user_msg, agent_msg, cites_json, suggestions_json FROM turns WHERE session_id = ? ORDER BY turn_index",
+        (session_id,),
+    ).fetchall()
+    out = []
+    for r in rows:
+        try:
+            cites = json.loads(r["cites_json"] or "[]")
+        except json.JSONDecodeError:
+            cites = []
+        try:
+            suggestions = json.loads(r["suggestions_json"] or "[]")
+        except json.JSONDecodeError:
+            suggestions = []
+        out.append({
+            "user": r["user_msg"],
+            "agent": r["agent_msg"],
+            "cites": cites,
+            "suggestions": suggestions,
+        })
+    return out
+
+
+def add_turn(conn: DbConn, session_id: str, user_msg: str, agent_msg: str, cites: list[dict[str, Any]] | None = None, suggestions: list[str] | None = None) -> None:
+    # Serialize index computation with a transaction lock to prevent
+    # race conditions when multiple threads add turns to the same session.
+    # Use BEGIN IMMEDIATE to acquire a write lock immediately.
+    in_transaction = conn.in_transaction
+    if not in_transaction:
+        conn.execute("BEGIN IMMEDIATE")
+    try:
+        row = conn.execute(
+            "SELECT max(turn_index) as last FROM turns WHERE session_id = ?",
+            (session_id,),
+        ).fetchone()
+        next_index = (row["last"] if row and row["last"] is not None else -1) + 1
+        conn.execute(
+            "INSERT INTO turns (session_id, turn_index, user_msg, agent_msg, cites_json, suggestions_json) VALUES (?, ?, ?, ?, ?, ?)",
+            (session_id, next_index, user_msg, agent_msg,
+             json.dumps(cites or []), json.dumps(suggestions or [])),
+        )
+        conn.execute(
+            "UPDATE sessions SET updated_at = datetime('now') WHERE session_id = ?",
+            (session_id,),
+        )
+        if not in_transaction:
+            conn.commit()
+    except Exception:
+        if not in_transaction:
+            conn.rollback()
+        raise
 
 
 def insert_fts_row(conn: DbConn, path: str, title: str, summary: str, keywords: str, content: str) -> None:

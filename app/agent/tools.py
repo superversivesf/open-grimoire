@@ -1,7 +1,11 @@
+import ast
 import json
+import math
+import operator
 import re
 import random
 import sqlite3
+import time
 import traceback
 from pathlib import Path
 from typing import Any
@@ -16,9 +20,9 @@ log = get_logger("agent")
 
 _GREP_MAX_PATTERN_LEN = 200
 _GREP_TIMEOUT = 0.25
-# Pathological shapes that trigger catastrophic backtracking: a quantifier
-# applied to a group/class that itself ends in a quantifier, e.g. (a+)+.
 _PATHOLOGICAL = re.compile(r"\([^)]*[+*][^)]*\)[+*]")
+_KEYWORD_CACHE: dict[str, tuple[float, set[str]]] = {}
+_KEYWORD_CACHE_TTL = 60.0
 
 
 def _dice_roll(count: int, sides: int) -> int:
@@ -37,6 +41,47 @@ def _eval_dice(expr: str) -> str:
             raise ValueError(f"dice rolls capped at {MAX_DICE}d{MAX_SIDES}")
         return str(_dice_roll(n, s))
     return re.sub(r"(\d+)d(\d+)", replace, expr)
+
+
+_SAFE_OPS = {
+    ast.Add: operator.add, ast.Sub: operator.sub,
+    ast.Mult: operator.mul, ast.Div: operator.truediv,
+    ast.FloorDiv: operator.floordiv, ast.Mod: operator.mod,
+    ast.Pow: operator.pow, ast.USub: operator.neg, ast.UAdd: operator.pos,
+}
+
+
+def _safe_eval(expr: str) -> int | float:
+    tree = ast.parse(expr.strip(), mode="eval")
+
+    def _eval(node: ast.AST) -> int | float:
+        if isinstance(node, ast.Expression):
+            return _eval(node.body)
+        if isinstance(node, ast.Constant):
+            if isinstance(node.value, (int, float)):
+                return node.value
+            raise ValueError(f"unsupported constant: {node.value!r}")
+        if isinstance(node, ast.BinOp):
+            op = _SAFE_OPS.get(type(node.op))
+            if op is None:
+                raise ValueError(f"unsupported operator: {type(node.op).__name__}")
+            left = _eval(node.left)
+            right = _eval(node.right)
+            if isinstance(node.op, (ast.Div, ast.FloorDiv, ast.Mod)) and right == 0:
+                raise ValueError("division by zero")
+            return op(left, right)
+        if isinstance(node, ast.UnaryOp):
+            op = _SAFE_OPS.get(type(node.op))
+            if op is None:
+                raise ValueError(f"unsupported unary operator: {type(node.op).__name__}")
+            return op(_eval(node.operand))
+        if isinstance(node, ast.Call):
+            if isinstance(node.func, ast.Name) and node.func.id == "abs" and len(node.args) == 1:
+                return abs(_eval(node.args[0]))
+            raise ValueError(f"unsupported function call: {ast.dump(node)}")
+        raise ValueError(f"unsupported expression: {ast.dump(node)}")
+
+    return _eval(tree)
 
 
 class ToolBox:
@@ -96,15 +141,17 @@ class ToolBox:
             full = self.data_dir / self.owner_uid / path
             if not full.is_file():
                 return None
-            text = full.read_text()
-            if not text.startswith("---"):
-                return None
-            end = text.find("\n---\n", 4)
-            if end == -1:
-                return None
-            for line in text[4:end].splitlines():
-                if line.startswith("page:"):
-                    return int(line[5:].strip())
+            with open(full, "r") as f:
+                if f.read(3) != "---":
+                    return None
+                rest = f.readline()
+                if rest.rstrip("\n") != "":
+                    return None
+                for line in f:
+                    if line.rstrip("\n") == "---":
+                        break
+                    if line.startswith("page:"):
+                        return int(line[5:].strip())
         except (ValueError, OSError):
             pass
         return None
@@ -113,21 +160,29 @@ class ToolBox:
         """Per-collection keyword expansion: term -> keyword tokens containing it."""
         if not terms:
             return {}
-        placeholders = " OR ".join("path LIKE ?" for _ in doc_ids)
-        rows = conn.execute(
-            f"SELECT keywords FROM documents_fts WHERE {placeholders}",
-            tuple(f"{d}/%" for d in doc_ids),
-        ).fetchall()
-        all_keywords = set()
-        for r in rows:
-            for kw in (r["keywords"] or "").split(","):
-                kw = kw.strip().lower()
-                if kw:
-                    all_keywords.add(kw)
+        short_terms = [t for t in terms if len(t) >= 4]
+        if not short_terms:
+            return {}
+        cache_key = self.collection_id
+        now = time.monotonic()
+        cached = _KEYWORD_CACHE.get(cache_key)
+        if cached and now - cached[0] < _KEYWORD_CACHE_TTL:
+            all_keywords = cached[1]
+        else:
+            placeholders = " OR ".join("path LIKE ?" for _ in doc_ids)
+            rows = conn.execute(
+                f"SELECT keywords FROM documents_fts WHERE keywords != '' AND ({placeholders})",
+                tuple(f"{d}/%" for d in doc_ids),
+            ).fetchall()
+            all_keywords = set()
+            for r in rows:
+                for kw in (r["keywords"] or "").split(","):
+                    kw = kw.strip().lower()
+                    if kw:
+                        all_keywords.add(kw)
+            _KEYWORD_CACHE[cache_key] = (now, all_keywords)
         extra = {}
-        for t in terms:
-            if len(t) < 4:
-                continue
+        for t in short_terms:
             hits = {kw for kw in all_keywords if t in kw or kw in t}
             if hits:
                 extra[t] = sorted(hits)
@@ -195,7 +250,11 @@ class ToolBox:
                                 if len(hits) >= 20:
                                     return hits
                         except rex.TimeoutError:
+                            if hits:
+                                return hits
                             return []
+                    if len(hits) >= 20:
+                        return hits
                 except Exception:
                     continue
         return hits
@@ -217,12 +276,11 @@ class ToolBox:
         return rows
 
     def calc(self, expr: str) -> str:
-        from simpleeval import simple_eval
         if len(expr) > 200:
             return "error: expression too long"
         try:
             dice_expr = _eval_dice(expr)
-            result = simple_eval(dice_expr)
+            result = _safe_eval(dice_expr)
             if not isinstance(result, (int, float)):
                 return "error: only numeric expressions are supported"
             return str(result)

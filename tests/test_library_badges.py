@@ -6,7 +6,7 @@ from app.main import create_app
 from app.storage.shared_db import init_shared_db, create_user, add_collection_member
 from app.storage.user_db import init_user_db, create_collection, create_doc, update_doc_status
 from app.auth.passwords import hash_password
-from tests.conftest import csrf_for
+from tests.conftest import csrf_for, login
 
 PROCESSING = {"queued", "extracting", "structuring", "tiering", "enriching", "indexing"}
 
@@ -33,18 +33,11 @@ def setup(tmp_dirs, test_config):
     return app, alice, bob, busy, idle
 
 
-async def _login(client, username):
-    await client.get("/login")
-    token = client.cookies.get("login_csrf")
-    r = await client.post("/login", data={"username": username, "password": "pw123456", "_csrf": token})
-    assert r.status_code in (200, 303)
-
-
 @pytest.mark.asyncio
 async def test_processing_badge_on_busy_collection(setup):
     app, alice, bob, busy, idle = setup
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-        await _login(client, "alice")
+        await login(client, "alice", password="pw123456")
         r = await client.get("/")
         assert r.status_code == 200
         # Busy collection card carries the processing badge
@@ -59,7 +52,7 @@ async def test_processing_badge_visible_to_member(setup):
     """Members see the processing badge on shared collections too."""
     app, alice, bob, busy, idle = setup
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-        await _login(client, "bob")
+        await login(client, "bob", password="pw123456")
         r = await client.get("/")
         assert r.status_code == 200
         assert "Busy Shelf" in r.text
@@ -73,6 +66,6 @@ async def test_no_badge_when_all_done(setup):
     update_doc_status(uconn, "d1", "done")
     uconn.close()
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-        await _login(client, "alice")
+        await login(client, "alice", password="pw123456")
         r = await client.get("/")
         assert "processing" not in r.text.lower()

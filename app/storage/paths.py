@@ -1,4 +1,5 @@
 from pathlib import Path
+import os
 
 
 def user_data_dir(data_dir: Path, user_id: str) -> Path:
@@ -21,4 +22,11 @@ def validate_user_path(data_dir: Path, user_id: str, target: str) -> Path:
         resolved.relative_to(user_root)
     except ValueError:
         raise ValueError(f"path outside user tree: {target}")
+    if p.is_symlink() or any(parent.is_symlink() for parent in p.parents):
+        real = os.path.realpath(str(p))
+        real_path = Path(real)
+        try:
+            real_path.relative_to(str(user_root))
+        except ValueError:
+            raise ValueError(f"symlink target outside user tree: {target}")
     return resolved

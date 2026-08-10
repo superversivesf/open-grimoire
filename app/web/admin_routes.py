@@ -12,14 +12,14 @@ from app.web.template_utils import create_templates
 
 router = APIRouter()
 _templates = create_templates(str(Path(__file__).parent.parent / "web" / "templates"))
-# Late-init module config: set by init_admin_routes() from create_app() before
-# any request is served.
+# Late-init module config: kept as no-ops for backward compat with tests.
+# Routes now read from request.app.state.* instead of module globals.
 _db_dir: Path = Path()
 
 
 def init_admin_routes(db_dir: Path) -> None:
-    global _db_dir
-    _db_dir = db_dir
+    """No-op for backward compatibility. Routes read from request.app.state."""
+    pass
 
 
 def _project_cost_per_1000(summary: dict[str, Any], total_query_cost: float) -> float:
@@ -35,7 +35,7 @@ async def admin_dashboard(request: Request) -> Response:
     uid = current_user_id(request)
     if not uid:
         return RedirectResponse("/login", status_code=303)
-    sconn = init_shared_db(_db_dir)
+    sconn = init_shared_db(request.app.state.db_dir)
     user = None
     for u in list_users(sconn):
         if u["user_id"] == uid and u["is_admin"]:
@@ -69,7 +69,7 @@ async def admin_dashboard(request: Request) -> Response:
 
     cost_per_1000 = _project_cost_per_1000(summary, total_query_cost)
 
-    sconn2 = init_shared_db(_db_dir)
+    sconn2 = init_shared_db(request.app.state.db_dir)
     pending_users = list_users_by_status(sconn2, "pending")
     sconn2.close()
 
@@ -93,7 +93,7 @@ async def admin_dashboard(request: Request) -> Response:
 async def approve_user_route(request: Request, user_id: str, _: None = Depends(require_csrf)) -> Response:
     if not is_admin_request(request):
         return RedirectResponse("/", status_code=303)
-    sconn = init_shared_db(_db_dir)
+    sconn = init_shared_db(request.app.state.db_dir)
     set_user_status(sconn, user_id, "active")
     sconn.close()
     return RedirectResponse("/admin", status_code=303)
@@ -106,7 +106,7 @@ async def reject_user_route(request: Request, user_id: str, _: None = Depends(re
     # Admins can't reject themselves — prevents lockout.
     if user_id == current_user_id(request):
         return RedirectResponse("/admin", status_code=303)
-    sconn = init_shared_db(_db_dir)
+    sconn = init_shared_db(request.app.state.db_dir)
     set_user_status(sconn, user_id, "rejected")
     sconn.close()
     return RedirectResponse("/admin", status_code=303)
@@ -120,7 +120,7 @@ async def create_user_route(request: Request, username: str = Form(...), passwor
     username = username.strip()
     if len(username) < 3 or len(password) < 8:
         return RedirectResponse("/admin", status_code=303)
-    sconn = init_shared_db(_db_dir)
+    sconn = init_shared_db(request.app.state.db_dir)
     try:
         create_user_with_status(
             sconn, username, hash_password(password),

@@ -91,3 +91,49 @@ async def test_loop_force_terminates_after_max():
     result = await loop.run([], "loop forever")
     assert "could not find" in result["answer"].lower() or "couldn't" in result["answer"].lower()
     assert result["iterations"] == 3
+
+
+def test_clean_answer_preserves_legitimate_page_text():
+    from app.agent.loop import clean_answer
+    text = "The **Page** of Swords is a tarot card.\n\n**Path**: d1/goblin.md\n**Page**: 42"
+    result = clean_answer(text)
+    assert "**Page** of Swords" in result
+    assert "tarot card" in result
+    assert "**Path**" not in result
+    assert "**Page**:" not in result
+
+
+def test_clean_answer_strips_citation_lines():
+    from app.agent.loop import clean_answer
+    text = "Goblins have AC 15.\n\n**Path**: d1/goblin.md\n**Page**: 42\n**Quote**: AC 15"
+    result = clean_answer(text)
+    assert "Goblins have AC 15" in result
+    assert "**Path**" not in result
+    assert "**Page**" not in result
+
+
+def test_synthesize_answer_handles_frontmatter_only():
+    from app.agent.loop import _synthesize_answer
+    messages = [
+        {"role": "tool", "name": "read_file", "content": "---\nsummary: test\npage: 1\n---\n\nActual content here with goblins."},
+    ]
+    result = _synthesize_answer(messages, "goblins content")
+    assert "Actual content" in result
+
+
+def test_synthesize_answer_handles_horizontal_rules():
+    from app.agent.loop import _synthesize_answer
+    messages = [
+        {"role": "tool", "name": "read_file", "content": "---\nsummary: test\n---\n\nContent with --- horizontal rule about goblins.\n\nMore text."},
+    ]
+    result = _synthesize_answer(messages, "goblins horizontal")
+    assert "horizontal rule" in result
+
+
+def test_synthesize_answer_short_terms():
+    from app.agent.loop import _synthesize_answer
+    messages = [
+        {"role": "tool", "name": "read_file", "content": "Goblins have AC 15 and HP 7. They are small creatures."},
+    ]
+    result = _synthesize_answer(messages, "What is the AC and HP of goblins?")
+    assert "AC" in result or "HP" in result or "Goblins" in result

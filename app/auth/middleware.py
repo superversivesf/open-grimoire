@@ -1,4 +1,5 @@
 from pathlib import Path
+import time
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response
@@ -6,8 +7,9 @@ from starlette.types import ASGIApp
 from app.auth.session import verify_session, get_csrf_token
 
 
-# Paths that don't require authentication
 SKIP_AUTH_PATHS = {"/healthz", "/readyz", "/static", "/login", "/register", "/favicon.ico"}
+_admin_cache: dict[str, tuple[float, bool]] = {}
+_ADMIN_CACHE_TTL = 300.0
 
 
 def current_user_id(request: Request) -> str | None:
@@ -19,7 +21,6 @@ def is_admin(request: Request) -> bool:
 
 
 def _should_skip_auth(path: str) -> bool:
-    """Check if path should skip authentication."""
     if path in SKIP_AUTH_PATHS:
         return True
     if path.startswith("/static/"):
@@ -34,7 +35,6 @@ class AuthMiddleware(BaseHTTPMiddleware):
         self.db_dir = db_dir
 
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
-        # Skip auth for health checks and static assets
         if _should_skip_auth(request.url.path):
             return await call_next(request)
 
@@ -44,18 +44,25 @@ class AuthMiddleware(BaseHTTPMiddleware):
         request.state.is_admin = is_admin
         request.state.csrf_token = get_csrf_token(token, self.session_secret) if token else None
 
-        # Fallback: if is_admin not in token (old sessions), check DB once
         if uid and not is_admin and self.db_dir:
-            try:
-                from app.storage.shared_db import init_shared_db
-                sconn = init_shared_db(self.db_dir)
-                row = sconn.execute(
-                    "SELECT is_admin FROM users WHERE user_id = ?", (uid,)
-                ).fetchone()
-                if row and row["is_admin"]:
+            now = time.monotonic()
+            cached = _admin_cache.get(uid)
+            if cached and now - cached[0] < _ADMIN_CACHE_TTL:
+                if cached[1]:
                     request.state.is_admin = True
-                sconn.close()
-            except Exception:
-                pass
+            else:
+                try:
+                    from app.storage.shared_db import init_shared_db
+                    sconn = init_shared_db(self.db_dir)
+                    row = sconn.execute(
+                        "SELECT is_admin FROM users WHERE user_id = ?", (uid,)
+                    ).fetchone()
+                    is_admin_val = bool(row and row["is_admin"])
+                    _admin_cache[uid] = (now, is_admin_val)
+                    if is_admin_val:
+                        request.state.is_admin = True
+                    sconn.close()
+                except Exception:
+                    pass
 
         return await call_next(request)

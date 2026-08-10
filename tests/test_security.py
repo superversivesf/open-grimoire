@@ -148,15 +148,13 @@ def test_verify_session_rejects_tampered_payload():
     from app.auth.session import sign_session, verify_session
     import base64
     token = sign_session("alice", "secret", is_admin=False)
-    raw, _sig = token.rsplit(".", 1)
-    # Flip the is_admin flag in the payload, keep the old (now invalid) signature.
-    import json
-    payload = json.loads(base64.urlsafe_b64decode(raw))
-    payload["is_admin"] = True
-    tampered_raw = base64.urlsafe_b64encode(json.dumps(payload).encode()).decode()
-    tampered = f"{tampered_raw}.{_sig}"
+    raw, sig = token.rsplit(".", 1)
+    # Tamper with the encrypted payload bytes — Fernet will reject it
+    decoded = base64.urlsafe_b64decode(raw)
+    tampered_bytes = decoded[:-1] + bytes([decoded[-1] ^ 1])
+    tampered_raw = base64.urlsafe_b64encode(tampered_bytes).decode()
+    tampered = f"{tampered_raw}.{sig}"
     uid, is_admin = verify_session(tampered, "secret")
-    # Tampering must not elevate privileges.
     assert uid is None
     assert is_admin is False
 

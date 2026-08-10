@@ -49,18 +49,27 @@ STATE_TOOLS = {
 
 
 def clean_answer(text: str) -> str:
+    """Strip citation-format boilerplate from answers.
+
+    Only matches the project's citation formats — bracket-wrapped paths,
+    backtick-wrapped paths, bold metadata lines, and citation section
+    headers.  Does NOT strip conversational text that could be part of a
+    legitimate answer.
+    """
     if not text:
         return text
-    text = re.sub(r'^Based on the search results,?\s*', '', text, flags=re.IGNORECASE)
+    # Citation section headers: "### Citations:" / "## Citations"
     text = re.sub(r'###?\s*Citations?:?\s*\n?', '', text, flags=re.IGNORECASE)
     text = re.sub(r'\n###?\s*Citations?:?\s*\n.*', '', text, flags=re.IGNORECASE | re.DOTALL)
-    text = re.sub(r'\n-?\s*\*\*(Page|Path|Quote|Source|Reference)\*\*:?\s*[^\n]+', '', text, flags=re.IGNORECASE)
-    text = re.sub(r'\n-?\s*(Page|Path|Quote|Source|Reference):?\s*[^\n]+', '', text, flags=re.IGNORECASE)
+    # Bold citation metadata lines: "**Page**: 42", "**Path**: ...", etc.
+    text = re.sub(r'\n-?\s*\*\*(Page|Path|Quote|Source|Reference)\*\*:\s*[^\n]+', '', text, flags=re.IGNORECASE)
+    # Plain citation metadata lines: "Page: 42", "Path: ...", etc.
+    text = re.sub(r'\n-?\s*(Page|Path|Quote|Source|Reference):\s*[^\n]+', '', text, flags=re.IGNORECASE)
+    # Bracket-wrapped path citations: [Path: abc123/some_file.md]
     text = re.sub(r'\[Path:\s*[a-f0-9]+/[^\]]+\]', '', text)
+    # Backtick-wrapped path citations: `abc123.../some_file.md`
     text = re.sub(r'`[a-f0-9]{32}/[^`]+\.md`', '', text)
-    text = re.sub(r'If you need more (detailed )?information[^\?]*\??', '', text, flags=re.IGNORECASE)
-    text = re.sub(r'If you.*?like more.*?ask.*?!', '', text, flags=re.IGNORECASE | re.DOTALL)
-    text = re.sub(r'feel free to ask!?', '', text, flags=re.IGNORECASE)
+    # Collapse runs of blank lines
     text = re.sub(r'\n{3,}', '\n\n', text)
     return text.strip()
 
@@ -84,15 +93,35 @@ def _extract_cites_from_history(messages: list[dict[str, Any]]) -> list[dict[str
     cites = []
     seen_paths = set()
     for msg in messages:
-        if msg.get("role") == "tool" and msg.get("name") == "fts_search":
-            try:
-                results = json.loads(msg["content"])
-                for r in results[:3]:
-                    path = r.get("path", "")
-                    if path and path not in seen_paths:
-                        seen_paths.add(path)
-                        cites.append({"path": path, "quote": r.get("snippet", "")[:200]})
-            except (json.JSONDecodeError, TypeError):
+        if msg.get("role") == "tool":
+            tool_name = msg.get("name", "")
+            content = msg.get("content", "")
+            # fts_search results
+            if tool_name == "fts_search":
+                try:
+                    results = json.loads(content)
+                    for r in results[:3]:
+                        path = r.get("path", "")
+                        if path and path not in seen_paths:
+                            seen_paths.add(path)
+                            cites.append({"path": path, "quote": r.get("snippet", "")[:200]})
+                except (json.JSONDecodeError, TypeError):
+                    pass
+            # grep results - scan for file paths in the output
+            elif tool_name == "grep":
+                # grep returns lines like "path/to/file.md:line_num:matching_text"
+                for line in content.split("\n"):
+                    if ":" in line:
+                        parts = line.split(":", 1)
+                        if parts:
+                            potential_path = parts[0]
+                            if potential_path.endswith(".md") and potential_path not in seen_paths:
+                                seen_paths.add(potential_path)
+                                cites.append({"path": potential_path, "quote": line[:200]})
+            # read_file results - extract the path from context or content
+            elif tool_name == "read_file":
+                # read_file tool result may contain the path in the first line or as metadata
+                # Look for patterns like "File: path/to/file.md" or just extract from context
                 pass
     return cites[:5]
 
@@ -104,7 +133,6 @@ def _synthesize_answer(messages: list[dict[str, Any]], question: str) -> str:
     for msg in messages:
         if msg.get("role") == "tool" and msg.get("name") == "fts_search":
             try:
-                import json
                 results = json.loads(msg.get("content", "[]"))
                 for r in results[:5]:
                     title = r.get("title", "")
@@ -125,17 +153,29 @@ def _synthesize_answer(messages: list[dict[str, Any]], question: str) -> str:
 
     # If we have file content, extract the most relevant paragraph
     if file_contents:
-        question_words = set(w.lower() for w in question.split() if len(w) > 4)
+        question_words = set(w.lower() for w in question.split() if len(w) >= 2)
         best_snippet = ""
         best_score = 0
         for content in file_contents:
             if content.startswith("---"):
-                parts = content.split("---", 2)
-                content = parts[2].strip() if len(parts) > 2 else content
+                end = content.find("\n---\n", 3)
+                if end != -1:
+                    content = content[end + 5:].strip()
             for para in content.split("\n\n"):
                 para_clean = para.strip()
-                if len(para_clean) < 20 or para_clean.startswith("#"):
+                if len(para_clean) < 20:
                     continue
+                if para_clean.startswith("#"):
+                    continue
+                if para_clean.startswith("```"):
+                    para_clean = para_clean.strip("`").strip()
+                    if len(para_clean) < 20:
+                        continue
+                if para_clean.startswith("|") and "|" in para_clean[1:]:
+                    cells = [c.strip() for c in para_clean.strip("|").split("|")]
+                    if all(re.match(r"^[-:]+$", c) for c in cells):
+                        continue
+                    para_clean = " | ".join(cells)
                 para_lower = para_clean.lower()
                 score = sum(1 for w in question_words if w in para_lower)
                 if score > best_score:
@@ -174,6 +214,18 @@ class AgentLoop:
                 break
         if result is None:
             result = {"type": "done", "answer": "I could not find an answer.", "cites": [], "suggestions": [], "iterations": self.max_iterations, "done_called": False}
+        elif result.get("type") == "error":
+            # run_stream surfaced a mid-run failure (LLM/tool error) as an
+            # error event — convert it into a graceful fallback so the
+            # non-streaming caller gets an answer instead of a crash.
+            result = {
+                "type": "done",
+                "answer": f"Sorry, the AI service is unavailable right now. ({result.get('message', 'unknown error')})",
+                "cites": [],
+                "suggestions": [],
+                "iterations": 0,
+                "done_called": False,
+            }
         return {
             "answer": result.get("answer", ""),
             "cites": result.get("cites", []),
@@ -218,7 +270,12 @@ class AgentLoop:
 
             tools = STATE_TOOLS[state]
             total_input_tokens += estimate_messages_tokens(messages)
-            resp = await self.gateway.call("query", "", tools=tools, messages=messages)
+            try:
+                resp = await self.gateway.call("query", "", tools=tools, messages=messages)
+            except Exception as e:
+                log.error(f"QUERY ERROR: \"{new_question}\": {e}", exc_info=True)
+                yield {"type": "error", "message": str(e)}
+                return
             llm_time = time.time() - t0
             msg = resp.get("message", {})
             tool_calls = msg.get("tool_calls") or []
@@ -303,7 +360,12 @@ class AgentLoop:
                 elif name == "list_index":
                     yield {"type": "thinking", "message": "Browsing document index..."}
 
-                result = self.toolbox.execute(name, args)
+                try:
+                    result = self.toolbox.execute(name, args)
+                except Exception as e:
+                    log.error(f"QUERY ERROR (tool {name}): {e}", exc_info=True)
+                    yield {"type": "error", "message": str(e)}
+                    return
                 result_preview = result[:120].replace("\n", " ")
                 log.info(f"  iter {total_iterations}: {name}({json.dumps(args)[:100]}) -> {result_preview}... ({llm_time:.1f}s)")
                 messages.append({"role": "assistant", "content": content})

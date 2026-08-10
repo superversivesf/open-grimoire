@@ -1,3 +1,4 @@
+import asyncio
 from httpx import AsyncClient
 import json
 from typing import Any, cast
@@ -10,11 +11,20 @@ class OllamaGateway:
         self.models = models
         self.num_ctx = num_ctx
         self._client: AsyncClient | None = None
+        self._client_lock = asyncio.Lock()
 
-    def _get_client(self) -> AsyncClient:
+    async def _get_client(self) -> AsyncClient:
         if self._client is None:
-            self._client = AsyncClient(base_url=self.host, timeout=OLLAMA_TIMEOUT)
+            async with self._client_lock:
+                if self._client is None:
+                    self._client = AsyncClient(base_url=self.host, timeout=OLLAMA_TIMEOUT)
         return self._client
+
+    async def _reset_client(self) -> None:
+        async with self._client_lock:
+            if self._client is not None:
+                await self._client.aclose()
+                self._client = None
 
     async def call(self, role: str, prompt: str, tools: list[dict[str, Any]] | None = None, messages: list[dict[str, Any]] | None = None) -> dict[str, Any]:
         model = self.models.get(role)
@@ -33,12 +43,18 @@ class OllamaGateway:
         }
         if tools:
             body["tools"] = tools
-        resp = await self._get_client().post("/api/chat", json=body)
-        resp.raise_for_status()
-        return cast(dict[str, Any], resp.json())
+        client = await self._get_client()
+        try:
+            resp = await client.post("/api/chat", json=body)
+            resp.raise_for_status()
+            return cast(dict[str, Any], resp.json())
+        except Exception:
+            await self._reset_client()
+            raise
 
     async def pull(self, model: str) -> None:
-        resp = await self._get_client().post("/api/pull", json={"name": model}, timeout=None)
+        client = await self._get_client()
+        resp = await client.post("/api/pull", json={"name": model}, timeout=300)
         resp.raise_for_status()
 
     async def close(self) -> None:

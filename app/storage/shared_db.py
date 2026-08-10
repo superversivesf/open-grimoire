@@ -111,49 +111,55 @@ def log_enrichment(
 
 def get_usage_summary(conn: DbConn, days: int = 30) -> dict[str, Any]:
     """Get usage summary for the last N days."""
-    since = f"datetime('now', '-{days} days')"
+    since_param = f"-{days} days"
 
     queries = conn.execute(
-        f"SELECT count(*) as count, sum(iterations) as total_iters, "
-        f"sum(est_input_tokens) as total_input, sum(est_output_tokens) as total_output, "
-        f"sum(elapsed_sec) as total_time, sum(citations) as total_citations "
-        f"FROM query_log WHERE created_at >= {since}"
+        "SELECT count(*) as count, sum(iterations) as total_iters, "
+        "sum(est_input_tokens) as total_input, sum(est_output_tokens) as total_output, "
+        "sum(elapsed_sec) as total_time, sum(citations) as total_citations "
+        "FROM query_log WHERE created_at >= datetime('now', ?)",
+        (since_param,),
     ).fetchone()
 
     enrichments = conn.execute(
-        f"SELECT count(*) as count, sum(sections) as total_sections, "
-        f"sum(est_input_tokens) as total_input, sum(est_output_tokens) as total_output, "
-        f"sum(elapsed_sec) as total_time "
-        f"FROM enrich_log WHERE created_at >= {since}"
+        "SELECT count(*) as count, sum(sections) as total_sections, "
+        "sum(est_input_tokens) as total_input, sum(est_output_tokens) as total_output, "
+        "sum(elapsed_sec) as total_time "
+        "FROM enrich_log WHERE created_at >= datetime('now', ?)",
+        (since_param,),
     ).fetchone()
 
     by_model = conn.execute(
-        f"SELECT model, count(*) as count, sum(iterations) as total_iters, "
-        f"sum(est_input_tokens) as total_input, sum(est_output_tokens) as total_output, "
-        f"sum(elapsed_sec) as total_time, sum(citations) as total_citations "
-        f"FROM query_log WHERE created_at >= {since} GROUP BY model ORDER BY count DESC"
+        "SELECT model, count(*) as count, sum(iterations) as total_iters, "
+        "sum(est_input_tokens) as total_input, sum(est_output_tokens) as total_output, "
+        "sum(elapsed_sec) as total_time, sum(citations) as total_citations "
+        "FROM query_log WHERE created_at >= datetime('now', ?) GROUP BY model ORDER BY count DESC",
+        (since_param,),
     ).fetchall()
 
     by_user = conn.execute(
-        f"SELECT q.user_id, u.username, count(*) as query_count, "
-        f"sum(q.iterations) as total_iters, sum(q.est_input_tokens) as total_input, "
-        f"sum(q.est_output_tokens) as total_output, sum(q.elapsed_sec) as total_time "
-        f"FROM query_log q LEFT JOIN users u ON q.user_id = u.user_id "
-        f"WHERE q.created_at >= {since} GROUP BY q.user_id ORDER BY query_count DESC"
+        "SELECT q.user_id, u.username, count(*) as query_count, "
+        "sum(q.iterations) as total_iters, sum(q.est_input_tokens) as total_input, "
+        "sum(q.est_output_tokens) as total_output, sum(q.elapsed_sec) as total_time "
+        "FROM query_log q LEFT JOIN users u ON q.user_id = u.user_id "
+        "WHERE q.created_at >= datetime('now', ?) GROUP BY q.user_id ORDER BY query_count DESC",
+        (since_param,),
     ).fetchall()
 
     recent_queries = conn.execute(
-        f"SELECT q.log_id, q.question, q.answer, q.model, q.iterations, "
-        f"q.citations, q.elapsed_sec, q.created_at, u.username "
-        f"FROM query_log q LEFT JOIN users u ON q.user_id = u.user_id "
-        f"WHERE q.created_at >= {since} ORDER BY q.created_at DESC LIMIT 20"
+        "SELECT q.log_id, q.question, q.answer, q.model, q.iterations, "
+        "q.citations, q.elapsed_sec, q.created_at, u.username "
+        "FROM query_log q LEFT JOIN users u ON q.user_id = u.user_id "
+        "WHERE q.created_at >= datetime('now', ?) ORDER BY q.created_at DESC LIMIT 20",
+        (since_param,),
     ).fetchall()
 
     recent_enrichments = conn.execute(
-        f"SELECT e.log_id, e.doc_id, e.model, e.sections, e.succeeded, "
-        f"e.elapsed_sec, e.created_at, u.username "
-        f"FROM enrich_log e LEFT JOIN users u ON e.user_id = u.user_id "
-        f"WHERE e.created_at >= {since} ORDER BY e.created_at DESC LIMIT 10"
+        "SELECT e.log_id, e.doc_id, e.model, e.sections, e.succeeded, "
+        "e.elapsed_sec, e.created_at, u.username "
+        "FROM enrich_log e LEFT JOIN users u ON e.user_id = u.user_id "
+        "WHERE e.created_at >= datetime('now', ?) ORDER BY e.created_at DESC LIMIT 10",
+        (since_param,),
     ).fetchall()
 
     return {
@@ -239,6 +245,14 @@ def remove_collection_member(conn: DbConn, collection_id: str, user_id: str) -> 
     conn.commit()
 
 
+def remove_all_collection_members(conn: DbConn, collection_id: str) -> None:
+    conn.execute(
+        "DELETE FROM collection_members WHERE collection_id = ?",
+        (collection_id,),
+    )
+    conn.commit()
+
+
 def list_collection_members(conn: DbConn, collection_id: str) -> list[dict[str, Any]]:
     rows = conn.execute(
         "SELECT collection_id, user_id, role, added_at FROM collection_members WHERE collection_id = ?",
@@ -276,31 +290,34 @@ def enqueue_job(conn: DbConn, user_id: str, doc_id: str, pdf_path: str) -> str:
 def claim_next_job(conn: DbConn) -> dict[str, Any] | None:
     """Atomically claim the next job, reclaiming expired leases.
 
-    A job whose lease has expired (crashed worker) is reclaimed, up to
-    MAX_JOB_ATTEMPTS. The claim is a single UPDATE ... RETURNING so two
-    workers can never claim the same job.
+    Uses BEGIN IMMEDIATE to prevent two workers from claiming the same job.
     """
     from app.constants import MAX_JOB_ATTEMPTS, JOB_LEASE_SECONDS
-    row = conn.execute(
-        """
-        UPDATE queue_jobs
-           SET status = 'processing',
-               attempts = attempts + 1,
-               lease_expires_at = datetime('now', ?),
-               updated_at = datetime('now')
-         WHERE job_id = (
-             SELECT job_id FROM queue_jobs
-              WHERE status = 'queued'
-                 OR (status = 'processing' AND lease_expires_at < datetime('now'))
-              ORDER BY created_at LIMIT 1
-         )
-           AND attempts < ?
-         RETURNING *
-        """,
-        (f"+{JOB_LEASE_SECONDS} seconds", MAX_JOB_ATTEMPTS),
-    ).fetchone()
-    conn.commit()
-    return dict(row) if row else None
+    conn.execute("BEGIN IMMEDIATE")
+    try:
+        row = conn.execute(
+            """
+            UPDATE queue_jobs
+               SET status = 'processing',
+                   attempts = attempts + 1,
+                   lease_expires_at = datetime('now', ?),
+                   updated_at = datetime('now')
+             WHERE job_id = (
+                 SELECT job_id FROM queue_jobs
+                  WHERE status = 'queued'
+                     OR (status = 'processing' AND lease_expires_at < datetime('now'))
+                  ORDER BY created_at LIMIT 1
+             )
+               AND attempts < ?
+             RETURNING *
+            """,
+            (f"+{JOB_LEASE_SECONDS} seconds", MAX_JOB_ATTEMPTS),
+        ).fetchone()
+        conn.commit()
+        return dict(row) if row else None
+    except Exception:
+        conn.rollback()
+        raise
 
 
 def heartbeat_job(conn: DbConn, job_id: str) -> None:

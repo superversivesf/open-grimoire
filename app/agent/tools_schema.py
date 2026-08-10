@@ -4,21 +4,6 @@ FORCED_DONE_TOOLS: list[dict[str, Any]] = [
     {
         "type": "function",
         "function": {
-            "name": "read_file",
-            "description": "Read the full content of a markdown file. Only use for files you have NOT already read.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "path": {"type": "string", "description": "Path to the markdown file"},
-                    "lines": {"type": "string", "description": "Optional line range, e.g. '10-30'"},
-                },
-                "required": ["path"],
-            },
-        },
-    },
-    {
-        "type": "function",
-        "function": {
             "name": "done",
             "description": "Signal that the answer is complete. Provide the final answer, citations, and 3 suggested follow-up questions.",
             "parameters": {

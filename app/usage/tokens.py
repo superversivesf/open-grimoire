@@ -32,6 +32,16 @@ def estimate_response_tokens(text: str) -> int:
     return estimate_tokens(text)
 
 
+# Explicit list of cloud models (not determined by "cloud" in name)
+CLOUD_MODELS = {
+    "deepseek-v4-flash",
+    "deepseek-v4-pro",
+    "gemma4:31b-cloud",
+    "nemotron-3-nano:30b-cloud",
+    "nemotron-3-ultra:cloud",
+    "glm-5.2:cloud",
+}
+
 # Cost per 1M tokens (rough, based on DeepSeek API pricing)
 # Cloud models cost more, local models are free
 CLOUD_MODEL_COSTS = {
@@ -47,7 +57,7 @@ CLOUD_MODEL_COSTS = {
 
 def estimate_cost_usd(model: str, input_tokens: int, output_tokens: int) -> float:
     """Estimate cost in USD for a model call."""
-    is_cloud = "cloud" in model.lower()
+    is_cloud = model in CLOUD_MODELS
     if not is_cloud:
         return 0.0
     costs = CLOUD_MODEL_COSTS.get(model, CLOUD_MODEL_COSTS["default"])

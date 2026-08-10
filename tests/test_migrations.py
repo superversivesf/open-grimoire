@@ -14,11 +14,16 @@ def _fresh_user_db(tmp_path):
 def test_migrate_user_db_applies_all_versions(tmp_path):
     conn = _fresh_user_db(tmp_path)
     migrate_user_db(conn)
-    assert _get_user_version(conn) == 1
+    assert _get_user_version(conn) == 2
     cols = {r["name"] for r in conn.execute("PRAGMA table_info(docs)")}
     assert "enrich_progress" in cols
     assert "enrich_total" in cols
     assert "enrich_completed_paths" in cols
+    turns_cols = {r["name"] for r in conn.execute("PRAGMA table_info(turns)")}
+    assert "session_id" in turns_cols
+    assert "turn_index" in turns_cols
+    assert "user_msg" in turns_cols
+    assert "agent_msg" in turns_cols
     conn.close()
 
 
@@ -26,7 +31,7 @@ def test_migrate_user_db_idempotent(tmp_path):
     conn = _fresh_user_db(tmp_path)
     migrate_user_db(conn)
     migrate_user_db(conn)
-    assert _get_user_version(conn) == 1
+    assert _get_user_version(conn) == 2
     conn.close()
 
 

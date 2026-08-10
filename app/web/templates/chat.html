@@ -35,7 +35,7 @@
   <button type="submit" class="rpg-btn">Send &#9654;</button>
 </form>
 
-<script>
+<script nonce="{{ request.state.csp_nonce }}">
 function askFollowUp(btn) {
   var question = btn.getAttribute('data-question');
   var form = document.getElementById('chat-form');
@@ -45,5 +45,12 @@ function askFollowUp(btn) {
   input.value = question;
   sendBtn.click();
 }
+
+// CSP nonce-based: suggestion buttons are injected by htmx, so bind via
+// delegation on the chat log instead of inline onclick.
+document.getElementById('chat-log').addEventListener('click', function(e) {
+  var btn = e.target.closest('.rpg-suggestion-btn');
+  if (btn) askFollowUp(btn);
+});
 </script>
 {% endblock %}

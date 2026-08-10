@@ -69,21 +69,34 @@ class PipelineRunner:
                         if doc_dir.exists():
                             shutil.rmtree(doc_dir)
                         shutil.copytree(source_dir, doc_dir)
-                        # Copy FTS rows from source user's DB
+                        # Copy FTS rows and doc metadata from source user's DB
                         source_uconn = init_user_db(self.db_dir, existing_user["user_id"])
                         fts_rows = source_uconn.execute(
                             "SELECT path, title, summary, keywords, content FROM documents_fts WHERE path LIKE ?",
                             (f"{existing_user['doc_id']}/%",),
                         ).fetchall()
+                        source_doc = source_uconn.execute(
+                            "SELECT enrich_completed_paths, page_count FROM docs WHERE doc_id = ?",
+                            (existing_user["doc_id"],),
+                        ).fetchone()
                         source_uconn.close()
                         for row in fts_rows:
                             old_path = row["path"]
-                            new_path = f"{doc_id}/{old_path[len(existing_user['doc_id'])+1:]}"
+                            suffix = old_path.split("/", 1)[1] if "/" in old_path else old_path
+                            new_path = f"{doc_id}/{suffix}"
                             uconn.execute(
                                 "INSERT INTO documents_fts (path, title, summary, keywords, content) VALUES (?, ?, ?, ?, ?)",
                                 (new_path, row["title"], row["summary"], row["keywords"], row["content"]),
                             )
                         uconn.commit()
+
+                        # Copy enrich_completed_paths and doc status from source
+                        if source_doc:
+                            uconn.execute(
+                                "UPDATE docs SET enrich_completed_paths = ?, page_count = ? WHERE doc_id = ?",
+                                (source_doc["enrich_completed_paths"], source_doc["page_count"], doc_id),
+                            )
+                            uconn.commit()
 
                         # Register and link
                         link_user_book(conn, str(user_id), str(doc_id), chash, "")
@@ -94,7 +107,7 @@ class PipelineRunner:
 
             # Extract cover image (first page as JPG)
             try:
-                self._extract_cover(pdf_path, doc_dir)
+                await self._extract_cover_async(pdf_path, doc_dir)
                 log.info(f"JOB {job_id[:8]} COVER: extracted cover.jpg")
             except Exception as e:
                 log.warning(f"JOB {job_id[:8]} COVER: failed to extract cover: {e}")
@@ -103,26 +116,10 @@ class PipelineRunner:
             t0 = time.time()
             update_doc_status(uconn, doc_id, "structuring")
             log.info(f"JOB {job_id[:8]} STAGE 2: detecting structure")
-            structurer = Structurer(self.gateway)
+            structurer = Structurer()
             tree = structurer.detect(blocks)
-            def count_nodes(nodes: list[dict[str, Any]]) -> int:
-                total = 0
-                for n in nodes:
-                    total += 1
-                    if n.get("children"):
-                        total += count_nodes(n["children"])
-                return total
-            def count_leaves(nodes: list[dict[str, Any]]) -> int:
-                total = 0
-                for n in nodes:
-                    if n.get("children"):
-                        total += count_leaves(n["children"])
-                    else:
-                        total += 1
-                return total
             chapters = len(tree)
-            total_nodes = count_nodes(tree)
-            leaf_count = count_leaves(tree)
+            total_nodes, leaf_count = structurer.counts(tree)
             log.info(f"JOB {job_id[:8]} STAGE 2 DONE: {chapters} chapters, {total_nodes} nodes, {leaf_count} leaves, {time.time()-t0:.1f}s")
 
             # Stage 3: Tier
@@ -147,11 +144,27 @@ class PipelineRunner:
                 full_paths = [udata / p for p in remaining_paths]
                 page_map = self._build_page_map(tree, udata, leaf_paths)
                 enriched = len(completed_paths)
+                sem = asyncio.Semaphore(5)
+
+                async def _enrich_one(p: Path, rel_path: str, page: int | None) -> tuple[bool, dict[str, Any]]:
+                    async with sem:
+                        r = await enricher.enrich_leaf(p, page)
+                        return True, r
+
+                tasks = []
                 for i, p in enumerate(full_paths):
                     page = page_map.get(str(p))
                     rel_path = remaining_paths[i]
-                    try:
-                        r = await enricher.enrich_leaf(p, page)
+                    tasks.append(_enrich_one(p, rel_path, page))
+
+                results = await asyncio.gather(*tasks, return_exceptions=True)
+                for i, result in enumerate(results):
+                    rel_path = remaining_paths[i]
+                    if isinstance(result, Exception):
+                        log.warning(f"JOB {job_id[:8]} ENRICH {enriched + i + 1}/{len(leaf_paths)} FAILED: {full_paths[i].name} -> {result}")
+                        continue
+                    ok, r = result
+                    if ok:
                         enriched += 1
                         add_enrich_completed_path(uconn, doc_id, rel_path)
                         summary = r.get("summary", "")
@@ -159,21 +172,16 @@ class PipelineRunner:
                             summary = str(summary)
                         summary = summary[:ENRICH_SUMMARY_MAX_CHARS]
                         keywords = r.get("keywords", [])
-                        log.debug(f"JOB {job_id[:8]} ENRICH {enriched}/{len(leaf_paths)}: {p.name} -> summary=\"{summary}\" keywords={keywords}")
-                    except Exception as e:
-                        log.warning(f"JOB {job_id[:8]} ENRICH {enriched}/{len(leaf_paths)} FAILED: {p.name} -> {e}")
+                        log.debug(f"JOB {job_id[:8]} ENRICH {enriched}/{len(leaf_paths)}: {full_paths[i].name} -> summary=\"{summary}\" keywords={keywords}")
                     update_enrich_progress(uconn, doc_id, enriched, len(leaf_paths))
                 log.info(f"JOB {job_id[:8]} STAGE 4 DONE: {enriched}/{len(leaf_paths)} sections enriched, {time.time()-t0:.1f}s")
 
                 enrich_model = str(getattr(self.gateway, "models", {}).get("enrich", "unknown") or "unknown")
                 enrich_elapsed = time.time() - t0
-                # Estimate tokens: ~500 input tokens per section (content), ~50 output (summary+keywords)
                 est_input = sum(estimate_tokens(p.read_text()[:2000]) for p in full_paths if p.exists())
                 est_output = (enriched - len(completed_paths)) * ENRICH_EST_OUTPUT_TOKENS_PER_SECTION
-                sconn2 = init_shared_db(self.db_dir)
-                log_enrichment(sconn2, user_id, doc_id, enrich_model,
-                               len(leaf_paths), enriched - len(completed_paths), est_input, est_output, enrich_elapsed)
-                sconn2.close()
+                log_enrichment(conn, user_id, doc_id, enrich_model,
+                                len(leaf_paths), enriched - len(completed_paths), est_input, est_output, enrich_elapsed)
             else:
                 log.info(f"JOB {job_id[:8]} STAGE 4 SKIPPED: no gateway")
 
@@ -201,13 +209,22 @@ class PipelineRunner:
 
     def _build_page_map(self, tree: list[dict[str, Any]], udata: Path, leaf_paths: list[str]) -> dict[str, int | None]:
         pages: list[int | None] = []
+        node_count = 0
+        leaf_count = 0
+
         def walk(nodes: list[dict[str, Any]]) -> None:
+            nonlocal node_count, leaf_count
             for node in nodes:
+                node_count += 1
                 if node["children"]:
                     walk(node["children"])
                 else:
+                    leaf_count += 1
                     pages.append(node.get("page_start"))
+
         walk(tree)
+        if len(leaf_paths) != len(pages):
+            log.warning(f"_build_page_map: leaf_paths count ({len(leaf_paths)}) != tree leaves ({len(pages)})")
         return {str(udata / p): page for p, page in zip(leaf_paths, pages)}
 
     def _doc_title(self, uconn: sqlite3.Connection, doc_id: str) -> str:
@@ -222,3 +239,6 @@ class PipelineRunner:
         if images:
             cover_path = doc_dir / "cover.jpg"
             images[0].save(str(cover_path), "JPEG", quality=85, optimize=True)
+
+    async def _extract_cover_async(self, pdf_path: Path, doc_dir: Path) -> None:
+        await asyncio.to_thread(self._extract_cover, pdf_path, doc_dir)

@@ -21,16 +21,23 @@ class QueueWorker:
     async def _heartbeat_loop(self, job_id: str) -> None:
         """Refresh the job lease while it is being processed."""
         interval = max(1.0, JOB_LEASE_SECONDS / 3)
+        conn = init_shared_db(self.db_dir)
         try:
             while not self._stop_event.is_set():
                 await asyncio.sleep(interval)
-                conn = init_shared_db(self.db_dir)
                 try:
                     heartbeat_job(conn, job_id)
-                finally:
-                    conn.close()
+                except Exception:
+                    log.warning(f"heartbeat failed for job {job_id[:8]}, reconnecting")
+                    try:
+                        conn.close()
+                    except Exception:
+                        pass
+                    conn = init_shared_db(self.db_dir)
         except asyncio.CancelledError:
             pass
+        finally:
+            conn.close()
 
     async def run_once(self) -> bool:
         conn = init_shared_db(self.db_dir)
@@ -41,6 +48,7 @@ class QueueWorker:
             self._current_job_id = job["job_id"]
             set_job_id(self._current_job_id)
             conn.close()
+            conn = None
             heartbeat_task = asyncio.create_task(self._heartbeat_loop(job["job_id"]))
             try:
                 await self.runner.run_job(job)

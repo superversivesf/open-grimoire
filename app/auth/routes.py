@@ -12,11 +12,15 @@ from app.config import Config
 from app.constants import SESSION_COOKIE_MAX_AGE, LOGIN_RATE_LIMIT, REGISTER_RATE_LIMIT
 import os
 import secrets
+import sqlite3
+from app.logging_utils import get_logger
+
+log = get_logger("auth")
 
 router = APIRouter()
 _templates = create_templates(str(Path(__file__).parent.parent / "web" / "templates"))
-# Late-init module config: set by init_auth_routes() from create_app() before
-# any request is served. Typed as Path (not Optional) to reflect that invariant.
+# Late-init module config: kept as no-ops for backward compat with tests.
+# Routes now read from request.app.state.* instead of module globals.
 _db_dir: Path = Path()
 _limiter: Limiter | None = None
 
@@ -30,22 +34,29 @@ def _get_limiter() -> Limiter:
 
 def _rate_key(request: Request) -> str:
     """Rate-limit key: first X-Forwarded-For hop when a trusted proxy is
-    configured, else the direct client address. X-Forwarded-For is never
-    trusted unless TRUST_PROXY_HEADERS=1 (set it only behind your own
-    reverse proxy), so clients cannot spoof the key."""
+    configured, else the direct client address.
+
+    SECURITY: X-Forwarded-For / X-Real-IP are only trusted when
+    TRUST_PROXY_HEADERS=1. Set that ONLY when the app is deployed behind
+    your own reverse proxy (nginx/caddy/traefik) that overwrites these
+    headers on every request. If the app is ever exposed directly with
+    this flag set, clients can spoof the header and bypass rate limits.
+    Prefer X-Real-IP (single value, set by the proxy) over X-Forwarded-For
+    (comma-joined chain) to avoid trusting a client-supplied hop.
+    """
     if os.environ.get("TRUST_PROXY_HEADERS") == "1":
-        xff = request.headers.get("x-forwarded-for")
-        if xff:
-            return xff.split(",")[0].strip()
         real = request.headers.get("x-real-ip")
         if real:
             return real.strip()
+        xff = request.headers.get("x-forwarded-for")
+        if xff:
+            return xff.split(",")[0].strip()
     return request.client.host if request.client else "unknown"
 
 
 def init_auth_routes(db_dir: Path) -> None:
-    global _db_dir
-    _db_dir = db_dir
+    """No-op for backward compatibility. Routes read from request.app.state."""
+    pass
 
 
 def _is_rate_limited() -> bool:
@@ -65,7 +76,7 @@ async def login_page(request: Request) -> Response:
     # token that no longer matches the cookie.
     resp.headers["Cache-Control"] = "no-store"
     secure = getattr(request.app.state.config, "cookie_secure", False)
-    resp.set_cookie("login_csrf", token, httponly=True, max_age=SESSION_COOKIE_MAX_AGE, samesite="lax", secure=secure)
+    resp.set_cookie("login_csrf", token, httponly=True, max_age=SESSION_COOKIE_MAX_AGE, samesite="lax", secure=secure, path="/")
     return resp
 
 
@@ -78,7 +89,7 @@ async def register_page(request: Request) -> Response:
     resp = _templates.TemplateResponse(request, "register.html", {"user_id": None, "csrf_token": token, "submitted": False})
     resp.headers["Cache-Control"] = "no-store"
     secure = getattr(request.app.state.config, "cookie_secure", False)
-    resp.set_cookie("login_csrf", token, httponly=True, max_age=SESSION_COOKIE_MAX_AGE, samesite="lax", secure=secure)
+    resp.set_cookie("login_csrf", token, httponly=True, max_age=SESSION_COOKIE_MAX_AGE, samesite="lax", secure=secure, path="/")
     return resp
 
 
@@ -104,11 +115,19 @@ async def register_submit(request: Request, username: str = Form(...), password:
              "submitted": False, "error": "Username must be at least 3 characters"},
             status_code=400,
         )
-    conn = init_shared_db(_db_dir)
+    conn = init_shared_db(request.app.state.db_dir)
     try:
         create_user_with_status(conn, username, hash_password(password), status="pending")
-    except Exception:
+    except sqlite3.IntegrityError:
         pass  # duplicate username → same generic response (no enumeration)
+    except Exception:
+        log.error(f"registration failed for {username}", exc_info=True)
+        return _templates.TemplateResponse(
+            request, "register.html",
+            {"user_id": None, "csrf_token": request.cookies.get("login_csrf", ""),
+             "submitted": False, "error": "Registration failed. Please try again later."},
+            status_code=500,
+        )
     finally:
         conn.close()
     return _templates.TemplateResponse(
@@ -125,7 +144,7 @@ async def login_submit(request: Request, username: str = Form(...), password: st
     # Rate limiting is enforced by the @limiter.limit decorator above, gated by
     # `limiter.enabled` (set in create_app from _is_rate_limited()). When the
     # limit is exceeded slowapi raises RateLimitExceeded → handled as 429.
-    conn = init_shared_db(_db_dir)
+    conn = init_shared_db(request.app.state.db_dir)
     user = get_user_by_username(conn, username)
     conn.close()
     # Always burn an Argon2 verify — even for unknown users — so login
@@ -155,12 +174,14 @@ async def login_submit(request: Request, username: str = Form(...), password: st
     token = sign_session(user["user_id"], request.app.state.session_secret, is_admin=user.get("is_admin", False))
     resp = RedirectResponse("/", status_code=303)
     secure = getattr(request.app.state.config, "cookie_secure", False)
-    resp.set_cookie("session", token, httponly=True, max_age=SESSION_COOKIE_MAX_AGE, samesite="lax", secure=secure)
+    resp.set_cookie("session", token, httponly=True, max_age=SESSION_COOKIE_MAX_AGE, samesite="lax", secure=secure, path="/")
+    resp.delete_cookie("login_csrf", path="/", secure=secure)
     return resp
 
 
 @router.post("/logout")
-async def logout(_: None = Depends(require_csrf)) -> RedirectResponse:
+async def logout(request: Request, _: None = Depends(require_csrf)) -> RedirectResponse:
     resp = RedirectResponse("/login", status_code=303)
-    resp.delete_cookie("session")
+    secure = getattr(request.app.state.config, "cookie_secure", False)
+    resp.delete_cookie("session", path="/", secure=secure, samesite="lax")
     return resp

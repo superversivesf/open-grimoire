@@ -17,4 +17,3 @@ paths:
 server:
   host: 0.0.0.0
   port: 8050
-  secret: change-me-via-SESSION_SECRET-env

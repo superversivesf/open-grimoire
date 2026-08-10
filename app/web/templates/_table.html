@@ -4,8 +4,7 @@
   <div class="rpg-book-card">
     <a href="/docs/{{ d.doc_id }}" class="rpg-book-cover-link">
       <div class="rpg-book-cover">
-        <img src="/docs/{{ d.doc_id }}/cover" alt="{{ d.title }}" loading="lazy"
-             onerror="this.src='/static/no-cover.svg'">
+        <img src="/docs/{{ d.doc_id }}/cover" alt="{{ d.title }}" loading="lazy">
         {% if d.status != 'done' %}
         <div class="rpg-book-overlay">
           <span class="rpg-badge rpg-badge-{{ d.status }}">{{ d.status }}</span>
@@ -20,13 +19,11 @@
     <div class="rpg-book-info">
       <a href="/docs/{{ d.doc_id }}" class="rpg-book-title">{{ d.title }}</a>
       <div class="rpg-book-actions">
-        <form method="post" action="/docs/{{ d.doc_id }}/reprocess" style="display:inline"
-              onsubmit="this.querySelector('button').textContent='...'; this.querySelector('button').disabled=true;">
+        <form method="post" action="/docs/{{ d.doc_id }}/reprocess" class="js-reprocess" style="display:inline">
           <input type="hidden" name="_csrf" value="{{ request.state.csrf_token }}">
           <button class="rpg-btn-secondary rpg-btn-sm" type="submit">Reprocess</button>
         </form>
-        <form method="post" action="/docs/{{ d.doc_id }}/delete" style="display:inline"
-              onsubmit="return confirm('Delete this book?')">
+        <form method="post" action="/docs/{{ d.doc_id }}/delete" class="js-confirm-delete" style="display:inline">
           <input type="hidden" name="_csrf" value="{{ request.state.csrf_token }}">
           <button class="rpg-btn-danger rpg-btn-sm" type="submit">Delete</button>
         </form>
@@ -35,3 +32,26 @@
   </div>
   {% endfor %}
 </div>
+
+<script nonce="{{ request.state.csp_nonce }}">
+(function() {
+  var grid = document.getElementById('book-grid');
+  if (!grid) return;
+  // Cover fallback — error events don't bubble, so listen in the capture phase.
+  grid.addEventListener('error', function(e) {
+    if (e.target && e.target.tagName === 'IMG') e.target.src = '/static/no-cover.svg';
+  }, true);
+  grid.querySelectorAll('.js-reprocess').forEach(function(form) {
+    form.addEventListener('submit', function() {
+      var btn = form.querySelector('button');
+      btn.textContent = '...';
+      btn.disabled = true;
+    });
+  });
+  grid.querySelectorAll('.js-confirm-delete').forEach(function(form) {
+    form.addEventListener('submit', function(e) {
+      if (!confirm('Delete this book?')) e.preventDefault();
+    });
+  });
+})();
+</script>

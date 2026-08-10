@@ -37,9 +37,9 @@
     </h3>
     <p class="meta">Created {{ c.created_at }}</p>
     <div class="rpg-card-actions">
-      <button class="rpg-btn-secondary rpg-btn-sm" onclick="renameCollection('{{ c.collection_id }}', '{{ c.name }}')">&#9998; Rename</button>
-      <form method="post" action="/collections/{{ c.collection_id }}/delete" style="display:inline"
-            onsubmit="return confirm('Delete collection \"{{ c.name }}\" and all its books? This cannot be undone.')">
+      <button class="rpg-btn-secondary rpg-btn-sm js-rename" data-cid="{{ c.collection_id }}" data-name="{{ c.name }}">&#9998; Rename</button>
+      <form method="post" action="/collections/{{ c.collection_id }}/delete" class="js-confirm-delete"
+            data-msg="Delete collection '{{ c.name }}' and all its books? This cannot be undone." style="display:inline">
         <input type="hidden" name="_csrf" value="{{ request.state.csrf_token }}">
         <button type="submit" class="rpg-btn-danger rpg-btn-sm">&#128465; Delete</button>
       </form>
@@ -56,14 +56,14 @@
       <input type="hidden" name="_csrf" value="{{ request.state.csrf_token }}">
       <input type="text" name="name" id="rename-input" placeholder="Collection name" required style="width:100%; margin-bottom:1rem;">
       <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
-        <button type="button" class="rpg-btn-secondary" onclick="document.getElementById('rename-modal').style.display='none'">Cancel</button>
+        <button type="button" class="rpg-btn-secondary" id="rename-cancel">Cancel</button>
         <button type="submit" class="rpg-btn">Save</button>
       </div>
     </form>
   </div>
 </div>
 
-<script>
+<script nonce="{{ request.state.csp_nonce }}">
 function renameCollection(cid, currentName) {
   var modal = document.getElementById('rename-modal');
   var form = document.getElementById('rename-form');
@@ -74,6 +74,21 @@ function renameCollection(cid, currentName) {
   input.focus();
   input.select();
 }
+
+// CSP nonce-based: bind handlers instead of inline onclick/onsubmit.
+document.querySelectorAll('.js-rename').forEach(function(btn) {
+  btn.addEventListener('click', function() {
+    renameCollection(btn.getAttribute('data-cid'), btn.getAttribute('data-name'));
+  });
+});
+document.getElementById('rename-cancel').addEventListener('click', function() {
+  document.getElementById('rename-modal').style.display = 'none';
+});
+document.querySelectorAll('.js-confirm-delete').forEach(function(form) {
+  form.addEventListener('submit', function(e) {
+    if (!confirm(form.getAttribute('data-msg'))) e.preventDefault();
+  });
+});
 </script>
 
 {% else %}

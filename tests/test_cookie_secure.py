@@ -64,6 +64,55 @@ async def test_security_headers_present(app_with_user):
 
 
 @pytest.mark.asyncio
+async def test_csp_is_nonce_based(app_with_user):
+    """CSP must be nonce-based: script-src and style-src carry a per-request
+    nonce and no 'unsafe-inline'. Inline style attributes stay allowed via the
+    narrow style-src-attr directive (pervasive in templates, low risk)."""
+    import re
+    async with AsyncClient(transport=ASGITransport(app=app_with_user), base_url="http://test") as client:
+        r = await client.get("/login")
+        assert r.status_code == 200
+        csp = r.headers["Content-Security-Policy"]
+        for directive in ("script-src", "style-src"):
+            m = re.search(rf"{directive} ([^;]+)", csp)
+            assert m, f"missing {directive} in CSP: {csp}"
+            assert "unsafe-inline" not in m.group(1), f"{directive} must not allow unsafe-inline: {csp}"
+        m = re.search(r"script-src 'self' 'nonce-([A-Za-z0-9_-]+)'", csp)
+        assert m, f"script-src must carry a nonce: {csp}"
+        assert f"'nonce-{m.group(1)}'" in csp
+
+
+@pytest.mark.asyncio
+async def test_csp_nonce_stamped_on_inline_scripts(app_with_user):
+    """Inline <script>/<style> blocks in rendered pages must carry the same
+    per-request nonce as the CSP header, or the browser blocks them."""
+    import re
+    from app.storage.shared_db import init_shared_db, create_user
+    from app.storage.user_db import init_user_db, create_collection
+    from app.auth.passwords import hash_password
+
+    conn = init_shared_db(app_with_user.state.config.db_dir)
+    uid = create_user(conn, "carol", hash_password("pw"))
+    conn.close()
+    uconn = init_user_db(app_with_user.state.config.db_dir, uid)
+    create_collection(uconn, "C")
+    uconn.close()
+
+    async with AsyncClient(transport=ASGITransport(app=app_with_user), base_url="http://test") as client:
+        await client.get("/login")
+        token = client.cookies.get("login_csrf")
+        r = await client.post("/login", data={"username": "carol", "password": "pw", "_csrf": token})
+        assert r.status_code in (200, 303)
+        page = await client.get("/")
+        assert page.status_code == 200
+        csp = page.headers["Content-Security-Policy"]
+        m = re.search(r"script-src 'self' 'nonce-([A-Za-z0-9_-]+)'", csp)
+        assert m, f"script-src must carry a nonce: {csp}"
+        nonce = m.group(1)
+        assert f'<script nonce="{nonce}">' in page.text, "inline <script> must carry the CSP nonce"
+
+
+@pytest.mark.asyncio
 async def test_htmx_vendored_locally_and_csp_compatible():
     """htmx must be served from /static (CSP script-src 'self' allows it),
     never from an external CDN the CSP would block — otherwise hx-post is

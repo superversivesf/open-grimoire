@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>PDF — Page {{ page }}</title>
   <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
-  <style>
+  <style nonce="{{ request.state.csp_nonce }}">
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { height: 100%; overflow: hidden; background: #1a1625; }
     #pdf-frame {
@@ -27,7 +27,7 @@
 <body>
   <div id="loading">Loading PDF — page {{ page }}...</div>
   <iframe id="pdf-frame" style="display:none;"></iframe>
-  <script>
+  <script nonce="{{ request.state.csp_nonce }}">
     // Use #page= fragment for browsers that support it (Chrome desktop)
     // and page= query param as fallback (Firefox, Safari)
     var page = {{ page }};

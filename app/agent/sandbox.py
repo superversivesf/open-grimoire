@@ -15,9 +15,11 @@ def safe_read_file(data_dir: Path, user_id: str, path: str, lines: str | None = 
         try:
             start, end = map(int, lines.split("-"))
             text_lines = text.splitlines()
+            if start < 0:
+                start = 0
             text = "\n".join(text_lines[start : end + 1])
         except (ValueError, IndexError):
-            pass
+            return f"(invalid line range: {lines})"
     return truncate_result(text)
 
 

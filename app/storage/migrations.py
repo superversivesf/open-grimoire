@@ -5,8 +5,86 @@ Migrations are applied in order on initialization.
 """
 
 import sqlite3
+import threading
+import logging
 from pathlib import Path
-from typing import Callable
+
+logger = logging.getLogger(__name__)
+
+# ─── Connection Pooling ───────────────────────────────────────────────
+# sqlite3.Connection cannot carry attributes, so pooled connections use a
+# subclass carrying the pool key. close() returns the connection to the
+# calling thread's pool; _real_close() is the escape hatch used on
+# overflow / shutdown. Pools are thread-local because SQLite connections
+# are bound to the thread that created them.
+_MAX_POOL_SIZE = 4
+_thread_pools = threading.local()
+
+
+class PoolConn(sqlite3.Connection):
+    _pool_key: str = ""
+
+    def close(self) -> None:
+        release_connection(self)
+
+    def _real_close(self) -> None:
+        super().close()
+
+
+def _pool_key_for(db_path: Path) -> str:
+    return str(db_path.resolve())
+
+
+def _pool_bucket(key: str) -> list["PoolConn"]:
+    buckets = getattr(_thread_pools, "buckets", None)
+    if buckets is None:
+        buckets = {}
+        _thread_pools.buckets = buckets
+    return buckets.setdefault(key, [])
+
+
+def _make_connection(db_path: Path, row_factory: bool = True) -> "PoolConn":
+    conn = sqlite3.connect(str(db_path), factory=PoolConn)
+    conn._pool_key = _pool_key_for(db_path)
+    if row_factory:
+        conn.row_factory = sqlite3.Row
+    _apply_connection_pragmas(conn)
+    return conn
+
+
+def acquire_connection(db_path: Path, row_factory: bool = True) -> "PoolConn":
+    """Get a pooled connection for this thread, or create a new one."""
+    key = _pool_key_for(db_path)
+    bucket = _pool_bucket(key)
+    while bucket:
+        conn = bucket.pop()
+        try:
+            conn.execute("SELECT 1")
+            conn.rollback()  # clear any leaked transaction
+            return conn
+        except sqlite3.ProgrammingError:
+            conn._real_close()
+    return _make_connection(db_path, row_factory)
+
+
+def release_connection(conn: "PoolConn") -> None:
+    """Return a connection to this thread's pool (up to a cap), else close."""
+    bucket = _pool_bucket(conn._pool_key)
+    if len(bucket) < _MAX_POOL_SIZE:
+        bucket.append(conn)
+        return
+    conn._real_close()
+
+
+def close_all_pools() -> None:
+    """Close every pooled connection for the CURRENT thread (shutdown)."""
+    buckets = getattr(_thread_pools, "buckets", None)
+    if buckets is None:
+        return
+    for bucket in buckets.values():
+        while bucket:
+            bucket.pop()._real_close()
+    _thread_pools.buckets = {}
 
 # ─── Shared Database Migrations ──────────────────────────────────────
 
@@ -140,6 +218,20 @@ USER_MIGRATIONS: list[tuple[int, str, str]] = [
             path, title, summary, keywords, content, tokenize='porter'
         );
     """),
+    (2, "add_turns_table", """
+        CREATE TABLE IF NOT EXISTS turns (
+            session_id TEXT NOT NULL,
+            turn_index INTEGER NOT NULL,
+            user_msg TEXT NOT NULL,
+            agent_msg TEXT NOT NULL,
+            cites_json TEXT NOT NULL DEFAULT '[]',
+            suggestions_json TEXT NOT NULL DEFAULT '[]',
+            created_at TEXT NOT NULL DEFAULT (datetime('now')),
+            PRIMARY KEY (session_id, turn_index),
+            FOREIGN KEY (session_id) REFERENCES sessions(session_id)
+        );
+        CREATE INDEX IF NOT EXISTS idx_turns_session ON turns(session_id);
+    """),
 ]
 
 
@@ -201,7 +293,10 @@ def _add_column(conn: sqlite3.Connection, table: str, column: str, ddl: str) -> 
     try:
         conn.execute(ddl)
     except sqlite3.OperationalError as exc:
-        if "duplicate column name" not in str(exc):
+        msg = str(exc).lower()
+        if "duplicate column name" not in msg:
+            raise
+        if "disk i/o" in msg or "database is locked" in msg or "no such table" in msg:
             raise
 
 
@@ -215,7 +310,7 @@ def migrate_shared_db(conn: sqlite3.Connection) -> None:
     current = _get_shared_version(conn)
     for version, name, sql in SHARED_MIGRATIONS:
         if version > current:
-            print(f"  [migrate] shared: v{version} - {name}")
+            logger.info(f"  [migrate] shared: v{version} - {name}")
             conn.executescript(sql)
             guard = _GUARDED_ALTERS.get(version)
             if guard:
@@ -227,14 +322,14 @@ def migrate_shared_db(conn: sqlite3.Connection) -> None:
 def migrate_user_db(conn: sqlite3.Connection) -> None:
     """Apply pending migrations to user database.
 
-    Failures propagate — a failed migration must never advance the
-    version, or the schema drifts silently. Migrations are idempotent
-    (CREATE ... IF NOT EXISTS), so a partial failure can be retried.
+    Failures propagate — a failed migration must never advance the version,
+    or the schema drifts silently. Migrations are idempotent (CREATE ... IF
+    NOT EXISTS), so a partial failure can be retried.
     """
     current = _get_user_version(conn)
     for version, name, sql in USER_MIGRATIONS:
         if version > current:
-            print(f"  [migrate] user: v{version} - {name}")
+            logger.info(f"  [migrate] user: v{version} - {name}")
             conn.executescript(sql)
             _set_user_version(conn, version)
     conn.commit()
@@ -255,9 +350,7 @@ def _apply_connection_pragmas(conn: sqlite3.Connection) -> None:
 def init_shared_db_with_migrations(db_dir: Path) -> sqlite3.Connection:
     """Initialize shared database and run migrations."""
     db_dir.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(db_dir / "shared.sqlite")
-    conn.row_factory = sqlite3.Row
-    _apply_connection_pragmas(conn)
+    conn = _make_connection(db_dir / "shared.sqlite")
     migrate_shared_db(conn)
     return conn
 
@@ -267,8 +360,6 @@ def init_user_db_with_migrations(db_dir: Path, user_id: str) -> sqlite3.Connecti
     from app.storage.paths import user_db_path
     p = user_db_path(db_dir, user_id)
     p.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(p)
-    conn.row_factory = sqlite3.Row
-    _apply_connection_pragmas(conn)
+    conn = _make_connection(p)
     migrate_user_db(conn)
     return conn

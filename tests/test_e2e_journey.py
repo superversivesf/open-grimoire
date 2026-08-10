@@ -33,6 +33,7 @@ from app.agent.loop import AgentLoop
 from app.pipeline.runner import PipelineRunner
 from app.auth.passwords import hash_password, verify_password
 from app.gateway.ollama import OllamaGateway
+from tests.conftest import login
 
 
 def pytest_configure(config):
@@ -196,13 +197,6 @@ def real_app_with_user(tmp_dirs, test_config, real_ollama):
     return app, uid, real_ollama
 
 
-async def _login(client, username="testuser", password="testpass"):
-    """Helper: login and return the authenticated client."""
-    r = await client.post("/login", data={"username": username, "password": password})
-    assert r.status_code == 303, f"Login failed: {r.status_code}"
-    return client
-
-
 # ===========================================================================
 # Journey 1: User Registration & Authentication
 # ===========================================================================
@@ -236,7 +230,7 @@ class TestUserJourney:
     async def test_logout_clears_session(self, app_with_user):
         app, uid, _ = app_with_user
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            await _login(client)
+            await login(client, "testuser", "testpass")
             # Verify we can access protected route
             r = await client.get("/")
             assert r.status_code == 200
@@ -269,7 +263,7 @@ class TestCollectionJourney:
     async def test_create_collection(self, app_with_user, tmp_dirs):
         app, uid, _ = app_with_user
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            await _login(client)
+            await login(client, "testuser", "testpass")
             r = await client.post("/collections", data={"name": "Dragon Warriors"})
             assert r.status_code == 303
             # Verify it appears on home page
@@ -280,7 +274,7 @@ class TestCollectionJourney:
     async def test_create_multiple_collections(self, app_with_user, tmp_dirs):
         app, uid, _ = app_with_user
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            await _login(client)
+            await login(client, "testuser", "testpass")
             for name in ["Dragon Warriors", "Pathfinder", "D&D 5e"]:
                 await client.post("/collections", data={"name": name})
             r = await client.get("/")
@@ -291,7 +285,7 @@ class TestCollectionJourney:
     async def test_rename_collection(self, app_with_user, tmp_dirs):
         app, uid, _ = app_with_user
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            await _login(client)
+            await login(client, "testuser", "testpass")
             await client.post("/collections", data={"name": "Old Name"})
             r = await client.get("/")
             assert "Old Name" in r.text
@@ -311,7 +305,7 @@ class TestCollectionJourney:
     async def test_delete_collection_removes_docs(self, app_with_user, tmp_dirs):
         app, uid, _ = app_with_user
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            await _login(client)
+            await login(client, "testuser", "testpass")
             await client.post("/collections", data={"name": "To Delete"})
             r = await client.get("/")
             import re
@@ -341,7 +335,7 @@ class TestUploadPipelineJourney:
         app, uid, _ = app_with_user
         pdf_bytes = _make_rpg_pdf()
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            await _login(client)
+            await login(client, "testuser", "testpass")
             # Create a collection
             uconn = init_user_db(tmp_dirs["db"], uid)
             cid = create_collection(uconn, "RPG Books")
@@ -372,7 +366,7 @@ class TestUploadPipelineJourney:
         pdf1 = _make_pdf(["Page 1 content"])
         pdf2 = _make_pdf(["Page 2 content"])
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            await _login(client)
+            await login(client, "testuser", "testpass")
             uconn = init_user_db(tmp_dirs["db"], uid)
             cid = create_collection(uconn, "Multi")
             uconn.close()
@@ -396,7 +390,7 @@ class TestUploadPipelineJourney:
         app, uid, gateway = app_with_user
         pdf_bytes = _make_rpg_pdf()
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            await _login(client)
+            await login(client, "testuser", "testpass")
             uconn = init_user_db(tmp_dirs["db"], uid)
             cid = create_collection(uconn, "Pipeline Test")
             uconn.close()
@@ -442,7 +436,7 @@ class TestUploadPipelineJourney:
         """Corrupt PDF (no %PDF- magic bytes) is rejected at upload, not queued."""
         app, uid, gateway = app_with_user
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            await _login(client)
+            await login(client, "testuser", "testpass")
             uconn = init_user_db(tmp_dirs["db"], uid)
             cid = create_collection(uconn, "Bad PDFs")
             uconn.close()
@@ -476,7 +470,7 @@ class TestDocumentViewJourney:
         app, uid, gateway = app_with_user
         pdf_bytes = _make_rpg_pdf()
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            await _login(client)
+            await login(client, "testuser", "testpass")
             uconn = init_user_db(tmp_dirs["db"], uid)
             cid = create_collection(uconn, "View Test")
             uconn.close()
@@ -501,7 +495,7 @@ class TestDocumentViewJourney:
         """Document page should list sections, not show 'still processing'."""
         app, uid, cid, doc_id = setup_doc
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            await _login(client)
+            await login(client, "testuser", "testpass")
             r = await client.get(f"/docs/{doc_id}")
             assert r.status_code == 200
             assert "Contents" in r.text or "rpg-tree" in r.text
@@ -518,7 +512,7 @@ class TestDocumentViewJourney:
         first_file = md_files[0]
         rel_path = first_file.name
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            await _login(client)
+            await login(client, "testuser", "testpass")
             r = await client.get(f"/docs/{doc_id}/view", params={"path": rel_path})
             assert r.status_code == 200
             # Should contain some content from the file
@@ -529,7 +523,7 @@ class TestDocumentViewJourney:
         """Cover endpoint should return a JPEG image."""
         app, uid, cid, doc_id = setup_doc
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            await _login(client)
+            await login(client, "testuser", "testpass")
             r = await client.get(f"/docs/{doc_id}/cover")
             assert r.status_code == 200
             assert r.headers["content-type"] == "image/jpeg"
@@ -540,7 +534,7 @@ class TestDocumentViewJourney:
         """PDF endpoint should return the original PDF."""
         app, uid, cid, doc_id = setup_doc
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            await _login(client)
+            await login(client, "testuser", "testpass")
             r = await client.get(f"/docs/{doc_id}/pdf")
             assert r.status_code == 200
             assert r.headers["content-type"] == "application/pdf"
@@ -551,7 +545,7 @@ class TestDocumentViewJourney:
         """Collection page should show the book with its cover."""
         app, uid, cid, doc_id = setup_doc
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            await _login(client)
+            await login(client, "testuser", "testpass")
             r = await client.get(f"/collections/{cid}")
             assert r.status_code == 200
             assert "rpg" in r.text.lower()
@@ -562,7 +556,7 @@ class TestDocumentViewJourney:
         """Collection table partial should show the book with no processing overlay."""
         app, uid, cid, doc_id = setup_doc
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            await _login(client)
+            await login(client, "testuser", "testpass")
             r = await client.get(f"/collections/{cid}/table")
             assert r.status_code == 200
             # When status is 'done', no overlay badge is shown — just the book card
@@ -583,7 +577,7 @@ class TestSearchQAJourney:
         app, uid, gateway = app_with_user
         pdf_bytes = _make_rpg_pdf()
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            await _login(client)
+            await login(client, "testuser", "testpass")
             uconn = init_user_db(tmp_dirs["db"], uid)
             cid = create_collection(uconn, "Search Test")
             uconn.close()
@@ -674,7 +668,7 @@ class TestSearchQAJourney:
         """Full Q&A: ask a question via the web UI, get an answer back."""
         app, uid, cid, doc_id = setup_searchable
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            await _login(client)
+            await login(client, "testuser", "testpass")
             r = await client.post(
                 "/sessions",
                 data={"collection_id": cid, "question": "What is a goblin's AC?"},
@@ -692,7 +686,7 @@ class TestSearchQAJourney:
         """Follow-up questions in an existing session should work."""
         app, uid, cid, doc_id = setup_searchable
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            await _login(client)
+            await login(client, "testuser", "testpass")
             # First question
             r = await client.post(
                 "/sessions",
@@ -721,7 +715,7 @@ class TestSearchQAJourney:
         """Sessions page should list created sessions."""
         app, uid, cid, doc_id = setup_searchable
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            await _login(client)
+            await login(client, "testuser", "testpass")
             await client.post(
                 "/sessions",
                 data={"collection_id": cid, "question": "What is a goblin's AC?"},
@@ -735,7 +729,7 @@ class TestSearchQAJourney:
         """Citation links should point to the PDF with page anchors."""
         app, uid, cid, doc_id = setup_searchable
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            await _login(client)
+            await login(client, "testuser", "testpass")
             r = await client.post(
                 "/sessions",
                 data={"collection_id": cid, "question": "What is a goblin's AC?"},
@@ -755,7 +749,7 @@ class TestSearchQAJourney:
         """Follow-up suggestion buttons should have data-question attributes."""
         app, uid, cid, doc_id = setup_searchable
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            await _login(client)
+            await login(client, "testuser", "testpass")
             r = await client.post(
                 "/sessions",
                 data={"collection_id": cid, "question": "What is a goblin's AC?"},
@@ -967,7 +961,7 @@ class TestRealOllamaJourney:
         app, uid, gateway = real_app_with_user
         pdf_bytes = _make_rpg_pdf()
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            await _login(client)
+            await login(client, "testuser", "testpass")
             uconn = init_user_db(tmp_dirs["db"], uid)
             cid = create_collection(uconn, "Real E2E")
             uconn.close()
@@ -1010,7 +1004,7 @@ class TestRealOllamaJourney:
         app, uid, gateway = real_app_with_user
         pdf_bytes = _make_rpg_pdf()
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
-            await _login(client)
+            await login(client, "testuser", "testpass")
             uconn = init_user_db(tmp_dirs["db"], uid)
             cid = create_collection(uconn, "Enrichment Quality")
             uconn.close()

@@ -2,8 +2,14 @@ import pytest
 from pathlib import Path
 import tempfile
 import os
+from httpx import AsyncClient
 from app.config import Config
 from app.auth.session import get_csrf_token
+from app.main import create_app
+from app.storage.shared_db import init_shared_db, create_user, add_collection_member
+from app.storage.user_db import init_user_db, create_collection, create_doc, update_doc_status, insert_fts_row
+from app.auth.passwords import hash_password
+
 
 
 def csrf_for(client, secret: str = "testsecret") -> str:
@@ -14,6 +20,13 @@ def csrf_for(client, secret: str = "testsecret") -> str:
     token = get_csrf_token(session, secret)
     assert token is not None, "no CSRF token in session cookie"
     return token
+
+
+async def login(client: AsyncClient, username: str = "alice", password: str = "pw123") -> None:
+    """Log in and verify session cookie is set."""
+    r = await client.post("/login", data={"username": username, "password": password})
+    assert r.status_code in (200, 303)
+    assert "session" in r.cookies
 
 
 @pytest.fixture(autouse=True)
@@ -74,3 +87,34 @@ def disable_rate_limiter():
         pass
     yield
     limiter.enabled = original_enabled
+
+
+DOC_ID_A = "38dfd1fd2c4249f193f923458891812f"
+
+
+@pytest.fixture
+def shared_collection_fixture(tmp_dirs, test_config):
+    """alice owns shared c1 with a goblin doc; bob is member; eve is nobody.
+    Returns (app, alice, bob, eve, cid)."""
+    conn = init_shared_db(tmp_dirs["db"])
+    alice = create_user(conn, "alice", hash_password("pw123456"))
+    bob = create_user(conn, "bob", hash_password("pw123456"))
+    eve = create_user(conn, "eve", hash_password("pw123456"))
+    conn.close()
+    uconn = init_user_db(tmp_dirs["db"], alice)
+    cid = create_collection(uconn, "Shared Shelf")
+    create_doc(uconn, DOC_ID_A, cid, "Goblin Book", "sha1")
+    update_doc_status(uconn, DOC_ID_A, "done")
+    insert_fts_row(uconn, f"{DOC_ID_A}/01_goblin.md", "Goblin", "Goblin stats.", "goblin", "Goblins have AC 15.")
+    uconn.close()
+    doc_dir = tmp_dirs["data"] / alice / DOC_ID_A
+    doc_dir.mkdir(parents=True)
+    (doc_dir / "original.pdf").write_bytes(b"%PDF-1.4 fake")
+    (doc_dir / "cover.jpg").write_bytes(b"jpegdata")
+    (doc_dir / "01_goblin.md").write_text("---\nsummary: \"Goblin.\"\nkeywords: [goblin]\n---\n\n# Goblin\n\nAC 15, HP 7.\n")
+    conn = init_shared_db(tmp_dirs["db"])
+    add_collection_member(conn, cid, alice, "owner")
+    add_collection_member(conn, cid, bob, "member")
+    conn.close()
+    app = create_app(test_config, session_secret="testsecret")
+    return app, alice, bob, eve, cid

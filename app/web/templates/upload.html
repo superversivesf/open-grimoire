@@ -25,8 +25,7 @@
 </div>
 {% endif %}
 
-<form id="upload-form" method="post" action="/upload" enctype="multipart/form-data"
-      onsubmit="document.getElementById('upload-btn').disabled=true; document.getElementById('upload-btn').classList.add('rpg-btn-loading'); document.getElementById('upload-overlay').style.display='flex';">
+<form id="upload-form" method="post" action="/upload" enctype="multipart/form-data">
   <input type="hidden" name="_csrf" value="{{ request.state.csrf_token }}">
   <input type="hidden" name="collection_id" value="{{ collection.collection_id }}">
   <label class="rpg-dropzone" for="file-input" id="dropzone">
@@ -53,10 +52,18 @@
 
 <p style="margin-top:1rem;"><a href="/collections/{{ collection.collection_id }}" class="rpg-btn-secondary rpg-btn">&#8592; Back to collection</a></p>
 
-<script>
+<script nonce="{{ request.state.csp_nonce }}">
 var dropzone = document.getElementById('dropzone');
 var fileInput = document.getElementById('file-input');
 var fileList = document.getElementById('file-list');
+
+// CSP nonce-based: bind the submit handler instead of inline onsubmit.
+document.getElementById('upload-form').addEventListener('submit', function() {
+  var btn = document.getElementById('upload-btn');
+  btn.disabled = true;
+  btn.classList.add('rpg-btn-loading');
+  document.getElementById('upload-overlay').style.display = 'flex';
+});
 
 fileInput.addEventListener('change', function(e) {
   fileList.innerHTML = '';

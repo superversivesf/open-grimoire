@@ -57,8 +57,11 @@ def configure_logging(log_dir: str = "logs", json_output: bool = True) -> None:
     log_path = Path(log_dir)
     log_path.mkdir(parents=True, exist_ok=True)
 
-    # Configure standard library logging to write to file
-    file_handler = logging.FileHandler(log_path / "rpg-master.log")
+    # Configure standard library logging to write to file with rotation
+    from logging.handlers import RotatingFileHandler
+    file_handler = RotatingFileHandler(
+        log_path / "rpg-master.log", maxBytes=10 * 1024 * 1024, backupCount=5
+    )
     file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(logging.Formatter("%(message)s"))
 
@@ -100,12 +103,3 @@ def get_logger(name: str) -> structlog.stdlib.BoundLogger:
     return cast(structlog.stdlib.BoundLogger, structlog.get_logger(name))
 
 
-# Backward compatibility: configure on first use
-_configured = False
-
-
-def _ensure_configured() -> None:
-    global _configured
-    if not _configured:
-        configure_logging()
-        _configured = True
