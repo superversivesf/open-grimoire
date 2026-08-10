@@ -16,7 +16,7 @@ from app.gateway.ollama import OllamaGateway
 from app.config import load_config
 from app.storage.shared_db import init_shared_db, list_users
 from app.storage.user_db import init_user_db, list_collections
-from tests.enrich_comparison import (
+from benchmarks.enrich_comparison import (
     collect_enrich_samples, score_enrichment,
     check_topic_match, EnrichResult
 )

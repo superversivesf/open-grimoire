@@ -37,6 +37,13 @@ RUN useradd --create-home --uid 10001 appuser \
     && chown -R appuser:appuser /app
 USER appuser
 
+# Entrypoint: generate a random SESSION_SECRET when the operator did not
+# provide one, so the container "just works" while app/config.py's strict
+# validation (>=32 chars, no known placeholders) still guards production.
+COPY --chown=appuser:appuser entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+
 EXPOSE 8050
 
+ENTRYPOINT ["/app/entrypoint.sh"]
 CMD ["python", "-m", "app"]

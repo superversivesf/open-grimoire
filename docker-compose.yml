@@ -10,7 +10,7 @@ services:
       - ./config-prod.yaml:/app/config.yaml:ro
     environment:
       - OLLAMA_HOST=http://host.docker.internal:11434
-      - SESSION_SECRET=${SESSION_SECRET:-change-me-in-production}
+      - SESSION_SECRET=${SESSION_SECRET:-}
       - ALLOW_REGISTRATION=${ALLOW_REGISTRATION:-0}
       - HOST=0.0.0.0
       - PORT=8050
@@ -35,7 +35,7 @@ services:
       - ./config-test.yaml:/app/config.yaml:ro
     environment:
       - OLLAMA_HOST=http://host.docker.internal:11434
-      - SESSION_SECRET=${TEST_SESSION_SECRET:-test-secret-change-me}
+      - SESSION_SECRET=${TEST_SESSION_SECRET:-}
       - ALLOW_REGISTRATION=${ALLOW_REGISTRATION:-0}
       - HOST=0.0.0.0
       - PORT=8051

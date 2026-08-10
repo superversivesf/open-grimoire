@@ -221,7 +221,7 @@ async def test_enrich_model(model_name: str, samples: list[dict], cfg, num_ctx: 
     for i, sample in enumerate(samples):
         t0 = time.time()
         from app.pipeline.enrich import ENRICH_PROMPT
-        prompt = ENRICH_PROMPT.format(content=sample["content"])
+        prompt = ENRICH_PROMPT.substitute(content=sample["content"])
         try:
             resp = await gw.call("enrich", prompt)
             raw = resp.get("message", {}).get("content", "")
