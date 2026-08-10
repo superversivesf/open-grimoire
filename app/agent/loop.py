@@ -310,7 +310,7 @@ class AgentLoop:
                     elif len(content) > 10:
                         log.info(f"  iter {total_iterations}: content without tool calls, re-prompting for done ({llm_time:.1f}s)")
                         messages.append({"role": "assistant", "content": content})
-                        messages.append({"role": "user", "content": "Good answer. Now call the done tool with that answer in the 'answer' field, and add any source citations you have in the 'cites' field. Use the exact paths from the fts_search results."})
+                        messages.append({"role": "user", "content": "Good answer. Now call the done tool with that answer in the 'answer' field, add any source citations you have in the 'cites' field, and include 3 follow-up questions in the 'suggestions' field. Use the exact paths from the fts_search results."})
                         continue
                 if not tool_calls:
                     elapsed = time.time() - start_time

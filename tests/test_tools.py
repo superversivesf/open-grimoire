@@ -191,6 +191,13 @@ def test_read_file_blocks_index_md(toolbox):
     assert "list_index" in result
 
 
+def test_done_schema_requires_suggestions():
+    from app.agent.tools_schema import FORCED_DONE_TOOLS
+    props = FORCED_DONE_TOOLS[0]["function"]["parameters"]
+    assert "suggestions" in props["required"]
+    assert props["properties"]["suggestions"].get("minItems", 0) >= 3
+
+
 def test_execute_dispatch(toolbox):
     result = toolbox.execute("fts_search", {"query": "goblin"})
     import json
