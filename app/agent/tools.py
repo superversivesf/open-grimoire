@@ -110,10 +110,10 @@ class ToolBox:
             extra = self._keyword_synonyms(conn, doc_ids, terms)
             cascade = build_query_cascade(terms, extra)
             scope = "(" + " OR ".join(f"path LIKE ?" for _ in doc_ids) + ")"
-            for fts_query in cascade:
+            for stage, fts_query in enumerate(cascade):
                 sql = (
                     f"SELECT path, title, summary, "
-                    f"snippet(documents_fts, 4, '<mark>', '</mark>', '...', 10) as snippet, "
+                    f"snippet(documents_fts, 4, '<mark>', '</mark>', '...', 15) as snippet, "
                     f"bm25(documents_fts, 0, 5, 8, 8, 1) as rank "
                     f"FROM documents_fts WHERE documents_fts MATCH ? AND {scope} "
                     f"ORDER BY rank LIMIT 5"
@@ -121,15 +121,17 @@ class ToolBox:
                 params = (fts_query,) + tuple(f"{d}/%" for d in doc_ids)
                 rows = conn.execute(sql, params).fetchall()
                 if rows:
+                    match_mode = ("and", "or", "prefix")[stage]
                     results = []
                     for r in rows:
                         item = dict(r)
+                        item["match_mode"] = match_mode
                         item["page"] = self._page_for(item["path"])
                         results.append(item)
-                    log.debug(f"fts_search: query='{query}' -> {len(results)} results (fts='{fts_query}')")
+                    log.debug(f"fts_search: query='{query}' -> {len(results)} results ({match_mode}, fts='{fts_query}')")
                     return results
             log.debug(f"fts_search: query='{query}' -> 0 results across all fallbacks")
-            return []
+            return [{"match_mode": "none", "hint": f"No matches for '{query}'. Try a different single keyword or use grep."}]
         except Exception as e:
             log.error(f"fts_search ERROR: {e}\n{traceback.format_exc()}")
             return []

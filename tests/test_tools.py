@@ -57,6 +57,7 @@ def test_fts_search_prefix_fallback(toolbox):
 
 
 def test_fts_search_empty_query(toolbox):
+    # stop-word-only queries tokenize to nothing and return []
     assert toolbox.fts_search("how what the") == []
 
 
@@ -156,6 +157,19 @@ def test_calc_rejects_compound_types(toolbox):
 def test_ls(toolbox):
     result = toolbox.ls(str(toolbox.data_dir / "alice" / "d1"))
     assert "index.md" in result
+
+
+def test_fts_search_reports_match_mode(toolbox):
+    results = toolbox.fts_search("goblin")
+    assert results[0]["match_mode"] in ("and", "or", "prefix")
+
+
+def test_fts_search_empty_returns_hint_item(toolbox):
+    # a real query with no matches anywhere returns a hint item, not []
+    results = toolbox.fts_search("zzzzzzyxwv")
+    assert len(results) == 1
+    assert results[0]["match_mode"] == "none"
+    assert "hint" in results[0]
 
 
 def test_execute_dispatch(toolbox):
