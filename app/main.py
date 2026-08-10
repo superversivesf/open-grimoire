@@ -99,7 +99,10 @@ def create_app(cfg: Config, session_secret: str) -> FastAPI:
         request.state.csp_nonce = nonce
         response = await call_next(request)
         response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["X-Frame-Options"] = "DENY"
+        # X-Frame-Options: DENY would block the PDF viewer's same-origin
+        # <iframe> from loading the raw PDF — skip it for PDF responses.
+        if not response.headers.get("content-type", "").startswith("application/pdf"):
+            response.headers["X-Frame-Options"] = "DENY"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; img-src 'self' data:; "

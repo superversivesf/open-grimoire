@@ -314,6 +314,15 @@ class AgentLoop:
                 except json.JSONDecodeError:
                     args = {}
 
+                # Server-side state enforcement: in SYNTHESIZING/DONE only the
+                # done tool may run. The model may ignore the tool list we send,
+                # so reject anything else outright instead of executing it.
+                if state in (AgentState.SYNTHESIZING, AgentState.DONE) and name != "done":
+                    log.info(f"  iter {total_iterations}: BLOCKED {name} in {state.value} state — only done allowed")
+                    messages.append({"role": "assistant", "content": content})
+                    messages.append({"role": "tool", "name": name, "content": "Tool not allowed in this state. Call the done tool now with your answer and citations."})
+                    continue
+
                 if name == "done":
                     answer = args.get("answer", content or last_content or "No answer provided.")
                     cites = args.get("cites", [])
