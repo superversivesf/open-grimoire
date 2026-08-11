@@ -760,6 +760,27 @@ class TestSearchQAJourney:
             suggestions = re.findall(r'data-question="([^"]+)"', r.text)
             assert len(suggestions) >= 1, "Should have suggestion buttons"
 
+    @pytest.mark.asyncio
+    async def test_chat_page_has_no_inline_script(self, setup_searchable, tmp_dirs):
+        """Regression: the chat page must not carry inline scripts — per-request
+        CSP nonces cannot survive htmx body swaps, which silently disabled the
+        suggestion buttons. The handler lives in /static/chat.js instead."""
+        app, uid, cid, doc_id = setup_searchable
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            await login(client, "testuser", "testpass")
+            r = await client.post(
+                "/sessions",
+                data={"collection_id": cid, "question": "What is a goblin's AC?"},
+            )
+            import re
+            m = re.search(r'/sessions/([a-f0-9]+)', r.text)
+            sid = m.group(1)
+            r2 = await client.get(f"/sessions/{sid}")
+            html = r2.text
+            inline_scripts = re.findall(r'<script(?![^>]*src=)[^>]*>', html)
+            assert not inline_scripts, f"chat page must have no inline scripts, found: {inline_scripts}"
+            assert 'src="/static/chat.js"' in html, "chat.js must be loaded"
+
 
 # ===========================================================================
 # Journey 6: Multi-User Isolation
