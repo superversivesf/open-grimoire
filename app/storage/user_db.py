@@ -208,6 +208,15 @@ def add_enrich_completed_path(conn: DbConn, doc_id: str, path: str) -> None:
     conn.commit()
 
 
+def clear_enrich_completed_paths(conn: DbConn, doc_id: str) -> None:
+    """Reset the completed-enrich list and progress for a doc (used by re-enrich)."""
+    conn.execute(
+        "UPDATE docs SET enrich_completed_paths = '[]', enrich_progress = 0 WHERE doc_id = ?",
+        (doc_id,),
+    )
+    conn.commit()
+
+
 def get_doc(conn: DbConn, doc_id: str) -> dict[str, Any] | None:
     row = conn.execute(
         "SELECT doc_id, collection_id, title, sha256, status, page_count, enrich_progress, enrich_total, created_at FROM docs WHERE doc_id = ?",

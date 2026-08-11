@@ -55,7 +55,9 @@ class Enricher:
     @staticmethod
     def _parse_json(raw: str) -> dict[str, Any]:
         try:
-            return cast(dict[str, Any], json.loads(raw))
+            parsed = json.loads(raw)
+            if isinstance(parsed, dict):
+                return cast(dict[str, Any], parsed)
         except json.JSONDecodeError:
             pass
         start = raw.find("{")
@@ -82,7 +84,9 @@ class Enricher:
                 depth -= 1
                 if depth == 0:
                     try:
-                        return cast(dict[str, Any], json.loads(raw[start:i + 1]))
+                        parsed = json.loads(raw[start:i + 1])
+                        if isinstance(parsed, dict):
+                            return cast(dict[str, Any], parsed)
                     except json.JSONDecodeError:
                         break
         return {"summary": "", "keywords": []}
