@@ -107,6 +107,38 @@ async def test_loop_searches_then_done():
 
 
 @pytest.mark.asyncio
+async def test_loop_bounds_search_attempts():
+    """The SEARCHING cap must bind on distinct search count, not the
+    reset-on-every-search iteration counter (M1)."""
+    import json
+    search_count = [0]
+    seen_messages = []
+
+    async def mock_call(role, prompt, tools=None, messages=None):
+        seen_messages.extend(messages or [])
+        if search_count[0] < 5:
+            search_count[0] += 1
+            return {"message": {"content": "", "tool_calls": [
+                {"function": {"name": "fts_search", "arguments": json.dumps({"query": f"q{search_count[0]}"})}}
+            ]}}
+        return {"message": {"content": "", "tool_calls": [
+            {"function": {"name": "done", "arguments": '{"answer": "found", "cites": [], "suggestions": ["a", "b", "c"]}'}}
+        ]}}
+
+    gw = MagicMock()
+    gw.call = mock_call
+    toolbox = MagicMock()
+    toolbox.execute = MagicMock(return_value='[{"path": "x.md", "title": "X", "snippet": "y"}]')
+    loop = AgentLoop(gw, toolbox)
+    result = await loop.run([], "Find x")
+    # Exactly 5 distinct searches in SEARCHING, then the cap forces the nudge
+    # before the model may call done.
+    assert search_count[0] == 5
+    assert result["done_called"] is True
+    assert any("searched enough" in m.get("content", "") for m in seen_messages)
+
+
+@pytest.mark.asyncio
 async def test_loop_force_terminates_after_max():
     gw = MagicMock()
     gw.call = AsyncMock(return_value={

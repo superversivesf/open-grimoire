@@ -274,6 +274,8 @@ class AgentLoop:
 
         state = AgentState.SEARCHING
         state_iterations = 0
+        searches_in_state = 0
+        reads_in_state = 0
         total_iterations = 0
         nudge_given = False
         consecutive_dedups = 0
@@ -372,6 +374,8 @@ class AgentLoop:
                             log.info(f"  iter {total_iterations}: repeated dedup skips ({consecutive_dedups}), forcing SYNTHESIZING")
                             state = AgentState.SYNTHESIZING
                             state_iterations = 0
+                            searches_in_state = 0
+                            reads_in_state = 0
                         continue
                     consecutive_dedups = 0
                     files_read.add(fpath)
@@ -387,6 +391,8 @@ class AgentLoop:
                             log.info(f"  iter {total_iterations}: repeated dedup skips ({consecutive_dedups}), forcing SYNTHESIZING")
                             state = AgentState.SYNTHESIZING
                             state_iterations = 0
+                            searches_in_state = 0
+                            reads_in_state = 0
                         continue
                     consecutive_dedups = 0
                     searches_done.add(q)
@@ -419,21 +425,39 @@ class AgentLoop:
 
                 # State transitions based on tool used
                 if name in ("fts_search", "grep", "list_index", "ls"):
-                    state = AgentState.SEARCHING
-                    state_iterations = 0
+                    if state != AgentState.SEARCHING:
+                        state = AgentState.SEARCHING
+                        state_iterations = 0
+                        searches_in_state = 0
+                        reads_in_state = 0
+                    searches_in_state += 1
                 elif name == "read_file":
-                    state = AgentState.READING
-                    state_iterations = 0
+                    if state != AgentState.READING:
+                        state = AgentState.READING
+                        state_iterations = 0
+                        searches_in_state = 0
+                        reads_in_state = 0
+                    reads_in_state += 1
                 elif name == "table_extract":
-                    state = AgentState.READING
-                    state_iterations = 0
+                    if state != AgentState.READING:
+                        state = AgentState.READING
+                        state_iterations = 0
+                        searches_in_state = 0
+                        reads_in_state = 0
+                    reads_in_state += 1
 
             # Check state iteration limits and transition
             max_state_iter = STATE_MAX_ITERATIONS.get(state, 3)
-            if state_iterations >= max_state_iter:
+            if state_iterations >= max_state_iter or (
+                state == AgentState.SEARCHING and searches_in_state >= STATE_MAX_ITERATIONS[AgentState.SEARCHING]
+            ) or (
+                state == AgentState.READING and reads_in_state >= STATE_MAX_ITERATIONS[AgentState.READING]
+            ):
                 if state == AgentState.SEARCHING:
                     state = AgentState.READING
                     state_iterations = 0
+                    searches_in_state = 0
+                    reads_in_state = 0
                     if not nudge_given:
                         messages.append({"role": "user", "content": "You have searched enough. Please read the most relevant file from your search results, then call done with your answer."})
                         nudge_given = True
@@ -441,6 +465,8 @@ class AgentLoop:
                 elif state == AgentState.READING:
                     state = AgentState.SYNTHESIZING
                     state_iterations = 0
+                    searches_in_state = 0
+                    reads_in_state = 0
                     messages.append({"role": "user", "content": "You have read enough. Call the done tool now with your answer and citations. Cite the exact paths from your fts_search results."})
                     log.info(f"  iter {total_iterations}: transitioning to SYNTHESIZING state")
                 elif state == AgentState.SYNTHESIZING:
