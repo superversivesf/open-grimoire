@@ -56,9 +56,10 @@ def test_build_or_query_prefix():
 
 def test_cascade_order_strictest_first():
     cascade = build_query_cascade(["gobli"])
-    assert len(cascade) == 3
-    # 1: strict term; 2: same (no OR needed for one member); 3: prefix stage
-    assert "*" in cascade[2]
+    assert len(cascade) == 4
+    # 0: title stage; 1: strict term; 2: same (no OR needed for one member); 3: prefix stage
+    assert cascade[0].startswith("title:")
+    assert "*" in cascade[-1]
     assert "*" not in cascade[1]
 
 
@@ -70,13 +71,34 @@ def test_cascade_skips_prefix_for_multiple_terms():
 
 def test_cascade_keeps_prefix_for_single_term():
     cascade = build_query_cascade(["gobli"])
-    assert len(cascade) == 3
+    assert len(cascade) == 4
+    # 0: title stage; 1: strict term; 2: same (no OR needed); 3: prefix stage
+    assert cascade[0].startswith("title:")
+    assert "*" in cascade[-1]
+    assert "*" not in cascade[1]
 
 
 def test_cascade_skips_prefix_for_broad_stems():
     cascade = build_query_cascade(["feat"])
-    assert len(cascade) == 2
+    assert len(cascade) == 3
     assert "*" not in cascade[-1]
+
+
+def test_cascade_title_stage_first_for_single_term():
+    cascade = build_query_cascade(["goblin"])
+    assert cascade[0].startswith("title:")
+    assert "goblin" in cascade[0]
+
+
+def test_cascade_title_stage_quotes_terms():
+    cascade = build_query_cascade(["armor class"])
+    assert cascade[0].startswith("title:")
+    assert '"armor class"' in cascade[0]
+
+
+def test_cascade_title_stage_skipped_for_multi_term():
+    cascade = build_query_cascade(["goblin", "ac"])
+    assert not cascade[0].startswith("title:")
 
 
 def test_cascade_empty_for_all_stop_words():
@@ -177,5 +199,7 @@ def test_cascade_outputs_execute_against_real_fts5():
         assert isinstance(rows, list)
     # also single multi-word term with prefix path
     for fts_query in build_query_cascade(["armor class"]):
+        if fts_query.startswith("title:"):
+            continue  # title column not present in this test table
         conn.execute("SELECT a FROM t WHERE t MATCH ?", (fts_query,)).fetchall()
     conn.close()

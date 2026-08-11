@@ -161,7 +161,7 @@ def test_ls(toolbox):
 
 def test_fts_search_reports_match_mode(toolbox):
     results = toolbox.fts_search("goblin")
-    assert results[0]["match_mode"] in ("and", "or", "prefix")
+    assert results[0]["match_mode"] in ("title", "and", "or", "prefix")
 
 
 def test_fts_search_empty_returns_hint_item(toolbox):

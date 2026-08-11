@@ -144,6 +144,7 @@ def _allow_prefix(expanded: list[set[str]]) -> bool:
 def build_query_cascade(terms: list[str], extra_synonyms: dict[str, list[str]] | None = None) -> list[str]:
     """Return FTS5 queries from strictest to loosest.
 
+    0. title-only match (single term) — docs with the term in their title win
     1. AND of synonym groups (stop words removed)
     2. OR of everything
     3. OR of everything with prefix wildcards (single terms only)
@@ -154,10 +155,16 @@ def build_query_cascade(terms: list[str], extra_synonyms: dict[str, list[str]] |
     if not terms:
         return []
     expanded = expand_terms(terms, extra_synonyms)
+    cascade: list[str] = []
+    if len(expanded) == 1:
+        quoted = [q for m in sorted(expanded[0]) if (q := _quote(m))]
+        if quoted:
+            cascade.append("title:(" + " OR ".join(quoted) + ")")
     and_query = build_and_query(expanded)
     if not and_query:
-        return []
-    cascade = [and_query]
+        return cascade
+    if and_query not in cascade:
+        cascade.append(and_query)
     or_query = build_or_query(expanded)
     if or_query not in cascade:
         cascade.append(or_query)

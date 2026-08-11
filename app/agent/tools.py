@@ -121,7 +121,10 @@ class ToolBox:
                 params = (fts_query,) + tuple(f"{d}/%" for d in doc_ids)
                 rows = conn.execute(sql, params).fetchall()
                 if rows:
-                    match_mode = ("and", "or", "prefix")[stage]
+                    if fts_query.startswith("title:"):
+                        match_mode = "title"
+                    else:
+                        match_mode = ("and", "or", "prefix")[stage - (1 if cascade[0].startswith("title:") else 0)]
                     results = []
                     for r in rows:
                         item = dict(r)
@@ -186,7 +189,7 @@ class ToolBox:
             _KEYWORD_CACHE[cache_key] = (now, all_keywords)
         extra = {}
         for t in short_terms:
-            hits = {kw for kw in all_keywords if t in kw}
+            hits = {kw for kw in all_keywords if t in kw.split()}
             if hits:
                 extra[t] = sorted(hits)
         return extra
