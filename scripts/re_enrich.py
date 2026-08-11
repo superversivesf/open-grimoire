@@ -74,6 +74,26 @@ def build_page_map(doc_dir: Path, leaves: list[Path]) -> dict[Path, int]:
     return page_map
 
 
+def doc_already_enriched(doc_dir: Path) -> bool:
+    """True when every leaf already has a non-empty summary+keywords frontmatter."""
+    leaves = [f for f in doc_dir.rglob("*.md") if f.name != "index.md"]
+    if not leaves:
+        return True
+    for p in leaves:
+        text = p.read_text()
+        if not text.startswith("---\n"):
+            return False
+        end = text.find("\n---\n", 4)
+        if end == -1:
+            return False
+        fm = text[4:end]
+        if '"summary"' not in fm and "summary:" not in fm:
+            return False
+        if "keywords:" not in fm:
+            return False
+    return True
+
+
 async def main() -> None:
     cfg_path = sys.argv[1] if len(sys.argv) > 1 else str(Path(__file__).parent.parent / "config.yaml")
     cfg = load_config(cfg_path)
