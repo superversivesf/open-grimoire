@@ -31,8 +31,29 @@ def _gateway(responses):
     return gw
 
 
-async def _collect(loop, history, question):
-    return [ev async for ev in loop.run_stream(history, question)]
+def _streaming_gateway(prose: str, done_response: dict):
+    """Gateway whose call() returns prose first then done_response; stream()
+    yields prose deltas for the prose turn."""
+    gw = MagicMock()
+    calls = [0]
+
+    async def call(role, prompt, tools=None, messages=None):
+        if calls[0] == 0:
+            calls[0] += 1
+            return {"message": {"content": prose, "tool_calls": []}}
+        return dict(done_response)
+
+    async def stream(role, prompt, tools=None, messages=None):
+        for chunk in (prose[i:i + 4] for i in range(0, len(prose), 4)):
+            yield {"type": "content", "text": chunk}
+
+    gw.call = call
+    gw.stream = stream
+    return gw
+
+
+async def _collect(loop, history, question, nudge=None):
+    return [ev async for ev in loop.run_stream(history, question, nudge=nudge)]
 
 
 @pytest.mark.asyncio
@@ -130,8 +151,8 @@ async def test_run_maps_error_event_to_graceful_fallback():
 
 @pytest.mark.asyncio
 async def test_stream_budget_exhaustion_done_called_false():
-    """When the iteration budget is hit, a done event with done_called=False
-    and a fallback answer must be emitted."""
+    """When the iteration budget is hit, a budget_exhausted event with the
+    recent steps is emitted instead of a silent force-answered done."""
     gw = _gateway([
         {"message": {"content": "", "tool_calls": [
             {"function": {"name": "fts_search", "arguments": '{"query": "goblin"}'}}]}},
@@ -143,13 +164,15 @@ async def test_stream_budget_exhaustion_done_called_false():
     loop = AgentLoop(gw, toolbox, max_iterations=2)
 
     events = await _collect(loop, [], "Find the goblin")
-    thinking = [e for e in events if e["type"] == "thinking"]
-    done = [e for e in events if e["type"] == "done"]
-    assert len(thinking) == 2
-    assert len(done) == 1
-    assert done[0]["done_called"] is False
-    assert done[0]["iterations"] == 2
-    assert done[0]["answer"], "fallback answer must be non-empty"
+    types = [e["type"] for e in events]
+    assert types == ["thinking", "thinking", "budget_exhausted"]
+    exhausted = events[-1]
+    assert exhausted["iterations"] == 2
+    steps = exhausted["steps"]
+    assert len(steps) == 2
+    assert steps[0]["tool"] == "fts_search"
+    assert steps[0]["args"]["query"] == "goblin"
+    assert "done" not in types
 
 
 @pytest.mark.asyncio
@@ -169,6 +192,83 @@ async def test_stream_reprompts_on_content_without_tool_call():
     assert done[0]["answer"] == "Goblins have AC 15."
     # gateway was called twice: original answer + re-prompt for done
     assert len(events) == 1
+
+
+@pytest.mark.asyncio
+async def test_stream_emits_token_events_for_prose():
+    """A content-only reply (no tool calls) streams as token events; the done
+    event still carries the assembled answer."""
+    gw = _streaming_gateway(
+        "Here is a long answer about goblins without any tool call.",
+        {"message": {"content": "", "tool_calls": [
+            {"function": {"name": "done", "arguments": '{"answer": "Goblins have AC 15."}'}}
+        ]}},
+    )
+    toolbox = MagicMock()
+    loop = AgentLoop(gw, toolbox)
+
+    events = await _collect(loop, [], "Goblin AC?")
+    types = [e["type"] for e in events]
+    assert "token" in types
+    tokens = "".join(e["content"] for e in events if e["type"] == "token")
+    assert tokens == "Here is a long answer about goblins without any tool call."
+    done = [e for e in events if e["type"] == "done"]
+    assert done[0]["answer"] == "Goblins have AC 15."
+
+
+@pytest.mark.asyncio
+async def test_stream_tool_calls_from_prose_keeps_context():
+    """When the streamed response emits tool calls (not prose), the assistant
+    prose must stay in context for the tool execution loop."""
+    gw = MagicMock()
+    calls = [0]
+    seen_messages = []
+
+    async def call(role, prompt, tools=None, messages=None):
+        if calls[0] == 0:
+            calls[0] += 1
+            return {"message": {"content": "Let me look that up for you.", "tool_calls": []}}
+        seen_messages.extend(messages or [])
+        return {"message": {"content": "", "tool_calls": [
+            {"function": {"name": "done", "arguments": '{"answer": "Found it."}'}}
+        ]}}
+
+    async def stream(role, prompt, tools=None, messages=None):
+        yield {"type": "tool_calls", "calls": [
+            {"function": {"name": "fts_search", "arguments": '{"query": "goblin"}'}}
+        ]}
+
+    gw.call = call
+    gw.stream = stream
+    toolbox = MagicMock()
+    toolbox.execute = MagicMock(return_value='[{"path": "x.md", "title": "G", "snippet": "s"}]')
+    loop = AgentLoop(gw, toolbox)
+
+    events = await _collect(loop, [], "Goblin AC?")
+    types = [e["type"] for e in events]
+    assert "done" in types
+    # The assistant's prose must be present in the final messages context.
+    assert any("Let me look that up" in m.get("content", "") for m in seen_messages)
+
+
+@pytest.mark.asyncio
+async def test_stream_nudge_appended_to_messages():
+    """The nudge (continue) message must be appended after the question."""
+    gw = MagicMock()
+    seen = []
+
+    async def call(role, prompt, tools=None, messages=None):
+        seen.extend(messages or [])
+        return {"message": {"content": "", "tool_calls": [
+            {"function": {"name": "done", "arguments": '{"answer": "ok"}'}}
+        ]}}
+
+    gw.call = call
+    loop = AgentLoop(gw, MagicMock())
+    await _collect(loop, [], "Find x", nudge="You were asked to keep looking.")
+    contents = [m.get("content", "") for m in seen]
+    assert any("keep looking" in c for c in contents)
+    assert contents[-1] == "You were asked to keep looking."
 
 
 @pytest.mark.asyncio

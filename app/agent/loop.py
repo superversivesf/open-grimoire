@@ -216,11 +216,29 @@ class AgentLoop:
         self.max_iterations = max_iterations
 
     async def run(self, history: list[dict[str, Any]], new_question: str) -> dict[str, Any]:
-        """Non-streaming run — returns the full result at once."""
+        """Non-streaming run — returns the full result at once.
+
+        Uses stream_prose=False so prose answers don't incur a redundant
+        streamed gateway call — the non-streaming path has no live UI.
+        """
         result = None
-        async for event in self.run_stream(history, new_question):
+        async for event in self.run_stream(history, new_question, stream_prose=False):
             if event["type"] == "done":
                 result = event
+                break
+            elif event["type"] == "budget_exhausted":
+                # Non-streaming caller has no UI to offer a continue — return
+                # the synthesized fallback answer, as before.
+                result = {
+                    "type": "done",
+                    "answer": event.get("fallback_answer") or "I could not find an answer.",
+                    "cites": event.get("fallback_cites", []),
+                    "suggestions": [],
+                    "iterations": event.get("iterations", self.max_iterations),
+                    "done_called": False,
+                    "est_input_tokens": event.get("est_input_tokens", 0),
+                    "est_output_tokens": event.get("est_output_tokens", 0),
+                }
                 break
             elif event["type"] == "error":
                 result = event
@@ -249,19 +267,28 @@ class AgentLoop:
             "est_output_tokens": result.get("est_output_tokens", 0),
         }
 
-    async def run_stream(self, history: list[dict[str, Any]], new_question: str) -> typing.AsyncGenerator[dict[str, Any], None]:
+    async def run_stream(self, history: list[dict[str, Any]], new_question: str,
+                         stream_prose: bool = True,
+                         nudge: str | None = None) -> typing.AsyncGenerator[dict[str, Any], None]:
         """Streaming run — yields events as they happen.
 
         Event types:
           {"type": "thinking", "message": "..."} — status update (searching, reading)
           {"type": "token", "content": "..."} — answer token (streamed)
           {"type": "done", "answer": "...", "cites": [...], "suggestions": [...], "iterations": N}
+          {"type": "budget_exhausted", "steps": [...], "iterations": N,
+           "fallback_answer": "...", "fallback_cites": [...]}
           {"type": "error", "message": "..."}
+
+        stream_prose=False keeps the legacy non-streaming path (no redundant
+        streamed gateway call for the final prose turn).
         """
         start_time = time.time()
         trimmed = trim_history(history, keep_last=6)
         messages = build_messages(trimmed, SYSTEM_PROMPT)
         messages.append({"role": "user", "content": new_question})
+        if nudge:
+            messages.append({"role": "user", "content": nudge})
 
         log.info(f"QUERY START: \"{new_question}\" (history={len(history)} turns)")
 
@@ -279,6 +306,7 @@ class AgentLoop:
         total_iterations = 0
         nudge_given = False
         consecutive_dedups = 0
+        step_log: list[dict[str, Any]] = []
 
         while total_iterations < self.max_iterations:
             total_iterations += 1
@@ -310,10 +338,42 @@ class AgentLoop:
                         content = ""
                         log.info(f"  iter {total_iterations}: parsed text tool call -> {parsed_tc['function']['name']} ({llm_time:.1f}s)")
                     elif len(content) > 10:
-                        log.info(f"  iter {total_iterations}: content without tool calls, re-prompting for done ({llm_time:.1f}s)")
-                        messages.append({"role": "assistant", "content": content})
-                        messages.append({"role": "user", "content": "Good answer. Now call the done tool with that answer in the 'answer' field, add any source citations you have in the 'cites' field, and include 3 follow-up questions in the 'suggestions' field. Use the exact paths from the fts_search results."})
-                        continue
+                        if not stream_prose:
+                            # Non-streaming path: legacy behavior — keep the
+                            # prose and re-prompt for done without an extra call.
+                            log.info(f"  iter {total_iterations}: content without tool calls, re-prompting for done ({llm_time:.1f}s)")
+                            messages.append({"role": "assistant", "content": content})
+                            messages.append({"role": "user", "content": "Good answer. Now call the done tool with that answer in the 'answer' field, add any source citations you have in the 'cites' field, and include 3 follow-up questions in the 'suggestions' field. Use the exact paths from the fts_search results."})
+                            continue
+                        # The model is writing prose: stream the answer tokens
+                        # live, then re-prompt for the done tool call.
+                        log.info(f"  iter {total_iterations}: streaming prose answer ({llm_time:.1f}s)")
+                        stream_messages = messages + [{"role": "assistant", "content": content}]
+                        streamed = ""
+                        stream_tool_calls: list[dict[str, Any]] = []
+                        try:
+                            async for ev in self.gateway.stream("query", "", tools=tools, messages=stream_messages):
+                                if ev["type"] == "content":
+                                    streamed += ev["text"]
+                                    yield {"type": "token", "content": ev["text"]}
+                                elif ev["type"] == "tool_calls":
+                                    stream_tool_calls = ev["calls"]
+                        except Exception as e:
+                            log.error(f"QUERY STREAM ERROR: {e}", exc_info=True)
+                            yield {"type": "error", "message": str(e)}
+                            return
+                        if stream_tool_calls:
+                            # The streamed response produced tool calls instead
+                            # of prose — keep the assistant turn in context so
+                            # the model doesn't lose what it just wrote.
+                            messages.append({"role": "assistant", "content": streamed or content})
+                            tool_calls = stream_tool_calls
+                            content = ""
+                        else:
+                            messages.append({"role": "assistant", "content": streamed or content})
+                            messages.append({"role": "user", "content": "Good answer. Now call the done tool with that answer in the 'answer' field, add any source citations you have in the 'cites' field, and include 3 follow-up questions in the 'suggestions' field. Use the exact paths from the fts_search results."})
+                            last_content = streamed or content
+                            continue
                 if not tool_calls:
                     elapsed = time.time() - start_time
                     answer = clean_answer(last_content) or "I could not find an answer."
@@ -329,6 +389,9 @@ class AgentLoop:
                     args = json.loads(args_str) if isinstance(args_str, str) else args_str
                 except json.JSONDecodeError:
                     args = {}
+                step_log.append({"tool": name, "args": {k: v for k, v in args.items() if k != "password"}})
+                if len(step_log) > 8:
+                    step_log.pop(0)
 
                 # Server-side state enforcement: in SYNTHESIZING/DONE only the
                 # done tool may run. The model may ignore the tool list we send,
@@ -474,12 +537,11 @@ class AgentLoop:
                     # Force fallback answer
                     break
 
-        # Budget exhausted or forced to DONE state
+        # Budget exhausted — hand control back to the user with the recent steps
         elapsed = time.time() - start_time
         log.warning(f"QUERY BUDGET EXHAUSTED: \"{new_question}\" (iters={total_iterations}, {elapsed:.1f}s)")
         fallback = _synthesize_answer(messages, new_question)
         cites = _extract_cites_from_history(messages)
-        yield {"type": "done", "answer": fallback, "cites": cites, "suggestions": [],
-               "iterations": total_iterations, "done_called": False,
-               "est_input_tokens": total_input_tokens,
-               "est_output_tokens": total_output_tokens}
+        yield {"type": "budget_exhausted", "steps": step_log, "iterations": total_iterations,
+               "fallback_answer": fallback, "fallback_cites": cites,
+               "est_input_tokens": total_input_tokens, "est_output_tokens": total_output_tokens}

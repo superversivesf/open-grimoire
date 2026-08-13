@@ -96,10 +96,33 @@ async def test_stream_yields_content_deltas():
         client_inst = MockClient.return_value
         client_inst.stream = MagicMock(return_value=_FakeStreamCtx(mock_resp))
         deltas = [d async for d in gw.stream("query", "hi")]
-        assert deltas == ["Go", "blins"]
+        assert deltas == [
+            {"type": "content", "text": "Go"},
+            {"type": "content", "text": "blins"},
+        ]
         body = client_inst.stream.call_args.kwargs["json"]
         assert body["stream"] is True
         assert body["model"] == "qwen:7b"
+
+
+@pytest.mark.asyncio
+async def test_stream_yields_tool_calls_from_final_chunk():
+    gw = OllamaGateway("http://ollama:11434", {"query": "qwen:7b"})
+    lines = [
+        '{"message": {"content": "", "role": "assistant"}}',
+        '{"message": {"content": "", "role": "assistant", "tool_calls": '
+        '[{"function": {"name": "fts_search", "arguments": "{\\"query\\": \\"goblin\\"}"}}]}}',
+    ]
+    mock_resp = _make_stream_resp(lines)
+    with patch("app.gateway.ollama.AsyncClient") as MockClient:
+        client_inst = MockClient.return_value
+        client_inst.stream = MagicMock(return_value=_FakeStreamCtx(mock_resp))
+        deltas = [d async for d in gw.stream("query", "hi", tools=[{"type": "function"}])]
+        assert deltas == [
+            {"type": "tool_calls", "calls": [
+                {"function": {"name": "fts_search", "arguments": '{"query": "goblin"}'}}
+            ]}
+        ]
 
 
 @pytest.mark.asyncio
@@ -125,7 +148,7 @@ async def test_stream_midstream_error_raises():
         with pytest.raises(RuntimeError, match="model exploded"):
             async for d in gw.stream("query", "hi"):
                 got.append(d)
-        assert got == ["Go"]
+        assert got == [{"type": "content", "text": "Go"}]
 
 
 @pytest.mark.asyncio

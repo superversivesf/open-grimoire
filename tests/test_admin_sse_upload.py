@@ -60,7 +60,7 @@ def app_with_session(tmp_dirs, test_config):
     uconn.close()
     app = create_app(test_config, session_secret="testsecret")
     mock_loop = MagicMock()
-    async def mock_run_stream(history, question):
+    async def mock_run_stream(history, question, stream_prose=True, nudge=None):
         yield {"type": "thinking", "message": "searching..."}
         yield {"type": "done", "answer": "AC is 15.", "cites": [], "suggestions": [], "iterations": 1}
     mock_loop.run_stream = mock_run_stream
@@ -91,6 +91,31 @@ async def test_sse_stream_requires_login(app_with_session):
         r = await client.post(f"/sessions/{sid}/stream", data={"question": "hi"})
         assert r.status_code == 303
         assert "/login" in r.headers["location"]
+
+
+@pytest.mark.asyncio
+async def test_sse_stream_forwards_budget_exhausted(app_with_session):
+    """Budget exhaustion must be forwarded as its own SSE event with steps."""
+    app, uid, sid = app_with_session
+    mock_loop = app.state.agent_loop_factory(None)
+
+    async def mock_run_stream(history, question, stream_prose=True, nudge=None):
+        yield {"type": "thinking", "message": "searching..."}
+        yield {"type": "budget_exhausted",
+               "steps": [{"tool": "fts_search", "args": {"query": "goblin"}}],
+               "iterations": 2, "fallback_answer": "partial", "fallback_cites": []}
+
+    mock_loop.run_stream = mock_run_stream
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        await client.post("/login", data={"username": "alice", "password": "pw"})
+        r = await client.post(
+            f"/sessions/{sid}/stream",
+            data={"question": "What is AC?", "_csrf": csrf_for(client)},
+        )
+        assert r.status_code == 200
+        assert "budget_exhausted" in r.text
+        assert "goblin" in r.text
+        assert "partial" in r.text
 
 
 # ─── Upload size enforcement ───────────────────────────────────────────

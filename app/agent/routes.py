@@ -149,7 +149,9 @@ def _sse_format(event_type: str, data: dict[str, Any]) -> str:
 
 
 @router.post("/sessions/{session_id}/stream")
-async def continue_session_stream(request: Request, session_id: str, question: str = Form(...), _: None = Depends(require_csrf)) -> Response:
+async def continue_session_stream(request: Request, session_id: str, question: str = Form(...),
+                                  continue_: int = Form(0, alias="continue"),
+                                  _: None = Depends(require_csrf)) -> Response:
     """SSE streaming endpoint for follow-up questions."""
     uid = current_user_id(request)
     if not uid:
@@ -172,10 +174,39 @@ async def continue_session_stream(request: Request, session_id: str, question: s
             yield _sse_format("error", {"message": "Access denied"})
             return
         loop = _make_loop(request, uid, session["collection_id"], owner_uid=owner)
+        nudge = (
+            f"The user asked you to keep looking for: {question}. "
+            "You have already searched and read some files — review what you found, "
+            "try different terms if needed, and then call done with your answer."
+        ) if continue_ else None
 
-        async for event in loop.run_stream(history, question):
+        async for event in loop.run_stream(history, question, nudge=nudge):
             if event["type"] == "thinking":
                 yield _sse_format("thinking", {"message": event["message"]})
+            elif event["type"] == "token":
+                yield _sse_format("token", {"content": event["content"]})
+            elif event["type"] == "budget_exhausted":
+                # No turn persisted (user may continue) — but log the run for
+                # observability.
+                sconn = init_shared_db(request.app.state.db_dir)
+                log_query(sconn, uid, _model_for(request.app.state.gateway, "query"), question,
+                          event.get("fallback_answer", ""),
+                          iterations=event.get("iterations", 0),
+                          citations=len(event.get("fallback_cites", [])),
+                          est_input_tokens=event.get("est_input_tokens", 0),
+                          est_output_tokens=event.get("est_output_tokens", 0),
+                          elapsed_sec=0,
+                          done_called=False,
+                          session_id=session_id, collection_id=session["collection_id"])
+                sconn.close()
+                yield _sse_format("budget_exhausted", {
+                    "steps": event.get("steps", []),
+                    "iterations": event.get("iterations", 0),
+                    "fallback_answer": event.get("fallback_answer", ""),
+                    "fallback_cites": event.get("fallback_cites", []),
+                    "est_input_tokens": event.get("est_input_tokens", 0),
+                    "est_output_tokens": event.get("est_output_tokens", 0),
+                })
             elif event["type"] == "done":
                 conn = init_user_db(request.app.state.db_dir, uid)
                 try:

@@ -60,11 +60,13 @@ class OllamaGateway:
         resp.raise_for_status()
 
     async def stream(self, role: str, prompt: str, tools: list[dict[str, Any]] | None = None,
-                     messages: list[dict[str, Any]] | None = None) -> AsyncGenerator[str, None]:
-        """Streamed chat call — yields content deltas as the model generates.
+                     messages: list[dict[str, Any]] | None = None) -> AsyncGenerator[dict[str, Any], None]:
+        """Streamed chat call — yields structured events as the model generates.
 
-        Mirrors call() but with stream:true; each yielded string is one
-        content chunk from an NDJSON /api/chat response line.
+        Mirrors call() but with stream:true. Yields:
+          {"type": "content", "text": str}  — one content delta per NDJSON line
+          {"type": "tool_calls", "calls": [...]} — final chunk when the model
+              emitted tool calls (Ollama sends them in the last done-chunk).
         """
         model = self.models.get(role)
         if not model:
@@ -95,9 +97,13 @@ class OllamaGateway:
                         continue
                     if chunk.get("error"):
                         raise RuntimeError(f"ollama stream error: {chunk['error']}")
-                    content = chunk.get("message", {}).get("content", "")
+                    msg = chunk.get("message", {})
+                    content = msg.get("content", "")
                     if content:
-                        yield content
+                        yield {"type": "content", "text": content}
+                    tool_calls = msg.get("tool_calls")
+                    if tool_calls:
+                        yield {"type": "tool_calls", "calls": tool_calls}
         except (ConnectError, RemoteProtocolError):
             await self._reset_client()
             raise
