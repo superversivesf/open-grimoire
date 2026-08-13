@@ -1,7 +1,9 @@
 import asyncio
-from httpx import AsyncClient
 import json
-from typing import Any, cast
+from typing import Any, AsyncGenerator, cast
+
+from httpx import AsyncClient, ConnectError, RemoteProtocolError
+
 from app.constants import OLLAMA_TIMEOUT, DEFAULT_NUM_CTX
 
 
@@ -56,6 +58,49 @@ class OllamaGateway:
         client = await self._get_client()
         resp = await client.post("/api/pull", json={"name": model}, timeout=300)
         resp.raise_for_status()
+
+    async def stream(self, role: str, prompt: str, tools: list[dict[str, Any]] | None = None,
+                     messages: list[dict[str, Any]] | None = None) -> AsyncGenerator[str, None]:
+        """Streamed chat call — yields content deltas as the model generates.
+
+        Mirrors call() but with stream:true; each yielded string is one
+        content chunk from an NDJSON /api/chat response line.
+        """
+        model = self.models.get(role)
+        if not model:
+            raise ValueError(f"unknown role: {role}")
+        if messages is None:
+            messages = [{"role": "user", "content": prompt}]
+        body = {
+            "model": model,
+            "messages": messages,
+            "stream": True,
+            "options": {
+                "num_ctx": self.num_ctx,
+                "temperature": 0.3,
+            },
+        }
+        if tools:
+            body["tools"] = tools
+        client = await self._get_client()
+        try:
+            async with client.stream("POST", "/api/chat", json=body) as resp:
+                resp.raise_for_status()
+                async for line in resp.aiter_lines():
+                    if not line:
+                        continue
+                    try:
+                        chunk = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
+                    if chunk.get("error"):
+                        raise RuntimeError(f"ollama stream error: {chunk['error']}")
+                    content = chunk.get("message", {}).get("content", "")
+                    if content:
+                        yield content
+        except (ConnectError, RemoteProtocolError):
+            await self._reset_client()
+            raise
 
     async def close(self) -> None:
         if self._client is not None:
