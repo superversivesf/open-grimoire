@@ -668,3 +668,42 @@ body {
   border-radius: 3px;
   border: 1px solid var(--rpg-border);
 }
+
+/* Live activity feed + streaming preview */
+.rpg-activity-log {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--rpg-text-dim);
+}
+.rpg-log-item::before {
+  content: "\2726";
+  margin-right: 0.4rem;
+  font-size: 0.7rem;
+}
+.rpg-token-preview {
+  white-space: pre-wrap;
+  min-height: 1.2em;
+  margin-bottom: 0.4rem;
+}
+.rpg-stream-spinner {
+  font-style: italic;
+  color: var(--rpg-text-dim);
+  opacity: 0.7;
+}
+.rpg-budget-row {
+  margin-top: 0.6rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--rpg-border);
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.rpg-budget-note {
+  flex-basis: 100%;
+  font-size: 0.9rem;
+  color: var(--rpg-text-dim);
+}

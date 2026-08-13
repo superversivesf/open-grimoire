@@ -224,16 +224,49 @@ async def continue_session_stream(request: Request, session_id: str, question: s
                           done_called=event.get("done_called", False),
                           session_id=session_id, collection_id=session["collection_id"])
                 sconn.close()
+                new_turn = {"user": question, "agent": event["answer"],
+                            "cites": event.get("cites", []), "suggestions": event.get("suggestions", [])}
+                fragment = _templates.TemplateResponse(
+                    request,
+                    "_message.html",
+                    {"user_id": uid, "turn": new_turn, "collection_id": session["collection_id"]},
+                ).body.decode()
                 yield _sse_format("done", {
                     "answer": event["answer"],
                     "cites": event.get("cites", []),
                     "suggestions": event.get("suggestions", []),
                     "iterations": event.get("iterations", 0),
+                    "html": fragment,
                 })
             elif event["type"] == "error":
                 yield _sse_format("error", {"message": event.get("message", "Unknown error")})
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
+
+
+@router.post("/sessions/{session_id}/stop")
+async def stop_session(request: Request, session_id: str, question: str = Form(...),
+                       fallback_answer: str = Form(""), _: None = Depends(require_csrf)) -> Response:
+    """Persist the exhausted run's fallback answer as the final turn (no re-run)."""
+    uid = current_user_id(request)
+    if not uid:
+        return RedirectResponse("/login", status_code=303)
+    conn = init_user_db(request.app.state.db_dir, uid)
+    try:
+        session = get_session(conn, session_id)
+        if not session:
+            return RedirectResponse("/sessions", status_code=303)
+        append_turn(conn, session_id, question, fallback_answer or "I could not find an answer.",
+                    [], [])
+        new_turn = {"user": question, "agent": fallback_answer or "I could not find an answer.",
+                    "cites": [], "suggestions": []}
+        return _templates.TemplateResponse(
+            request,
+            "_message.html",
+            {"user_id": uid, "turn": new_turn, "collection_id": session["collection_id"]},
+        )
+    finally:
+        conn.close()
 
 
 @router.get("/sessions")

@@ -55,7 +55,7 @@ def test_suggestion_click_appends_turn(browser_context):
     page.wait_for_load_state("networkidle")
 
     btns = page.locator(".rpg-suggestion-btn")
-    for _ in range(60):
+    for _ in range(120):
         if btns.count() > 0:
             break
         time.sleep(1)

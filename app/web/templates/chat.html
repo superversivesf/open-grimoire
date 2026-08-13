@@ -24,6 +24,8 @@
 </div>
 
 <form id="chat-form" class="rpg-chat-form"
+      action="/sessions/{{ session.session_id }}"
+      method="post"
       hx-post="/sessions/{{ session.session_id }}"
       hx-target="#chat-log"
       hx-swap="beforeend"
