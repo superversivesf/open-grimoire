@@ -8,10 +8,11 @@ from app.constants import WORKER_POLL_INTERVAL, JOB_LEASE_SECONDS
 
 log = get_logger("worker")
 
-# Upper bound for a single job run. Enrichment of a large book can take a
-# while, but a hung stage must not wedge the worker forever — the job lease
-# expires and the job is reclaimed on the next poll.
-JOB_RUN_TIMEOUT = 3600
+# Upper bound for a single job run. Enrichment of a large book at low
+# concurrency can legitimately take 1-2 hours; a hung stage must not wedge
+# the worker forever, but the bound must be generous enough that slow
+# enrichment isn't abandoned mid-way.
+JOB_RUN_TIMEOUT = 4 * 3600
 
 
 class QueueWorker:
