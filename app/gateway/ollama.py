@@ -23,10 +23,17 @@ class OllamaGateway:
         return self._client
 
     async def _reset_client(self) -> None:
-        async with self._client_lock:
-            if self._client is not None:
-                await self._client.aclose()
-                self._client = None
+        # Do NOT hold the lock while closing: httpx aclose() blocks until
+        # in-flight requests finish, so a hung request would deadlock every
+        # other caller waiting on the lock. Close with a timeout instead.
+        client = self._client
+        if client is None:
+            return
+        self._client = None
+        try:
+            await asyncio.wait_for(client.aclose(), timeout=5.0)
+        except Exception:
+            pass
 
     async def call(self, role: str, prompt: str, tools: list[dict[str, Any]] | None = None, messages: list[dict[str, Any]] | None = None) -> dict[str, Any]:
         model = self.models.get(role)

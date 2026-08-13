@@ -8,6 +8,11 @@ from app.constants import WORKER_POLL_INTERVAL, JOB_LEASE_SECONDS
 
 log = get_logger("worker")
 
+# Upper bound for a single job run. Enrichment of a large book can take a
+# while, but a hung stage must not wedge the worker forever — the job lease
+# expires and the job is reclaimed on the next poll.
+JOB_RUN_TIMEOUT = 3600
+
 
 class QueueWorker:
     def __init__(self, runner: Any, db_dir: Path, poll_interval: float = WORKER_POLL_INTERVAL) -> None:
@@ -51,7 +56,12 @@ class QueueWorker:
             conn = None
             heartbeat_task = asyncio.create_task(self._heartbeat_loop(job["job_id"]))
             try:
-                await self.runner.run_job(job)
+                # Bound the whole job so a hung enrich stage (e.g. a wedged
+                # gateway client) can't wedge the worker forever — the lease
+                # expires and the job is reclaimed on the next poll.
+                await asyncio.wait_for(self.runner.run_job(job), timeout=JOB_RUN_TIMEOUT)
+            except asyncio.TimeoutError:
+                log.warning(f"job {job['job_id'][:8]} exceeded {JOB_RUN_TIMEOUT}s, abandoning (lease will expire)")
             finally:
                 heartbeat_task.cancel()
                 try:
