@@ -48,7 +48,13 @@ class QueueWorker:
     async def run_once(self) -> bool:
         conn = init_shared_db(self.db_dir)
         try:
-            job = claim_next_job(conn)
+            try:
+                job = claim_next_job(conn)
+            except Exception:
+                # Transient DB failure (lock, WAL hiccup) must not kill the
+                # worker thread — log and let the next poll retry.
+                log.exception("claim_next_job failed; retrying on next poll")
+                return False
             if not job:
                 return False
             self._current_job_id = job["job_id"]
@@ -58,11 +64,11 @@ class QueueWorker:
             heartbeat_task = asyncio.create_task(self._heartbeat_loop(job["job_id"]))
             try:
                 # Bound the whole job so a hung enrich stage (e.g. a wedged
-                # gateway client) can't wedge the worker forever — the lease
-                # expires and the job is reclaimed on the next poll.
+                # gateway client) can't wedge the worker forever.
                 await asyncio.wait_for(self.runner.run_job(job), timeout=JOB_RUN_TIMEOUT)
             except asyncio.TimeoutError:
-                log.warning(f"job {job['job_id'][:8]} exceeded {JOB_RUN_TIMEOUT}s, abandoning (lease will expire)")
+                log.warning(f"job {job['job_id'][:8]} exceeded {JOB_RUN_TIMEOUT}s, marking failed")
+                self._fail_job(job, "timeout")
             finally:
                 heartbeat_task.cancel()
                 try:
@@ -75,6 +81,26 @@ class QueueWorker:
                 conn.close()
             self._current_job_id = None
             set_job_id(None)
+
+    def _fail_job(self, job: dict[str, Any], error: str) -> None:
+        """Mark a job failed (terminal status) so it is never reclaimed."""
+        from app.storage.shared_db import complete_job
+        from app.storage.user_db import init_user_db, update_doc_status
+        conn = init_shared_db(self.db_dir)
+        try:
+            complete_job(conn, job["job_id"], error=error)
+        except Exception:
+            log.exception(f"failed to mark job {job['job_id'][:8]} failed")
+        finally:
+            conn.close()
+        try:
+            uconn = init_user_db(self.db_dir, job["user_id"])
+            try:
+                update_doc_status(uconn, job["doc_id"], "failed")
+            finally:
+                uconn.close()
+        except Exception:
+            log.exception(f"failed to mark doc {job['doc_id'][:8]} failed")
 
     async def run_forever(self) -> None:
         """Run the worker until stopped."""

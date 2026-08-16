@@ -1,3 +1,4 @@
+import asyncio
 import json
 import re
 import time
@@ -119,17 +120,28 @@ def _extract_cites_from_history(messages: list[dict[str, Any]]) -> list[dict[str
                             cites.append({"path": path, "quote": r.get("snippet", "")[:200]})
                 except (json.JSONDecodeError, TypeError):
                     pass
-            # grep results - scan for file paths in the output
+            # grep results - stored as JSON (list of {path, line, text})
             elif tool_name == "grep":
-                # grep returns lines like "path/to/file.md:line_num:matching_text"
-                for line in content.split("\n"):
-                    if ":" in line:
-                        parts = line.split(":", 1)
-                        if parts:
-                            potential_path = parts[0]
-                            if potential_path.endswith(".md") and potential_path not in seen_paths:
-                                seen_paths.add(potential_path)
-                                cites.append({"path": potential_path, "quote": line[:200]})
+                try:
+                    results = json.loads(content)
+                    if isinstance(results, list):
+                        for r in results[:3]:
+                            if not isinstance(r, dict):
+                                continue
+                            path = r.get("path", "")
+                            if path and path not in seen_paths:
+                                seen_paths.add(path)
+                                cites.append({"path": path, "quote": r.get("text", "")[:200]})
+                except (json.JSONDecodeError, TypeError):
+                    # Legacy text format: "path/to/file.md:line_num:matching_text"
+                    for line in content.split("\n"):
+                        if ":" in line:
+                            parts = line.split(":", 1)
+                            if parts:
+                                potential_path = parts[0]
+                                if potential_path.endswith(".md") and potential_path not in seen_paths:
+                                    seen_paths.add(potential_path)
+                                    cites.append({"path": potential_path, "quote": line[:200]})
             # read_file results - pair with the path from the preceding assistant call
             elif tool_name == "read_file":
                 if pending_read_path and pending_read_path not in seen_paths:
@@ -389,6 +401,10 @@ class AgentLoop:
                     args = json.loads(args_str) if isinstance(args_str, str) else args_str
                 except json.JSONDecodeError:
                     args = {}
+                if not isinstance(args, dict):
+                    # Untrusted model output — a list/int/None would crash
+                    # args.items() below. Coerce to {} and keep going.
+                    args = {}
                 step_log.append({"tool": name, "args": {k: v for k, v in args.items() if k != "password"}})
                 if len(step_log) > 8:
                     step_log.pop(0)
@@ -474,7 +490,7 @@ class AgentLoop:
                     yield {"type": "thinking", "message": "Browsing document index..."}
 
                 try:
-                    result = self.toolbox.execute(name, args)
+                    result = await asyncio.to_thread(self.toolbox.execute, name, args)
                 except Exception as e:
                     log.error(f"QUERY ERROR (tool {name}): {e}", exc_info=True)
                     yield {"type": "error", "message": str(e)}

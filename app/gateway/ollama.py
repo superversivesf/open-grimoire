@@ -23,15 +23,18 @@ class OllamaGateway:
         return self._client
 
     async def _reset_client(self) -> None:
-        # Do NOT hold the lock while closing: httpx aclose() blocks until
-        # in-flight requests finish, so a hung request would deadlock every
-        # other caller waiting on the lock. Close with a timeout instead.
-        client = self._client
-        if client is None:
+        # Swap in a fresh client under the lock so no caller can grab a
+        # reference to a client that is about to be closed (TOCTOU). The
+        # old client is closed OUTSIDE the lock: httpx aclose() blocks
+        # until in-flight requests finish, so holding the lock would
+        # deadlock every other caller. Close with a timeout instead.
+        async with self._client_lock:
+            old = self._client
+            self._client = AsyncClient(base_url=self.host, timeout=OLLAMA_TIMEOUT)
+        if old is None:
             return
-        self._client = None
         try:
-            await asyncio.wait_for(client.aclose(), timeout=5.0)
+            await asyncio.wait_for(old.aclose(), timeout=5.0)
         except Exception:
             pass
 
@@ -57,7 +60,8 @@ class OllamaGateway:
             resp = await client.post("/api/chat", json=body)
             resp.raise_for_status()
             return cast(dict[str, Any], resp.json())
-        except Exception:
+        except (ConnectError, RemoteProtocolError):
+            # Connection-level failure: the client may be wedged — reset it.
             await self._reset_client()
             raise
 

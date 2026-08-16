@@ -5,7 +5,10 @@ Covered contracts:
   - the done event carries answer/cites/suggestions/iterations/tokens
   - a mid-stream failure (gateway exception) yields an error event and stops
   - iteration-budget exhaustion yields a done event with done_called=False
+  - blocking tool execution must not stall the event loop
 """
+import asyncio
+import time
 import pytest
 from unittest.mock import MagicMock
 
@@ -346,3 +349,59 @@ async def test_repeated_read_replays_cached_content():
     tool_contents = [m.get("content", "") for m in seen_messages[1] if m.get("role") == "tool"]
     assert any("AC 15, HP 7" in c for c in tool_contents), \
         "repeat read must replay cached content, not a generic dedup message"
+
+
+@pytest.mark.asyncio
+async def test_non_dict_tool_args_do_not_crash_stream():
+    """A model emitting non-dict tool arguments (e.g. a JSON array) must
+    not crash run_stream — the args must be coerced to {} and the run
+    must continue to done."""
+    gw = _gateway([
+        {"message": {"content": "", "tool_calls": [
+            {"function": {"name": "fts_search", "arguments": "[1,2,3]"}}]}},
+        {"message": {"content": "", "tool_calls": [
+            {"function": {"name": "done", "arguments": '{"answer": "AC is 15."}'}}]}},
+    ])
+    toolbox = MagicMock()
+    toolbox.execute = MagicMock(return_value="[]")
+    loop = AgentLoop(gw, toolbox)
+
+    events = await _collect(loop, [], "What is AC?")
+    assert any(e["type"] == "done" for e in events), \
+        "non-dict args must not abort the stream"
+    assert not any(e["type"] == "error" for e in events)
+
+
+@pytest.mark.asyncio
+async def test_blocking_tool_does_not_stall_event_loop():
+    """A slow synchronous tool must run off the event loop — concurrent
+    tasks must keep making progress while the tool blocks."""
+    gw = _gateway([
+        {"message": {"content": "", "tool_calls": [
+            {"function": {"name": "fts_search", "arguments": '{"query": "goblin"}'}}]}},
+        {"message": {"content": "", "tool_calls": [
+            {"function": {"name": "done", "arguments": '{"answer": "AC is 15."}'}}]}},
+    ])
+    toolbox = MagicMock()
+
+    def slow_execute(name, args):
+        time.sleep(2.0)  # blocking sleep — stalls the loop if run in-loop
+        return '[]'
+
+    toolbox.execute = MagicMock(side_effect=slow_execute)
+    loop = AgentLoop(gw, toolbox)
+
+    async def collect():
+        return [ev async for ev in loop.run_stream([], "What is AC?")]
+
+    collect_task = asyncio.create_task(collect())
+    # The mock gateway call is instant, so the tool starts almost
+    # immediately. Measure how long OUR sleep takes while the tool is
+    # (potentially) blocking the loop: in-loop execution delays us by
+    # ~2s; off-loop execution leaves us on schedule.
+    t0 = time.monotonic()
+    await asyncio.sleep(0.3)
+    gap = time.monotonic() - t0
+    events = await collect_task
+    assert gap < 1.0, f"event loop stalled during tool execution (gap {gap:.2f}s)"
+    assert any(e["type"] == "done" for e in events)

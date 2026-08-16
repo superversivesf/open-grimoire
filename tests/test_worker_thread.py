@@ -86,7 +86,85 @@ async def test_worker_runs_in_thread_not_blocking_loop(tmp_dirs, test_config):
         assert median_gap < 0.5, f"event loop blocked (median gap {median_gap:.2f}s)"
 
     t = getattr(app.state, "worker_thread", None)
-    assert t is not None, "worker_thread must be created by the startup hook"
+    assert t is not None, "startup hook must create the worker thread"
+    t.join(timeout=5)
+    assert not t.is_alive(), "worker thread must exit cleanly after shutdown"
+
+
+@pytest.mark.asyncio
+async def test_worker_survives_claim_exception(tmp_dirs, test_config, monkeypatch):
+    """A transient claim_next_job failure must not kill the worker thread —
+    it should log and keep polling (regression: worker died permanently)."""
+    import app.queue.worker as worker_mod
+    from app.main import create_app
+    from app.storage.shared_db import init_shared_db, enqueue_job, get_job
+
+    app = create_app(test_config, "testsecret")
+    real_claim = worker_mod.claim_next_job
+    calls = {"n": 0}
+
+    def flaky_claim(conn):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            raise RuntimeError("transient DB hiccup")
+        return real_claim(conn)
+
+    monkeypatch.setattr(worker_mod, "claim_next_job", flaky_claim)
+
+    async with app.router.lifespan_context(app):
+        conn = init_shared_db(test_config.db_dir)
+        job_id = enqueue_job(conn, "alice", "d1", "/x.pdf")
+        conn.close()
+        # Wait for the worker to survive the first (failing) poll and
+        # process the job on a later poll.
+        deadline = time.monotonic() + 20.0
+        status = "queued"
+        while status not in ("done", "failed"):
+            await asyncio.sleep(0.2)
+            conn = init_shared_db(test_config.db_dir)
+            status = get_job(conn, job_id)["status"]
+            conn.close()
+            assert time.monotonic() < deadline, f"job stuck in {status}"
+        assert calls["n"] >= 2, "worker must keep polling after a claim failure"
+
+    t = getattr(app.state, "worker_thread", None)
+    assert t is not None
+    t.join(timeout=5)
+    assert not t.is_alive(), "worker thread must exit cleanly after shutdown"
+
+
+@pytest.mark.asyncio
+async def test_worker_marks_timed_out_job_failed(tmp_dirs, test_config, monkeypatch):
+    """A job that exceeds JOB_RUN_TIMEOUT must be marked failed, not left
+    in 'processing' forever (regression: stuck jobs after MAX_JOB_ATTEMPTS)."""
+    import app.queue.worker as worker_mod
+    from app.main import create_app
+    from app.storage.shared_db import init_shared_db, enqueue_job, get_job
+
+    monkeypatch.setattr(worker_mod, "JOB_RUN_TIMEOUT", 0.5)
+
+    app = create_app(test_config, "testsecret")
+
+    async def hang_forever(job):
+        await asyncio.sleep(60)
+
+    async with app.router.lifespan_context(app):
+        app.state.worker.runner.run_job = hang_forever
+        conn = init_shared_db(test_config.db_dir)
+        job_id = enqueue_job(conn, "alice", "d1", "/x.pdf")
+        conn.close()
+        deadline = time.monotonic() + 20.0
+        status = "queued"
+        while status not in ("done", "failed"):
+            await asyncio.sleep(0.2)
+            conn = init_shared_db(test_config.db_dir)
+            status = get_job(conn, job_id)["status"]
+            conn.close()
+            assert time.monotonic() < deadline, f"job stuck in {status}"
+        assert status == "failed", "timed-out job must be marked failed"
+
+    t = getattr(app.state, "worker_thread", None)
+    assert t is not None
     t.join(timeout=5)
     assert not t.is_alive(), "worker thread must exit cleanly after shutdown"
 

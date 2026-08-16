@@ -69,6 +69,11 @@ def _safe_eval(expr: str) -> int | float:
             right = _eval(node.right)
             if isinstance(node.op, (ast.Div, ast.FloorDiv, ast.Mod)) and right == 0:
                 raise ValueError("division by zero")
+            if isinstance(node.op, ast.Pow):
+                if not isinstance(right, int) or right < 0 or right > 1000:
+                    raise ValueError("exponent must be an integer between 0 and 1000")
+                if isinstance(left, int) and left.bit_length() > 32:
+                    raise ValueError("base too large for exponentiation")
             return op(left, right)
         if isinstance(node, ast.UnaryOp):
             op = _SAFE_OPS.get(type(node.op))
@@ -93,6 +98,31 @@ class ToolBox:
         self.owner_uid = owner_uid or user_id
         self.db_dir = db_dir
         self.collection_id = collection_id
+
+    def _collection_doc_ids(self) -> set[str]:
+        """doc_ids belonging to the current collection (owner's DB)."""
+        conn = init_user_db(self.db_dir, self.owner_uid)
+        try:
+            rows = conn.execute(
+                "SELECT doc_id FROM docs WHERE collection_id = ?", (self.collection_id,)
+            ).fetchall()
+            return {r["doc_id"] for r in rows}
+        finally:
+            conn.close()
+
+    def _validate_collection_path(self, path: str) -> Path | None:
+        """Resolve a tool path inside the owner's tree AND the current
+        collection's doc set. Returns None when out of scope."""
+        try:
+            full = validate_user_path(self.data_dir, self.owner_uid, path)
+        except ValueError:
+            return None
+        doc_ids = self._collection_doc_ids()
+        rel = full.relative_to(self.data_dir / self.owner_uid)
+        first = rel.parts[0] if rel.parts else ""
+        if first not in doc_ids:
+            return None
+        return full
 
     def fts_search(self, query: str) -> list[dict[str, Any]]:
         conn = init_user_db(self.db_dir, self.owner_uid)
@@ -197,12 +227,14 @@ class ToolBox:
     def read_file(self, path: str, lines: str | None = None) -> str:
         if str(path).endswith("index.md"):
             return "index.md files are navigation only and cannot be read. Use list_index to navigate the book structure."
+        full = self._validate_collection_path(path)
+        if full is None:
+            return f"(invalid path: {path})"
         return safe_read_file(self.data_dir, self.owner_uid, path, lines)
 
     def list_index(self, path: str) -> list[dict[str, Any]]:
-        try:
-            full = validate_user_path(self.data_dir, self.owner_uid, path)
-        except ValueError:
+        full = self._validate_collection_path(path)
+        if full is None:
             return []
         if not full.exists():
             return []
@@ -244,10 +276,10 @@ class ToolBox:
             if not root.exists():
                 continue
             if path:
-                try:
-                    root = validate_user_path(self.data_dir, self.owner_uid, path)
-                except ValueError:
+                scoped = self._validate_collection_path(path)
+                if scoped is None:
                     continue
+                root = scoped
             for f in root.rglob("*.md"):
                 try:
                     for i, line in enumerate(f.read_text().splitlines(), start=1):
@@ -296,6 +328,9 @@ class ToolBox:
             return f"error: {e}"
 
     def ls(self, dir_path: str) -> list[str]:
+        full = self._validate_collection_path(dir_path)
+        if full is None:
+            return []
         try:
             return safe_ls(self.data_dir, self.owner_uid, dir_path)
         except ValueError:

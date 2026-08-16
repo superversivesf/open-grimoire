@@ -44,6 +44,22 @@ async def test_bug2_member_reads_shared_doc_content(setup):
 
 
 @pytest.mark.asyncio
+async def test_co_owner_reads_shared_doc_content(setup, tmp_dirs):
+    """A co-owner (role=owner) must have the same doc access as a member —
+    _resolve_doc_owner must not skip non-member roles."""
+    from app.storage.shared_db import add_collection_member
+    app, alice, bob, cid = setup
+    conn = init_shared_db(tmp_dirs["db"])
+    add_collection_member(conn, cid, bob, "owner")
+    conn.close()
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        await login(client, "bob", password="pw123456")
+        r = await client.get(f"/docs/{DOC_ID_A}/view", params={"path": "01_goblin.md"})
+        assert r.status_code == 200, f"co-owner must read shared docs, got {r.status_code}"
+        assert "AC 15" in r.text
+
+
+@pytest.mark.asyncio
 async def test_bug3_member_search_finds_shared_doc(setup):
     """BUG 3: /docs/search must find files in shared collections' owner trees."""
     app, alice, bob, cid = setup

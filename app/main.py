@@ -36,6 +36,15 @@ def create_app(cfg: Config, session_secret: str) -> FastAPI:
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
+        # Startup: retry orphaned doc-dir cleanup from previous crashes.
+        try:
+            from app.storage.cleanup import sweep_orphans
+            cleared = sweep_orphans(cfg.data_dir)
+            if cleared:
+                log.info(f"startup: swept {cleared} orphaned doc dirs")
+        except Exception:
+            log.exception("startup: orphan sweep failed")
+
         # Startup: start the worker thread
         app.state.worker.runner = PipelineRunner(app.state.worker_gateway, cfg.data_dir, cfg.db_dir)
 

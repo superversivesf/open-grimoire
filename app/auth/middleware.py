@@ -1,15 +1,15 @@
 from pathlib import Path
-import time
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import Response
 from starlette.types import ASGIApp
 from app.auth.session import verify_session, get_csrf_token
+from app.logging_utils import get_logger
 
+
+log = get_logger("auth")
 
 SKIP_AUTH_PATHS = {"/healthz", "/readyz", "/static", "/login", "/register", "/favicon.ico"}
-_admin_cache: dict[str, tuple[float, bool]] = {}
-_ADMIN_CACHE_TTL = 300.0
 
 
 def current_user_id(request: Request) -> str | None:
@@ -44,25 +44,31 @@ class AuthMiddleware(BaseHTTPMiddleware):
         request.state.is_admin = is_admin
         request.state.csrf_token = get_csrf_token(token, self.session_secret) if token else None
 
-        if uid and not is_admin and self.db_dir:
-            now = time.monotonic()
-            cached = _admin_cache.get(uid)
-            if cached and now - cached[0] < _ADMIN_CACHE_TTL:
-                if cached[1]:
-                    request.state.is_admin = True
-            else:
+        if uid and self.db_dir:
+            # Re-verify the user against the DB on every request: the signed
+            # token's is_admin flag and the account's status can change
+            # (demotion, rejection) while the cookie is still valid.
+            try:
+                from app.storage.shared_db import init_shared_db
+                sconn = init_shared_db(self.db_dir)
                 try:
-                    from app.storage.shared_db import init_shared_db
-                    sconn = init_shared_db(self.db_dir)
                     row = sconn.execute(
-                        "SELECT is_admin FROM users WHERE user_id = ?", (uid,)
+                        "SELECT is_admin, status FROM users WHERE user_id = ?", (uid,)
                     ).fetchone()
-                    is_admin_val = bool(row and row["is_admin"])
-                    _admin_cache[uid] = (now, is_admin_val)
-                    if is_admin_val:
-                        request.state.is_admin = True
+                finally:
                     sconn.close()
-                except Exception:
-                    pass
+                if row is None:
+                    request.state.user_id = None
+                    request.state.is_admin = False
+                else:
+                    request.state.is_admin = bool(row["is_admin"])
+                    status = row["status"]
+                    if status not in ("active", None):
+                        request.state.user_id = None
+                        request.state.is_admin = False
+            except Exception:
+                # DB hiccup must not take the whole app down; the token
+                # payload remains the fallback for this request.
+                log.exception("auth DB verification failed; falling back to token payload")
 
         return await call_next(request)

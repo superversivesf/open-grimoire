@@ -21,6 +21,24 @@ def test_cites_extracted_from_read_file():
     assert any(c["path"] == "abc/01_goblin.md" for c in cites)
 
 
+def test_cites_extracted_from_grep_json():
+    """grep results are stored as JSON — citations must be extracted from
+    the JSON structure, not from text lines."""
+    from app.agent.loop import _extract_cites_from_history
+    import json
+    messages = [
+        {"role": "assistant", "content": ""},
+        {"role": "tool", "name": "grep",
+         "content": json.dumps([
+             {"path": "d1/01_chapter/01_goblin.md", "line": 12, "text": "AC 15"},
+             {"path": "d1/01_chapter/02_knight.md", "line": 3, "text": "AC 16"},
+         ])},
+    ]
+    cites = _extract_cites_from_history(messages)
+    assert any(c["path"] == "d1/01_chapter/01_goblin.md" for c in cites), \
+        "grep JSON results must produce citations"
+
+
 def test_system_prompt_no_book_preference_instruction():
     assert "prefer matches from that book" not in SYSTEM_PROMPT
 

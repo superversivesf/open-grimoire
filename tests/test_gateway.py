@@ -162,3 +162,55 @@ async def test_stream_connection_error_resets_client():
             async for _ in gw.stream("query", "hi"):
                 pass
         assert client_inst.aclose.await_count >= 1, "client must be reset on connection error"
+
+
+@pytest.mark.asyncio
+async def test_call_http_error_does_not_reset_client():
+    """An HTTP 4xx/5xx (raise_for_status) must NOT tear down the shared
+    client — only connection-level failures warrant a reset."""
+    from httpx import HTTPStatusError, Request, Response as HttpxResponse
+    gw = OllamaGateway("http://ollama:11434", {"query": "qwen:7b"})
+    mock_resp = MagicMock()
+    mock_resp.status_code = 500
+    mock_resp.raise_for_status = MagicMock(
+        side_effect=HTTPStatusError("boom", request=Request("POST", "http://x"), response=HttpxResponse(500))
+    )
+    with patch("app.gateway.ollama.AsyncClient") as MockClient:
+        client_inst = MockClient.return_value
+        client_inst.post = AsyncMock(return_value=mock_resp)
+        client_inst.aclose = AsyncMock()
+        with pytest.raises(HTTPStatusError):
+            await gw.call("query", "hi")
+        assert client_inst.aclose.await_count == 0, \
+            "HTTP status errors must not reset the shared client"
+
+
+@pytest.mark.asyncio
+async def test_call_connection_error_resets_client():
+    """Connection-level failures must still reset the client."""
+    gw = OllamaGateway("http://ollama:11434", {"query": "qwen:7b"})
+    with patch("app.gateway.ollama.AsyncClient") as MockClient:
+        client_inst = MockClient.return_value
+        client_inst.post = AsyncMock(side_effect=ConnectError("boom"))
+        client_inst.aclose = AsyncMock()
+        with pytest.raises(ConnectError):
+            await gw.call("query", "hi")
+        assert client_inst.aclose.await_count >= 1, \
+            "connection errors must reset the client"
+
+
+@pytest.mark.asyncio
+async def test_reset_client_swaps_atomically():
+    """_reset_client must swap in a fresh client under the lock so a
+    concurrent _get_client never returns a client that is being closed."""
+    gw = OllamaGateway("http://ollama:11434", {"query": "qwen:7b"})
+    with patch("app.gateway.ollama.AsyncClient") as MockClient:
+        old = MagicMock()
+        old.aclose = AsyncMock()
+        fresh = MagicMock()
+        fresh.aclose = AsyncMock()
+        MockClient.side_effect = [fresh]
+        gw._client = old
+        await gw._reset_client()
+        assert gw._client is fresh, "a fresh client must be swapped in"
+        assert old.aclose.await_count >= 1, "old client must be closed"

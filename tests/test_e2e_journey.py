@@ -322,6 +322,40 @@ class TestCollectionJourney:
             assert len(docs) == 0
             uconn.close()
 
+    @pytest.mark.asyncio
+    async def test_delete_collection_records_orphans_on_rmtree_failure(self, app_with_user, tmp_dirs, monkeypatch):
+        """If filesystem cleanup fails, the orphaned doc dir must be recorded
+        in a cleanup queue (not silently lost)."""
+        import shutil as shutil_mod
+        from app.storage.cleanup import list_orphans
+        app, uid, _ = app_with_user
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            await login(client, "testuser", "testpass")
+            await client.post("/collections", data={"name": "To Delete"})
+            r = await client.get("/")
+            import re
+            m = re.search(r'collections/([a-f0-9]+)', r.text)
+            cid = m.group(1)
+            # Create a doc dir so rmtree has something to fail on.
+            uconn = init_user_db(tmp_dirs["db"], uid)
+            from app.storage.user_db import create_doc
+            doc_id = "deadbeef" * 4
+            create_doc(uconn, doc_id, cid, "Book", "h")
+            uconn.close()
+            doc_dir = tmp_dirs["data"] / uid / doc_id
+            doc_dir.mkdir(parents=True)
+            (doc_dir / "x.md").write_text("x")
+
+            def boom(path, *a, **k):
+                raise OSError("disk on fire")
+
+            monkeypatch.setattr(shutil_mod, "rmtree", boom)
+            r = await client.post(f"/collections/{cid}/delete")
+            assert r.status_code == 303, "delete must still complete"
+            orphans = list_orphans(tmp_dirs["data"])
+            assert any(o["doc_id"] == doc_id for o in orphans), \
+                "failed rmtree must record the orphaned doc dir"
+
 
 # ===========================================================================
 # Journey 3: PDF Upload & Processing Pipeline

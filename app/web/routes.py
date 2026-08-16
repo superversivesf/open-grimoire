@@ -74,7 +74,7 @@ def _resolve_doc_owner(request: Request, doc_id: str) -> tuple[str | None, dict 
         memberships = list_shared_collections_for_user(sconn, uid)
         for m in memberships:
             cid = m["collection_id"]
-            if m["role"] != "member":
+            if m["role"] not in ("member", "owner"):
                 continue
             resolved = resolve_collection(request.app.state.db_dir, cid, uid)
             if not resolved:
@@ -242,7 +242,13 @@ async def delete_collection_route(request: Request, collection_id: str, _: None 
     for d in docs:
         doc_dir = request.app.state.data_dir / owner / d["doc_id"]
         if doc_dir.exists():
-            shutil.rmtree(doc_dir)
+            try:
+                shutil.rmtree(doc_dir)
+            except OSError:
+                # Record the orphan so a startup sweep can retry — the DB
+                # rows are already gone, so this must not be silently lost.
+                from app.storage.cleanup import record_orphan
+                record_orphan(request.app.state.data_dir, owner, d["doc_id"])
     # Clean up membership rows
     sconn = init_shared_db(request.app.state.db_dir)
     remove_all_collection_members(sconn, collection_id)

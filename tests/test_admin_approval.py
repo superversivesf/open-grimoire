@@ -63,6 +63,51 @@ async def test_non_admin_cannot_approve(app_with_users, tmp_dirs):
 
 
 @pytest.mark.asyncio
+async def test_demoted_admin_loses_access_immediately(app_with_users, tmp_dirs):
+    """A demoted admin's existing session must not keep admin access until
+    cookie expiry — the middleware must re-verify is_admin from the DB."""
+    conn = init_shared_db(tmp_dirs["db"])
+    boss_uid = create_user(conn, "boss", hash_password("pw123456"), is_admin=True)
+    victim_uid = create_user_with_status(conn, "newbie", hash_password("pw123456"), status="pending")
+    conn.close()
+    async with AsyncClient(transport=ASGITransport(app=app_with_users), base_url="http://test") as client:
+        await login(client, "boss", password="pw123456")
+        # Demote in the DB while the session cookie is still valid.
+        conn = init_shared_db(tmp_dirs["db"])
+        conn.execute("UPDATE users SET is_admin = 0 WHERE user_id = ?", (boss_uid,))
+        conn.commit()
+        conn.close()
+        # The admin POST routes rely on request.state.is_admin — a stale
+        # token flag must not let the demoted admin approve users.
+        r = await client.post(f"/admin/users/{victim_uid}/approve",
+                              data={"_csrf": csrf_for(client)})
+        assert r.status_code == 303
+        conn = init_shared_db(tmp_dirs["db"])
+        assert get_user_by_username(conn, "newbie")["status"] == "pending", \
+            "demoted admin must not be able to approve users"
+        conn.close()
+
+
+@pytest.mark.asyncio
+async def test_rejected_user_loses_access_immediately(app_with_users, tmp_dirs):
+    """A rejected user's existing session must not keep access until cookie
+    expiry — the middleware must re-verify users.status from the DB."""
+    conn = init_shared_db(tmp_dirs["db"])
+    uid = create_user_with_status(conn, "newbie", hash_password("pw123456"), status="active")
+    conn.close()
+    async with AsyncClient(transport=ASGITransport(app=app_with_users), base_url="http://test") as client:
+        await login(client, "newbie", password="pw123456")
+        r = await client.get("/", follow_redirects=False)
+        assert r.status_code == 200, "active user must reach the library"
+        # Reject in the DB while the session cookie is still valid.
+        conn = init_shared_db(tmp_dirs["db"])
+        set_user_status(conn, uid, "rejected")
+        conn.close()
+        r = await client.get("/", follow_redirects=False)
+        assert r.status_code == 303, "rejected user must lose access immediately"
+
+
+@pytest.mark.asyncio
 async def test_approved_user_can_login(app_with_users, tmp_dirs):
     conn = init_shared_db(tmp_dirs["db"])
     create_user_with_status(conn, "newbie", hash_password("pw123456"), status="pending")

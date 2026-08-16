@@ -154,9 +154,81 @@ def test_calc_rejects_compound_types(toolbox):
     assert result.startswith("error"), f"expected error for compound types, got: {result}"
 
 
+def test_calc_rejects_huge_exponent(toolbox):
+    result = toolbox.calc("9**9**9")
+    assert result.startswith("error"), f"expected error for huge exponent, got: {result}"
+
+
+def test_calc_rejects_huge_exponent_operand(toolbox):
+    result = toolbox.calc("2**1000000000")
+    assert result.startswith("error"), f"expected error for huge exponent operand, got: {result}"
+
+
+def test_calc_allows_small_exponent(toolbox):
+    result = toolbox.calc("2**10")
+    assert "1024" in result
+
+
 def test_ls(toolbox):
     result = toolbox.ls(str(toolbox.data_dir / "alice" / "d1"))
     assert "index.md" in result
+
+
+def test_read_file_rejects_other_collection_doc(tmp_dirs):
+    """read_file must not read files from OTHER collections of the same
+    owner — only the current collection's doc_ids are allowed."""
+    uconn = init_user_db(tmp_dirs["db"], "alice")
+    cid = create_collection(uconn, "C")
+    create_doc(uconn, "d1", cid, "Book", "h")
+    other_cid = create_collection(uconn, "Other")
+    create_doc(uconn, "d2", other_cid, "Secret Book", "h")
+    uconn.close()
+    doc_dir = tmp_dirs["data"] / "alice" / "d2"
+    doc_dir.mkdir(parents=True)
+    (doc_dir / "secret.md").write_text("TOP SECRET content")
+    tb = ToolBox(tmp_dirs["data"], "alice", tmp_dirs["db"], cid)
+
+    result = tb.read_file("d2/secret.md")
+    assert "TOP SECRET" not in result, \
+        "read_file must not read files from other collections"
+    assert "invalid path" in result or "not found" in result
+
+
+def test_ls_rejects_other_collection_doc(tmp_dirs):
+    """ls must not list directories from OTHER collections of the same owner."""
+    uconn = init_user_db(tmp_dirs["db"], "alice")
+    cid = create_collection(uconn, "C")
+    create_doc(uconn, "d1", cid, "Book", "h")
+    other_cid = create_collection(uconn, "Other")
+    create_doc(uconn, "d2", other_cid, "Secret Book", "h")
+    uconn.close()
+    doc_dir = tmp_dirs["data"] / "alice" / "d2"
+    doc_dir.mkdir(parents=True)
+    (doc_dir / "secret.md").write_text("x")
+    tb = ToolBox(tmp_dirs["data"], "alice", tmp_dirs["db"], cid)
+
+    result = tb.ls("d2")
+    assert result == [], "ls must not list other collections' directories"
+
+
+def test_grep_with_path_rejects_other_collection_doc(tmp_dirs):
+    """grep with an explicit path must not search other collections."""
+    uconn = init_user_db(tmp_dirs["db"], "alice")
+    cid = create_collection(uconn, "C")
+    create_doc(uconn, "d1", cid, "Book", "h")
+    other_cid = create_collection(uconn, "Other")
+    create_doc(uconn, "d2", other_cid, "Secret Book", "h")
+    uconn.close()
+    d1_dir = tmp_dirs["data"] / "alice" / "d1"
+    d1_dir.mkdir(parents=True)
+    (d1_dir / "01.md").write_text("ordinary content")
+    doc_dir = tmp_dirs["data"] / "alice" / "d2"
+    doc_dir.mkdir(parents=True)
+    (doc_dir / "secret.md").write_text("TOP SECRET content")
+    tb = ToolBox(tmp_dirs["data"], "alice", tmp_dirs["db"], cid)
+
+    result = tb.grep("SECRET", path="d2")
+    assert result == [], "grep with path must not search other collections"
 
 
 def test_fts_search_reports_match_mode(toolbox):
