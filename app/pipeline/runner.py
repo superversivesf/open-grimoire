@@ -146,24 +146,21 @@ class PipelineRunner:
                 enriched = len(completed_paths)
                 sem = asyncio.Semaphore(2)
 
-                async def _enrich_one(p: Path, rel_path: str, page: int | None) -> tuple[bool, dict[str, Any]]:
+                async def _enrich_one(p: Path, rel_path: str, page: int | None) -> tuple[str, Path, bool, dict[str, Any]]:
                     async with sem:
                         r = await enricher.enrich_leaf(p, page)
-                        return True, r
+                        return rel_path, p, True, r
 
-                tasks = []
-                for i, p in enumerate(full_paths):
-                    page = page_map.get(str(p))
-                    rel_path = remaining_paths[i]
-                    tasks.append(_enrich_one(p, rel_path, page))
+                tasks = [asyncio.ensure_future(_enrich_one(p, remaining_paths[i], page_map.get(str(p))))
+                         for i, p in enumerate(full_paths)]
 
-                results = await asyncio.gather(*tasks, return_exceptions=True)
-                for i, result in enumerate(results):
-                    rel_path = remaining_paths[i]
-                    if isinstance(result, Exception):
-                        log.warning(f"JOB {job_id[:8]} ENRICH {enriched + i + 1}/{len(leaf_paths)} FAILED: {full_paths[i].name} -> {result}")
+                for coro in asyncio.as_completed(tasks):
+                    try:
+                        rel_path, full_path, ok, r = await coro
+                    except Exception as exc:
+                        log.warning(f"JOB {job_id[:8]} ENRICH FAILED: -> {exc}")
+                        update_enrich_progress(uconn, doc_id, enriched, len(leaf_paths))
                         continue
-                    ok, r = result
                     if ok:
                         summary = r.get("summary", "")
                         if not isinstance(summary, str):
@@ -171,11 +168,12 @@ class PipelineRunner:
                         summary = summary[:ENRICH_SUMMARY_MAX_CHARS]
                         keywords = r.get("keywords", [])
                         if not keywords:
-                            log.warning(f"JOB {job_id[:8]} ENRICH {enriched + i + 1}/{len(leaf_paths)} SKIPPED (no keywords): {full_paths[i].name}")
+                            log.warning(f"JOB {job_id[:8]} ENRICH SKIPPED (no keywords): {full_path.name}")
+                            update_enrich_progress(uconn, doc_id, enriched, len(leaf_paths))
                             continue
                         enriched += 1
                         add_enrich_completed_path(uconn, doc_id, rel_path)
-                        log.debug(f"JOB {job_id[:8]} ENRICH {enriched}/{len(leaf_paths)}: {full_paths[i].name} -> summary=\"{summary}\" keywords={keywords}")
+                        log.debug(f"JOB {job_id[:8]} ENRICH {enriched}/{len(leaf_paths)}: {full_path.name} -> summary=\"{summary}\" keywords={keywords}")
                     update_enrich_progress(uconn, doc_id, enriched, len(leaf_paths))
                 log.info(f"JOB {job_id[:8]} STAGE 4 DONE: {enriched}/{len(leaf_paths)} sections enriched, {time.time()-t0:.1f}s")
 
