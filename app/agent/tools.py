@@ -118,7 +118,8 @@ class ToolBox:
         except ValueError:
             return None
         doc_ids = self._collection_doc_ids()
-        rel = full.relative_to(self.data_dir / self.owner_uid)
+        owner_root = (self.data_dir / self.owner_uid).resolve()
+        rel = full.relative_to(owner_root)
         first = rel.parts[0] if rel.parts else ""
         if first not in doc_ids:
             return None
