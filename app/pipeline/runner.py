@@ -135,8 +135,18 @@ class PipelineRunner:
             t0 = time.time()
             update_doc_status(uconn, doc_id, "enriching")
             if self.gateway is not None:
-                # Checkpoint: get already enriched paths
+                # Checkpoint: get already enriched paths from the DB. If the
+                # DB list is empty but files on disk have frontmatter (job
+                # was interrupted mid-gather before the DB was updated),
+                # recover by scanning the disk.
                 completed_paths = set(get_enrich_completed_paths(uconn, doc_id))
+                if not completed_paths:
+                    completed_paths = {
+                        p for p in leaf_paths
+                        if (udata / p).exists() and (udata / p).read_text().startswith("---\n")
+                    }
+                    if completed_paths:
+                        log.info(f"JOB {job_id[:8]} STAGE 4: recovered {len(completed_paths)} enriched files from disk (DB checkpoint was empty)")
                 remaining_paths = [p for p in leaf_paths if p not in completed_paths]
                 log.info(f"JOB {job_id[:8]} STAGE 4: enriching {len(leaf_paths)} sections ({len(completed_paths)} already done, {len(remaining_paths)} remaining)")
                 update_enrich_progress(uconn, doc_id, len(completed_paths), len(leaf_paths))
