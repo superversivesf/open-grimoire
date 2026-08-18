@@ -10,6 +10,10 @@ from app.constants import ENRICH_OPTIMAL_KEYWORDS
 
 log = get_logger("enrich")
 
+# Max chars of section content to send to the enrich model. Large sections
+# (85KB+) overwhelm small models and produce unparsable responses.
+ENRICH_MAX_CONTENT_CHARS = 8000
+
 
 # Template for enrichment prompt. Uses $content placeholder to avoid
 # JSON brace escaping confusion with str.format().
@@ -36,20 +40,28 @@ class Enricher:
 
     async def enrich_leaf(self, path: Path, page: int | None = None) -> dict[str, Any]:
         content = path.read_text()
+        # Truncate to keep the prompt within the model's context window.
+        # Large sections (85KB+) overwhelm small enrich models.
+        truncated = content[:ENRICH_MAX_CONTENT_CHARS]
+        if len(content) > ENRICH_MAX_CONTENT_CHARS:
+            truncated += "\n\n[... section truncated for length ...]"
         result: dict[str, Any] = {}
-        for attempt in range(2):
-            prompt = ENRICH_PROMPT.substitute(content=content)
+        for attempt in range(3):
+            prompt = ENRICH_PROMPT.substitute(content=truncated)
             if attempt == 1:
                 prompt += "\n\nIMPORTANT: Your previous response could not be parsed. Return ONLY the JSON object with a summary and at least 5 keywords."
+            elif attempt == 2:
+                # Last-ditch: accept just a summary, no keywords required.
+                prompt += "\n\nIMPORTANT: Return ONLY a JSON object: {\"summary\": \"2-3 sentence summary\", \"keywords\": []}. Even if you cannot identify keywords, provide the summary."
             resp = await self.gateway.call("enrich", prompt)
             raw = resp.get("message", {}).get("content", "")
             result = self._parse_json(raw)
-            if result.get("keywords"):
+            if result.get("keywords") or (attempt == 2 and result.get("summary")):
                 break
-        if result.get("keywords"):
+        if result.get("summary") or result.get("keywords"):
             self._write_frontmatter(path, content, result, page)
         else:
-            log.warning(f"enrich FAILED for {path.name}: unparsable response, no frontmatter written")
+            log.warning(f"enrich FAILED for {path.name}: unparsable response (raw[:200]={raw[:200]!r}), no frontmatter written")
         return result
 
     @staticmethod
