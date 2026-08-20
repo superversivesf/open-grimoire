@@ -154,7 +154,7 @@ class PipelineRunner:
                 full_paths = [udata / p for p in remaining_paths]
                 page_map = self._build_page_map(tree, udata, leaf_paths)
                 enriched = len(completed_paths)
-                sem = asyncio.Semaphore(2)
+                sem = asyncio.Semaphore(1)  # one at a time — small models can't handle concurrency
 
                 async def _enrich_one(p: Path, rel_path: str, page: int | None) -> tuple[str, Path, bool, dict[str, Any]]:
                     async with sem:

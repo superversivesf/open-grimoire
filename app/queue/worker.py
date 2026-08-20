@@ -12,7 +12,7 @@ log = get_logger("worker")
 # concurrency can legitimately take 1-2 hours; a hung stage must not wedge
 # the worker forever, but the bound must be generous enough that slow
 # enrichment isn't abandoned mid-way.
-JOB_RUN_TIMEOUT = 4 * 3600
+JOB_RUN_TIMEOUT = 8 * 3600
 
 
 class QueueWorker:
